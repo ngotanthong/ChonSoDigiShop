@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VNPT SIM - Kho Số Liền Mạch & Copy Nhanh</title>
+    <style>
+        :root {
+            --primary: #005baa;
+            --accent: #e67e22;
+            --bg: #f4f7f9;
+            --card-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', system-ui, sans-serif; }
+        body { background: var(--bg); padding: 2rem 1rem; color: #1a1a1a; }
+        .container { max-width: 1240px; margin: 0 auto; }
+
+        header { margin-bottom: 2rem; text-align: center; }
+        header h1 { font-size: 26px; color: var(--primary); text-transform: uppercase; letter-spacing: 2px; font-weight: 800; }
+
+        /* Search Box */
+        .search-box {
+            background: white; padding: 1.5rem; border-radius: 20px;
+            box-shadow: var(--card-shadow); margin-bottom: 1.5rem; border: 1px solid #eef2f6;
+        }
+
+        .controls {
+            display: grid; grid-template-columns: 120px 140px 1fr 160px;
+            gap: 15px; align-items: flex-end;
+        }
+
+        /* Gợi ý */
+        .hint-container {
+            margin-top: 15px; padding-top: 15px; border-top: 1px solid #f0f3f7;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .quick-hints { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+        .hint-label { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-right: 10px; }
+        .hint-chip {
+            background: #f8fafc; border: 1px solid #e2e8f0; padding: 6px 14px;
+            border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer;
+            transition: 0.2s; color: #475569;
+        }
+        .hint-chip:hover { border-color: var(--primary); color: var(--primary); }
+
+        label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 6px; display: block; }
+        input, select {
+            width: 100%; height: 48px; border: 1.5px solid #e2e8f0; border-radius: 10px;
+            padding: 0 16px; font-size: 16px; outline: none;
+        }
+
+        .btn-main {
+            background: var(--primary); color: white; border: none; height: 48px;
+            border-radius: 10px; font-weight: 700; cursor: pointer; width: 100%;
+        }
+
+        /* Tags & Action Area */
+        .tag-area { 
+            background: white; padding: 1.2rem; border-radius: 16px; 
+            margin-bottom: 1.5rem; box-shadow: var(--card-shadow);
+            display: flex; justify-content: space-between; align-items: flex-start;
+            gap: 20px;
+        }
+        .tag-cloud { display: flex; flex-wrap: wrap; gap: 8px; flex: 1; }
+        .filter-tag {
+            background: #f1f5f9; border: 1px solid #e2e8f0; padding: 8px 16px;
+            border-radius: 25px; font-size: 12px; font-weight: 600; cursor: pointer;
+        }
+        .filter-tag.active { background: var(--primary); color: white; }
+
+        /* Nút Copy Toàn Bộ */
+        .btn-copy {
+            background: #fff; border: 2px solid var(--primary); color: var(--primary);
+            padding: 8px 18px; border-radius: 10px; font-size: 12px; font-weight: 800;
+            cursor: pointer; white-space: nowrap; transition: 0.2s;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .btn-copy:hover { background: var(--primary); color: white; }
+        .btn-copy:active { transform: scale(0.95); }
+
+        /* Results Grid */
+        .sim-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; padding-top: 15px; }
+        @media (max-width: 1100px) { .sim-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 768px) { .sim-grid { grid-template-columns: 1fr; } }
+
+        .sim-card {
+            background: white; border-radius: 50px;
+            display: flex; align-items: center; justify-content: space-between;
+            box-shadow: 0 6px 16px rgba(0, 152, 255, 0.08); 
+            border: 2px solid #0098ff; transition: all 0.3s ease;
+            position: relative; padding-left: 30px; min-height: 100px;
+        }
+        .sim-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0, 152, 255, 0.18); }
+
+        .sim-info { display: flex; flex-direction: column; gap: 4px; padding: 15px 0; }
+        
+        .sim-number { 
+            font-size: 26px; font-weight: 900; color: #0098ff; 
+            letter-spacing: 0.5px;
+        }
+        .sim-number .hi { color: var(--accent); border-bottom: 2px solid var(--accent); }
+        
+        .sim-time { font-size: 13px; color: #0098ff; font-weight: 500; }
+        .sim-time span { font-weight: 700; }
+        
+        .sim-badge {
+            background: #3b82f6; color: white;
+            padding: 12px 20px; text-align: center;
+            border-radius: 40px; margin: 6px;
+            display: flex; flex-direction: column; justify-content: center;
+            min-width: 150px; height: calc(100% - 12px);
+        }
+        
+        .sim-badge.free { background: #10b981; }
+        .sim-card.free-card { border-color: #10b981; box-shadow: 0 6px 16px rgba(16, 185, 129, 0.08); }
+        .sim-card.free-card:hover { box-shadow: 0 12px 24px rgba(16, 185, 129, 0.18); }
+        .sim-card.free-card .sim-number, .sim-card.free-card .sim-time { color: #10b981; }
+
+        .sim-badge.tier-1 { background: #3b82f6; }
+        .sim-card.tier-1-card { border-color: #3b82f6; box-shadow: 0 6px 16px rgba(59, 130, 246, 0.08); }
+        .sim-card.tier-1-card:hover { box-shadow: 0 12px 24px rgba(59, 130, 246, 0.18); }
+        .sim-card.tier-1-card .sim-number, .sim-card.tier-1-card .sim-time { color: #3b82f6; }
+
+        .sim-badge.tier-2 { background: #2563eb; }
+        .sim-card.tier-2-card { border-color: #2563eb; box-shadow: 0 6px 16px rgba(37, 99, 235, 0.08); }
+        .sim-card.tier-2-card:hover { box-shadow: 0 12px 24px rgba(37, 99, 235, 0.18); }
+        .sim-card.tier-2-card .sim-number, .sim-card.tier-2-card .sim-time { color: #2563eb; }
+
+        .sim-badge.tier-3 { background: #1d4ed8; }
+        .sim-card.tier-3-card { border-color: #1d4ed8; box-shadow: 0 6px 16px rgba(29, 78, 216, 0.08); }
+        .sim-card.tier-3-card:hover { box-shadow: 0 12px 24px rgba(29, 78, 216, 0.18); }
+        .sim-card.tier-3-card .sim-number, .sim-card.tier-3-card .sim-time { color: #1d4ed8; }
+
+        .sim-badge.tier-4 { background: #1e40af; }
+        .sim-card.tier-4-card { border-color: #1e40af; box-shadow: 0 6px 16px rgba(30, 64, 175, 0.08); }
+        .sim-card.tier-4-card:hover { box-shadow: 0 12px 24px rgba(30, 64, 175, 0.18); }
+        .sim-card.tier-4-card .sim-number, .sim-card.tier-4-card .sim-time { color: #1e40af; }
+
+        .sim-badge.tier-5 { background: #1e3a8a; }
+        .sim-card.tier-5-card { border-color: #1e3a8a; box-shadow: 0 6px 16px rgba(30, 58, 138, 0.08); }
+        .sim-card.tier-5-card:hover { box-shadow: 0 12px 24px rgba(30, 58, 138, 0.18); }
+        .sim-card.tier-5-card .sim-number, .sim-card.tier-5-card .sim-time { color: #1e3a8a; }
+
+        .sim-badge-price { font-size: 20px; font-weight: 800; }
+        .sim-badge-sub { font-size: 11px; font-weight: 500; opacity: 0.9; margin-top: 2px; }
+
+        .sim-tag {
+            position: absolute; top: -12px; left: 30px; bottom: auto;
+            background: #f59e0b; color: white; padding: 0 14px; height: 24px;
+            border-radius: 20px; font-size: 10px; font-weight: 700;
+            display: flex; align-items: center;
+            box-shadow: 0 4px 10px rgba(245, 158, 11, 0.25);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70%;
+        }
+
+        .loading-bar { height: 4px; background: #e2e8f0; margin-top: 10px; overflow: hidden; display: none; }
+        .loading-progress { height: 100%; background: var(--primary); width: 0%; transition: width 0.3s; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>QUẢN LÝ KHO SIM VNPT</h1>
+    </header>
+
+    <div class="search-box">
+        <div class="controls">
+            <div>
+                <label>Đầu số</label>
+                <select id="prefixSelect">
+                    <option value="0">Tất cả</option>
+                    <option value="8491">091</option>
+                    <option value="8494">094</option>
+                    <option value="8488">088</option>
+                    <option value="8481">081</option>
+                    <option value="8482">082</option>
+                    <option value="8483">083</option>
+                    <option value="8484">084</option>
+                    <option value="8485">085</option>
+                </select>
+            </div>
+            <div>
+                <label>Cước cam kết</label>
+                <select id="commit">
+                    <option value="">Tất cả</option>
+                    <option value="0">0đ</option>
+                    <option value="100000">100.000đ</option>
+                    <option value="150000">150.000đ</option>
+                    <option value="200000">200.000đ</option>
+                    <option value="400000">400.000đ</option>
+                    <option value="500000">500.000đ</option>
+                    <option value="600000">600.000đ</option>
+                    <option value="800000">800.000đ</option>
+                    <option value="1500000">1.500.000đ</option>
+                </select>
+            </div>
+            <div>
+                <label>Số cần tìm</label>
+                <input type="text" id="search" placeholder="Nhập đuôi hoặc chuỗi giữa...">
+            </div>
+            <div>
+                <label>&nbsp;</label>
+                <button class="btn-main" id="btnSearch">QUÉT TOÀN KHO</button>
+            </div>
+        </div>
+        <div class="loading-bar" id="loadBar"><div class="loading-progress" id="loadProgress"></div></div>
+        <div id="scanStatus" style="display:none; font-size: 13px; color: var(--primary); text-align: center; margin-top: 10px; font-weight: 600; font-style: italic;"></div>
+
+        <div class="hint-container">
+            <div class="quick-hints" id="hintWrapper">
+                <span class="hint-label">Gợi ý nhanh:</span>
+            </div>
+            <button style="background:none; border:none; color:var(--primary); cursor:pointer; font-size:12px; font-weight:600" onclick="refreshHints()">Làm mới ↻</button>
+        </div>
+    </div>
+
+    <div id="tagArea" class="tag-area" style="display: none; flex-direction: column;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+            <button class="btn-copy" onclick="toggleFilter()" style="background: #e2e8f0; color: #1e293b; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                ẨN / HIỆN BỘ LỌC
+            </button>
+            <button class="btn-copy" id="btnCopyAll" onclick="copyAllNumbers()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                SAO CHÉP DANH SÁCH
+            </button>
+        </div>
+        <div id="filterContainer" style="display: flex; flex-direction: column; gap: 12px;">
+            <div class="tag-cloud" id="sortCloud"></div>
+            <div class="tag-cloud" id="priceCloud"></div>
+            <div class="tag-cloud" id="tagCloud"></div>
+        </div>
+    </div>
+
+    <div id="results" class="sim-grid"></div>
+</div>
+
+<script>
+    // --- XỬ LÝ ĐĂNG NHẬP ---
+    if (localStorage.getItem('isLoggedIn') === 'true') {
+        document.getElementById('loginOverlay').style.display = 'none';
+    }
+
+    function checkLogin() {
+        const pass = document.getElementById('loginPassword').value;
+        if (pass === 'admin888') { // MẬT KHẨU MẶC ĐỊNH
+            localStorage.setItem('isLoggedIn', 'true');
+            document.getElementById('loginOverlay').style.display = 'none';
+        } else {
+            document.getElementById('loginError').style.display = 'block';
+        }
+    }
+
+    document.getElementById('loginPassword').addEventListener('keydown', e => {
+        if (e.key === 'Enter') checkLogin();
+    });
+
+    const BASE = 'https://digishop.vnpt.vn/apiprod/v2/simso/num_search';
+    const PREFIXES = ['8491', '8494', '8488', '8481', '8482', '8483', '8484', '8485'];
+    let currentData = [];
+    let priorityTag = null;
+    let priorityPrice = null;
+    let sortPrice = null;
+    let isFilterVisible = true;
+
+    function toggleFilter() {
+        isFilterVisible = !isFilterVisible;
+        const fc = document.getElementById('filterContainer');
+        if (fc) fc.style.display = isFilterVisible ? 'flex' : 'none';
+    }
+
+    // --- HÀM COPY TOÀN BỘ SỐ ---
+    function copyAllNumbers() {
+        if (currentData.length === 0) return;
+
+        let dataToCopy = [...currentData];
+        if (priorityPrice !== null) {
+            dataToCopy = dataToCopy.filter(item => {
+                const price = Number(item.monthly) || 0;
+                if (priorityPrice === '0') return price === 0;
+                if (priorityPrice === '<200') return price > 0 && price < 200000;
+                if (priorityPrice === '200-500') return price >= 200000 && price <= 500000;
+                if (priorityPrice === '>500') return price > 500000;
+                return true;
+            });
+        }
+        
+        if (sortPrice === 'asc') {
+            dataToCopy.sort((a, b) => (Number(a.monthly) || 0) - (Number(b.monthly) || 0));
+        } else if (sortPrice === 'desc') {
+            dataToCopy.sort((a, b) => (Number(b.monthly) || 0) - (Number(a.monthly) || 0));
+        }
+
+        if (priorityTag) {
+            dataToCopy = dataToCopy.filter(item => item.kieuso_name.replace(/^\d{3} /,'') === priorityTag);
+        }
+
+        const textToCopy = dataToCopy.map(item => fmt(item.so_tb)).join('\n');
+        
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            const btn = document.getElementById('btnCopyAll');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '✓ ĐÃ SAO CHÉP';
+            btn.style.borderColor = '#166534';
+            btn.style.color = '#166534';
+            
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.style.borderColor = '';
+                btn.style.color = '';
+            }, 2000);
+        });
+    }
+
+    function fmt(num) {
+        return num.startsWith('84') ? '0' + num.slice(2) : num;
+    }
+
+    async function handleGlobalSearch() {
+        const search = document.getElementById('search').value.trim();
+        const commitValue = document.getElementById('commit').value;
+        const prefixSelect = document.getElementById('prefixSelect').value;
+        const btn = document.getElementById('btnSearch');
+        const progress = document.getElementById('loadProgress');
+        const bar = document.getElementById('loadBar');
+        const scanStatus = document.getElementById('scanStatus');
+
+        btn.disabled = true;
+        btn.textContent = 'ĐANG QUÉT...';
+        bar.style.display = 'block';
+        scanStatus.style.display = 'block';
+        scanStatus.textContent = 'Bắt đầu quét...';
+        currentData = [];
+        priorityTag = null;
+        priorityPrice = null;
+        sortPrice = null;
+        renderTags(currentData);
+        applySort();
+
+        let targetPrefixes = prefixSelect !== "0" ? [prefixSelect] : PREFIXES;
+        const ALL_COMMITS = ['0', '100000', '150000', '200000', '400000', '500000', '600000', '800000', '1500000'];
+        let targetCommits = commitValue !== "" ? [commitValue] : ALL_COMMITS;
+
+        const totalRequests = targetPrefixes.length * targetCommits.length;
+        let completedRequests = 0;
+
+        const tasks = [];
+        for (const pref of targetPrefixes) {
+            for (const c of targetCommits) {
+                tasks.push({ pref, c });
+            }
+        }
+
+        const CONCURRENCY = 20;
+        
+        async function worker() {
+            while (tasks.length > 0) {
+                const { pref, c } = tasks.shift();
+                const prefixDisplay = '0' + pref.slice(2);
+                const commitDisplay = c === '0' ? '0đ' : (c === '' ? 'Tất cả' : (Number(c)/1000) + 'k');
+                
+                scanStatus.textContent = `Đang quét: ${completedRequests}/${totalRequests} (Đang gọi ${prefixDisplay} - ${commitDisplay})`;
+                
+                const url = `${BASE}?search=${encodeURIComponent(search)}&prefix=${pref}&commit=${c}`;
+                try {
+                    const res = await fetch(url);
+                    const json = await res.json();
+                    if (json.errorCode === 0 && json.data) {
+                        currentData = currentData.concat(json.data);
+                        renderTags(currentData);
+                        applySort();
+                    }
+                } catch (e) {
+                    console.error("Lỗi khi fetch:", url);
+                }
+                completedRequests++;
+                progress.style.width = `${(completedRequests / totalRequests) * 100}%`;
+                scanStatus.textContent = `Đang quét: ${completedRequests}/${totalRequests} ...`;
+            }
+        }
+
+        try {
+            const workers = [];
+            for (let i = 0; i < CONCURRENCY; i++) {
+                workers.push(worker());
+            }
+            await Promise.all(workers);
+        } catch (e) {
+            console.error("Lỗi kết nối API");
+            scanStatus.textContent = 'Có lỗi xảy ra trong quá trình quét!';
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'QUÉT TOÀN KHO';
+            if (scanStatus.textContent.startsWith('Đang quét') || scanStatus.textContent.startsWith('Bắt đầu')) {
+                scanStatus.textContent = 'Hoàn tất quét kho số!';
+            }
+            setTimeout(() => { 
+                bar.style.display = 'none'; 
+                progress.style.width = '0%'; 
+                scanStatus.style.display = 'none'; 
+            }, 2500);
+        }
+    }
+
+    function refreshHints() {
+        const wrapper = document.getElementById('hintWrapper');
+        wrapper.innerHTML = '<span class="hint-label">Gợi ý nhanh:</span>';
+        const patterns = ["68", "79", "888", "123", "6789", "555", "39", "86", "22"];
+        patterns.sort(() => 0.5 - Math.random()).slice(0, 6).forEach(p => {
+            const chip = document.createElement('div');
+            chip.className = 'hint-chip';
+            chip.textContent = p;
+            chip.onclick = () => { document.getElementById('search').value = p; handleGlobalSearch(); };
+            wrapper.appendChild(chip);
+        });
+    }
+
+    function highlight(numStr, search) {
+        if(!search) return numStr;
+        const reg = new RegExp(`(${search})`, 'g');
+        return numStr.replace(reg, '<span class="hi">$1</span>');
+    }
+
+    function renderTags(data) {
+        const tagArea = document.getElementById('tagArea');
+        const tagCloud = document.getElementById('tagCloud');
+        const priceCloud = document.getElementById('priceCloud');
+        const sortCloud = document.getElementById('sortCloud');
+        
+        tagCloud.innerHTML = '';
+        if (priceCloud) priceCloud.innerHTML = '';
+        if (sortCloud) sortCloud.innerHTML = '';
+        
+        if (!data || data.length === 0) { tagArea.style.display = 'none'; return; }
+        tagArea.style.display = 'flex';
+        tagArea.style.flexDirection = 'column';
+
+        if (sortCloud) {
+            const sortOptions = [
+                { id: null, label: 'Thứ tự mặc định' },
+                { id: 'asc', label: 'Cước tăng dần ↑' },
+                { id: 'desc', label: 'Cước giảm dần ↓' }
+            ];
+            sortOptions.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = `filter-tag ${sortPrice === opt.id ? 'active' : ''}`;
+                btn.textContent = opt.label;
+                btn.onclick = () => { sortPrice = opt.id; applySort(); renderTags(data); };
+                sortCloud.appendChild(btn);
+            });
+        }
+
+        const priceOptions = [
+            { id: null, label: 'Tất cả mức giá' },
+            { id: '0', label: '0đ' },
+            { id: '<200', label: 'Dưới 200k' },
+            { id: '200-500', label: '200k - 500k' },
+            { id: '>500', label: 'Trên 500k' }
+        ];
+
+        if (priceCloud) {
+            priceOptions.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = `filter-tag ${priorityPrice === opt.id ? 'active' : ''}`;
+                btn.textContent = opt.label;
+                btn.onclick = () => { priorityPrice = opt.id; applySort(); renderTags(data); };
+                priceCloud.appendChild(btn);
+            });
+        }
+
+        const rawTags = data.map(item => item.kieuso_name.replace(/^\d{3} /,''));
+        const uniqueTags = [...new Set(rawTags)].sort();
+
+        const btnAll = document.createElement('button');
+        btnAll.className = `filter-tag ${priorityTag === null ? 'active' : ''}`;
+        btnAll.textContent = `Tất cả kiểu số`;
+        btnAll.onclick = () => { priorityTag = null; applySort(); renderTags(data); };
+        tagCloud.appendChild(btnAll);
+
+        uniqueTags.forEach(tag => {
+            const btn = document.createElement('button');
+            btn.className = `filter-tag ${priorityTag === tag ? 'active' : ''}`;
+            btn.textContent = tag;
+            btn.onclick = () => { priorityTag = (priorityTag === tag) ? null : tag; applySort(); renderTags(data); };
+            tagCloud.appendChild(btn);
+        });
+    }
+
+    function renderCards(data) {
+        const container = document.getElementById('results');
+        const searchVal = document.getElementById('search').value.trim();
+        container.innerHTML = '';
+        
+        const escapeHTML = str => str.replace(/[&<>'"]/g, tag => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+        }[tag] || tag));
+
+        function highlight(numStr, search) {
+            if (!search) return numStr;
+            // Tách các cụm số dựa trên dấu *, bỏ qua các chuỗi rỗng
+            const parts = search.split('*').filter(p => p.trim() !== '');
+            if (parts.length === 0) return numStr;
+            
+            // Xếp các cụm dài lên trước để ưu tiên highlight (ví dụ 888 trước 88)
+            const safeParts = parts
+                .sort((a, b) => b.length - a.length)
+                .map(p => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+                
+            const reg = new RegExp(`(${safeParts.join('|')})`, 'g');
+            return numStr.replace(reg, '<span class="hi">$1</span>');
+        }
+
+        data.forEach(item => {
+            const rawTagName = item.kieuso_name.replace(/^\d{3} /,'');
+            const tagName = escapeHTML(rawTagName);
+            const card = document.createElement('div');
+            
+            const isFree = !item.monthly || item.monthly == 0 || item.monthly === "0";
+            const price = Number(item.monthly) || 0;
+            
+            let tier = '';
+            if (isFree) tier = 'free';
+            else if (price < 200000) tier = 'tier-1';
+            else if (price < 400000) tier = 'tier-2';
+            else if (price < 700000) tier = 'tier-3';
+            else if (price < 1000000) tier = 'tier-4';
+            else tier = 'tier-5';
+            
+            const cardClass = `sim-card ${tier}-card`;
+            card.className = `${cardClass} ${priorityTag === rawTagName ? 'highlight-card' : ''}`;
+            
+            const monthlyVal = isFree ? Number(item.price).toLocaleString() + ' đ' : price.toLocaleString() + ' đ';
+            const monthlySub = isFree ? '(giá mua SIM)' : '(cước cam kết/ tháng)';
+            const commitTime = (item.commitment && item.commitment > 0) ? `<span>${item.commitment}</span> tháng` : 'Không có';
+            
+            card.innerHTML = `
+                <div class="sim-tag" title="${tagName}">${tagName}</div>
+                <div class="sim-info">
+                    <div class="sim-number">${highlight(fmt(item.so_tb), searchVal)}</div>
+                    <div class="sim-time">Thời gian cam kết: ${commitTime}</div>
+                </div>
+                <div class="sim-badge ${tier}">
+                    <div class="sim-badge-price">${monthlyVal}</div>
+                    <div class="sim-badge-sub">${monthlySub}</div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function applySort() {
+        let sorted = [...currentData];
+        
+        if (priorityPrice !== null) {
+            sorted = sorted.filter(item => {
+                const price = Number(item.monthly) || 0;
+                if (priorityPrice === '0') return price === 0;
+                if (priorityPrice === '<200') return price > 0 && price < 200000;
+                if (priorityPrice === '200-500') return price >= 200000 && price <= 500000;
+                if (priorityPrice === '>500') return price > 500000;
+                return true;
+            });
+        }
+        
+        if (sortPrice === 'asc') {
+            sorted.sort((a, b) => (Number(a.monthly) || 0) - (Number(b.monthly) || 0));
+        } else if (sortPrice === 'desc') {
+            sorted.sort((a, b) => (Number(b.monthly) || 0) - (Number(a.monthly) || 0));
+        }
+        
+        if (priorityTag !== null) {
+            const matches = sorted.filter(item => item.kieuso_name.replace(/^\d{3} /,'') === priorityTag);
+            const others = sorted.filter(item => item.kieuso_name.replace(/^\d{3} /,'') !== priorityTag);
+            sorted = [...matches, ...others];
+        }
+        renderCards(sorted);
+    }
+
+    document.getElementById('btnSearch').addEventListener('click', handleGlobalSearch);
+    document.getElementById('search').addEventListener('keydown', e => { if(e.key === 'Enter') handleGlobalSearch(); });
+    
+    refreshHints();
+</script>
+</body>
+</html>
