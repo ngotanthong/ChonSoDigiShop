@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI Gợi ý Số Đẹp - VNPT DigiShop</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="https://vnpt.com.vn/favicon.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="accounts.js"></script>
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --primary: #005baa;
+            --primary-hover: #004c8f;
+            --text-main: #0f172a;
+            --text-sub: #64748b;
+            --border: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --radius: 12px;
+            --danger: #ef4444;
+            --success: #10b981;
+            --warning: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            line-height: 1.5;
+        }
+
+        /* --- Màn hình Đăng nhập (Kính mờ) --- */
+        #loginScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0f172a 0%, #005baa 50%, #1e3a8a 100%);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            padding: 20px;
+        }
+
+        .login-loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            border-radius: 24px;
+            gap: 16px;
+        }
+
+        .login-loading-overlay.hidden {
+            display: none;
+        }
+
+        .login-spinner {
+            width: 36px;
+            height: 36px;
+            border: 3px solid rgba(255, 255, 255, 0.15);
+            border-top: 3px solid #38bdf8;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .login-loading-text {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 24px;
+            padding: 40px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            color: white;
+            animation: cardEntrance 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            position: relative;
+        }
+
+        @keyframes cardEntrance {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
+        .login-card h2 { margin-bottom: 10px; font-weight: 700; font-size: 24px; letter-spacing: 1px; }
+        .login-card p { margin-bottom: 30px; font-size: 14px; color: rgba(255, 255, 255, 0.8); }
+
+        .input-group { margin-bottom: 20px; text-align: left; }
+        .input-group label { display: block; margin-bottom: 8px; font-size: 13px; font-weight: 600; color: rgba(255, 255, 255, 0.9); }
+        .input-group input {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: white;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+        .input-group input::placeholder { color: rgba(255, 255, 255, 0.5); }
+        .input-group input:focus { outline: none; border-color: #38bdf8; background: rgba(255, 255, 255, 0.15); box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2); }
+
+        .remember-group { display: flex; align-items: center; margin-bottom: 25px; gap: 8px; }
+        .remember-group input[type="checkbox"] {
+            appearance: none; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.4); border-radius: 4px; background: transparent; cursor: pointer; position: relative; transition: all 0.2s;
+        }
+        .remember-group input[type="checkbox"]:checked { background: #38bdf8; border-color: #38bdf8; }
+        .remember-group input[type="checkbox"]:checked::after {
+            content: '✓'; position: absolute; color: white; font-size: 12px; font-weight: bold; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        }
+        .remember-group label { color: rgba(255, 255, 255, 0.9); font-size: 14px; cursor: pointer; user-select: none; }
+
+        .btn-login {
+            width: 100%; height: 52px; background: linear-gradient(90deg, #38bdf8 0%, #005baa 100%); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3); letter-spacing: 0.5px;
+        }
+        .btn-login:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(56, 189, 248, 0.45); background: linear-gradient(90deg, #005baa 0%, #38bdf8 100%); }
+        .btn-login:active { transform: translateY(0); }
+        .btn-login:disabled { cursor: not-allowed; opacity: 0.7; transform: none !important; }
+
+        .btn-login .btn-spinner {
+            display: inline-block; width: 18px; height: 18px; border: 2.5px solid rgba(255, 255, 255, 0.3); border-top: 2.5px solid #fff; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 8px;
+        }
+
+        .error-msg { color: #ef4444; font-size: 13px; font-weight: 600; margin-top: 15px; display: none; }
+
+        /* --- Ứng dụng chính --- */
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+        .header-wrapper {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding: 16px 20px; background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); flex-wrap: wrap; gap: 12px;
+        }
+        .header-wrapper h1 { font-size: 20px; color: var(--primary); font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        
+        .header-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+        
+        .btn-nav {
+            display: flex; align-items: center; gap: 6px; padding: 10px 16px; background: #f1f5f9; color: var(--text-main); border: 1px solid var(--border); border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; text-decoration: none;
+        }
+        .btn-nav:hover { background: #e2e8f0; }
+
+        .btn-logout {
+            display: flex; align-items: center; gap: 6px; padding: 10px 16px; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-logout:hover { background: rgba(239, 68, 68, 0.2); transform: translateY(-1px); }
+
+        /* --- Khu vực Quét AI --- */
+        .scan-panel {
+            background: var(--surface); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); margin-bottom: 24px; text-align: center;
+        }
+        .scan-panel h2 { font-size: 18px; margin-bottom: 12px; color: var(--text-main); }
+        .scan-panel p { color: var(--text-sub); font-size: 14px; margin-bottom: 20px; }
+
+        .btn-scan {
+            background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%); color: white; border: none; padding: 14px 32px; font-size: 16px; font-weight: 700; border-radius: 30px; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 15px rgba(236, 72, 153, 0.3); display: inline-flex; align-items: center; gap: 8px;
+        }
+        .btn-scan:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(236, 72, 153, 0.4); }
+        .btn-scan:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+
+        /* Progress Bar */
+        .progress-container { width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; margin: 20px auto 10px; overflow: hidden; max-width: 500px; display: none; }
+        .progress-bar { height: 100%; background: linear-gradient(90deg, #8b5cf6, #ec4899); width: 0%; transition: width 0.3s ease; }
+        .status-text { font-size: 13px; color: var(--text-sub); font-weight: 500; display: none; margin-bottom: 0; }
+
+        /* --- Bộ lọc Danh mục --- */
+        .filter-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; justify-content: center; display: none; }
+        .tab-btn {
+            padding: 8px 16px; background: white; border: 1px solid var(--border); border-radius: 20px; font-size: 14px; font-weight: 500; color: var(--text-sub); cursor: pointer; transition: all 0.2s;
+        }
+        .tab-btn:hover { border-color: var(--primary); color: var(--primary); }
+        .tab-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        /* --- Kết quả SIM --- */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+        
+        .sim-card {
+            background: var(--surface); border-radius: var(--radius); padding: 16px; border: 1px solid var(--border); position: relative; transition: all 0.2s; cursor: pointer; display: flex; flex-direction: column; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .sim-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-color: #cbd5e1; }
+        
+        .sim-number { font-size: 22px; font-weight: 700; color: var(--primary); margin-bottom: 4px; letter-spacing: 0.5px; }
+        .sim-number .hi { color: #e11d48; }
+        
+        .sim-score { position: absolute; top: 16px; right: 16px; background: #fffbeb; color: #d97706; padding: 4px 8px; border-radius: 6px; font-size: 13px; font-weight: 700; border: 1px solid #fde68a; display: flex; align-items: center; gap: 4px; }
+        
+        .sim-reason { font-size: 13px; color: #059669; font-weight: 500; margin-bottom: 12px; background: #d1fae5; padding: 4px 8px; border-radius: 4px; display: inline-block; align-self: flex-start; }
+        
+        .sim-price-row { display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto; padding-top: 12px; border-top: 1px dashed var(--border); }
+        .sim-price-box { text-align: left; }
+        .sim-price { font-size: 16px; font-weight: 700; color: #ef4444; }
+        .sim-sub { font-size: 12px; color: var(--text-sub); }
+        .sim-commit { font-size: 13px; color: var(--text-main); font-weight: 500; background: #f1f5f9; padding: 4px 8px; border-radius: 4px; }
+
+        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-sub); display: none; grid-column: 1 / -1; }
+        .empty-state svg { margin-bottom: 16px; color: #cbd5e1; }
+        .empty-state p { font-size: 15px; }
+
+        /* Toast thông báo */
+        .toast {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: rgba(15, 23, 42, 0.9); color: white; padding: 12px 24px; border-radius: 30px; font-size: 14px; font-weight: 500; box-shadow: 0 10px 25px rgba(0,0,0,0.2); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 9999; display: flex; align-items: center; gap: 8px; pointer-events: none;
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+
+        @media (max-width: 600px) {
+            .header-wrapper { flex-direction: column; align-items: stretch; }
+            .header-actions { justify-content: stretch; }
+            .btn-nav, .btn-logout { flex: 1; justify-content: center; }
+            .sim-card { padding: 12px; }
+            .sim-number { font-size: 20px; }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Màn hình Đăng nhập Bảo mật -->
+    <div id="loginScreen">
+        <div class="login-card" style="position: relative;">
+            <div class="login-loading-overlay hidden" id="loginLoadingOverlay">
+                <div class="login-spinner"></div>
+                <div class="login-loading-text">Đang kiểm tra phiên đăng nhập...</div>
+            </div>
+            <h2>AI GỢI Ý SỐ ĐẸP</h2>
+            <p>Hệ thống đánh giá và lọc SIM phong thủy VNPT</p>
+            <div class="input-group">
+                <label for="username">Tên đăng nhập</label>
+                <input type="text" id="username" placeholder="Nhập tên đăng nhập..." required autocomplete="username">
+            </div>
+            <div class="input-group">
+                <label for="password">Mật khẩu</label>
+                <input type="password" id="password" placeholder="Nhập mật khẩu..." required autocomplete="current-password">
+            </div>
+            <div class="remember-group">
+                <input type="checkbox" id="rememberMe">
+                <label for="rememberMe">Ghi nhớ đăng nhập</label>
+            </div>
+            <button class="btn-login" onclick="handleLogin()">ĐĂNG NHẬP</button>
+            <div class="error-msg" id="loginError">Tên đăng nhập hoặc mật khẩu không chính xác!</div>
+        </div>
+    </div>
+
+    <!-- Ứng dụng chính -->
+    <div id="appContainer" style="display: none;">
+        <div class="container">
+            <header class="header-wrapper">
+                <h1>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
+                    </svg>
+                    AI GỢI Ý SỐ ĐẸP
+                </h1>
+                <div class="header-actions">
+                    <a href="index.html" class="btn-nav">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        Tìm Thủ Công
+                    </a>
+                    <button class="btn-logout" onclick="handleLogout()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
+                        Đăng Xuất
+                    </button>
+                </div>
+            </header>
+
+            <div class="scan-panel">
+                <h2>Quét Tự Động Toàn Kho</h2>
+                <p>Hệ thống sẽ tự động tìm kiếm các số có cam kết 0 tháng hoặc giá dưới 200k/tháng, sau đó dùng AI chấm điểm và chọn ra những số đẹp nhất cho bạn.</p>
+                
+                <button class="btn-scan" id="btnScan" onclick="startAutoScan()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                    BẮT ĐẦU QUÉT AI
+                </button>
+
+                <div class="progress-container" id="progressContainer">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                <div class="status-text" id="statusText">Đang chuẩn bị quét...</div>
+            </div>
+
+            <div class="filter-tabs" id="filterTabs">
+                <button class="tab-btn active" onclick="filterCategory('all')">Tất cả</button>
+                <button class="tab-btn" onclick="filterCategory('tamhoa')">🔥 Tam Hoa</button>
+                <button class="tab-btn" onclick="filterCategory('tuquy')">💎 Tứ Quý</button>
+                <button class="tab-btn" onclick="filterCategory('locphat')">🧧 Lộc Phát</button>
+                <button class="tab-btn" onclick="filterCategory('sotien')">📈 Số Tiến</button>
+                <button class="tab-btn" onclick="filterCategory('solap')">🔁 Số Lặp</button>
+                <button class="tab-btn" onclick="filterCategory('duoidep')">✨ Đuôi Đẹp</button>
+            </div>
+
+            <div class="grid" id="resultGrid"></div>
+            
+            <div class="empty-state" id="emptyState">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                <p>Chưa có dữ liệu. Nhấn "Bắt đầu quét AI" để tìm số đẹp.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+        <span>Đã sao chép số điện thoại!</span>
+    </div>
+
+    <script>
+        // --- CẤU HÌNH BẢO MẬT & API ---
+        const GAS_API_URL = 'https://script.google.com/macros/s/AKfycby4Abq0CZBBcVSzapt-o2sKTLGSwh1qvWNEa0UHXcFPANekzuApakMb783NtDn93KmJ4Q/exec';
+        const BASE_API = 'https://digishop.vnpt.vn/apiprod/v2/simso/num_search';
+        const PREFIXES = ['8491', '8494', '8488', '8481', '8482', '8483', '8484', '8485'];
+        // Chỉ lấy cam kết 0đ và giá rẻ <200k (mã API tương ứng: '0', '100000', '150000', '200000')
+        const COMMITS = ['0', '100000', '150000', '200000']; 
+        
+        let allScannedData = [];
+        let scoredData = [];
+        let currentCategory = 'all';
+
+        // Sinh mã định danh thiết bị
+        function generateUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
+        let deviceId = localStorage.getItem('simso_device_id');
+        if (!deviceId) {
+            deviceId = generateUUID();
+            localStorage.setItem('simso_device_id', deviceId);
+        }
+
+        async function sha256(message) {
+            const msgBuffer = new TextEncoder().encode(message);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        function showLoginLoading(show) {
+            const overlay = document.getElementById('loginLoadingOverlay');
+            if (overlay) show ? overlay.classList.remove('hidden') : overlay.classList.add('hidden');
+        }
+
+        function showLoginError(msg) {
+            const errorEl = document.getElementById('loginError');
+            errorEl.textContent = msg;
+            errorEl.style.display = 'block';
+        }
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('appContainer').style.display = 'none';
+
+            document.getElementById('password').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+            document.getElementById('username').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('password').focus(); });
+
+            const token = localStorage.getItem('simso_auth_token') || sessionStorage.getItem('simso_auth_token');
+            const authUser = localStorage.getItem('simso_auth_user') || sessionStorage.getItem('simso_auth_user');
+
+            if (token && authUser) {
+                showLoginLoading(true);
+                let verified = false;
+                if (window.ALLOWED_USERS && window.ALLOWED_USERS[authUser]) {
+                    const expectedPassHash = window.ALLOWED_USERS[authUser];
+                    const expectedToken = await sha256(authUser + expectedPassHash);
+                    if (token === expectedToken) verified = true;
+                }
+
+                if (verified) {
+                    if (GAS_API_URL) {
+                        try {
+                            const response = await fetch(`${GAS_API_URL}?action=check&user=${encodeURIComponent(authUser)}&deviceId=${deviceId}`);
+                            const resData = await response.json();
+                            if (resData.status === "ok") {
+                                unlockApp();
+                                return;
+                            } else {
+                                alert(resData.message || "Thiết bị này không khớp với liên kết cố định!");
+                                clearSession();
+                            }
+                        } catch (err) {
+                            console.error("Lỗi xác thực thiết bị:", err);
+                            unlockApp();
+                            return;
+                        }
+                    } else {
+                        unlockApp();
+                        return;
+                    }
+                } else {
+                    clearSession();
+                }
+                showLoginLoading(false);
+            }
+        });
+
+        function clearSession() {
+            localStorage.removeItem('simso_auth_token');
+            localStorage.removeItem('simso_auth_user');
+            sessionStorage.removeItem('simso_auth_token');
+            sessionStorage.removeItem('simso_auth_user');
+        }
+
+        function unlockApp() {
+            const loginScreen = document.getElementById('loginScreen');
+            const appContainer = document.getElementById('appContainer');
+            loginScreen.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+            loginScreen.style.opacity = '0';
+            loginScreen.style.transform = 'scale(1.05)';
+            setTimeout(() => {
+                loginScreen.style.display = 'none';
+                appContainer.style.display = 'block';
+            }, 500);
+        }
+
+        window.handleLogin = async function () {
+            const userVal = document.getElementById('username').value.trim().toLowerCase();
+            const passVal = document.getElementById('password').value;
+            const rememberMe = document.getElementById('rememberMe').checked;
+            const errorEl = document.getElementById('loginError');
+            const cardEl = document.querySelector('.login-card');
+            const btnLogin = document.querySelector('.btn-login');
+            const btnOriginalHTML = btnLogin.innerHTML;
+
+            if (!userVal || !passVal) { showLoginError("Vui lòng điền đầy đủ thông tin!"); return; }
+
+            btnLogin.disabled = true;
+            btnLogin.innerHTML = '<span class="btn-spinner"></span>ĐANG XÁC THỰC...';
+            errorEl.style.display = 'none';
+
+            function resetButton() { btnLogin.disabled = false; btnLogin.innerHTML = btnOriginalHTML; }
+
+            if (window.ALLOWED_USERS && window.ALLOWED_USERS[userVal]) {
+                const expectedPassHash = window.ALLOWED_USERS[userVal];
+                const inputPassHash = await sha256(passVal);
+
+                if (inputPassHash === expectedPassHash) {
+                    if (GAS_API_URL) {
+                        try {
+                            const response = await fetch(`${GAS_API_URL}?action=login&user=${encodeURIComponent(userVal)}&deviceId=${deviceId}&userAgent=${encodeURIComponent(navigator.userAgent)}`);
+                            const resData = await response.json();
+                            if (resData.status !== "ok") {
+                                resetButton();
+                                showLoginError(resData.message || "Tài khoản đang liên kết với thiết bị khác!");
+                                return;
+                            }
+                        } catch (err) {
+                            resetButton();
+                            showLoginError("Không thể kết nối máy chủ bảo mật!");
+                            return;
+                        }
+                    }
+
+                    btnLogin.innerHTML = '✓ ĐĂNG NHẬP THÀNH CÔNG';
+                    const authToken = await sha256(userVal + expectedPassHash);
+                    if (rememberMe) {
+                        localStorage.setItem('simso_auth_token', authToken);
+                        localStorage.setItem('simso_auth_user', userVal);
+                    } else {
+                        sessionStorage.setItem('simso_auth_token', authToken);
+                        sessionStorage.setItem('simso_auth_user', userVal);
+                    }
+                    unlockApp();
+                    return;
+                }
+            }
+            resetButton();
+            cardEl.classList.remove('shake');
+            void cardEl.offsetWidth;
+            cardEl.classList.add('shake');
+            showLoginError("Tên đăng nhập hoặc mật khẩu không chính xác!");
+        };
+
+        window.handleLogout = function () {
+            clearSession();
+            location.reload();
+        };
+
+        // --- AI BEAUTY SCORE ENGINE ---
+        function formatNumber(num) {
+            return num.startsWith('84') ? '0' + num.slice(2) : num;
+        }
+
+        function analyzeSIM(numStr) {
+            let score = 0;
+            let categories = [];
+            let reasons = [];
+            let highlight = ''; // Đoạn được highlight
+
+            // 1. Tứ Quý (4 số giống nhau ở cuối)
+            if (/(.)\1{3}$/.test(numStr)) {
+                score += 50;
+                categories.push('tuquy');
+                reasons.push('Tứ Quý');
+                highlight = numStr.slice(-4);
+            }
+            // 2. Tam Hoa (3 số giống nhau ở cuối)
+            else if (/(.)\1{2}$/.test(numStr)) {
+                score += 30;
+                categories.push('tamhoa');
+                reasons.push('Tam Hoa');
+                highlight = numStr.slice(-3);
+            }
+
+            // 3. Lộc Phát (chứa 68, 86, 168, 868 ở cuối)
+            if (/(168|868)$/.test(numStr)) {
+                score += 35;
+                categories.push('locphat');
+                reasons.push('Phát Lộc Phát');
+                highlight = highlight || numStr.slice(-3);
+            } else if (/(68|86)$/.test(numStr)) {
+                score += 25;
+                categories.push('locphat');
+                reasons.push('Lộc Phát');
+                highlight = highlight || numStr.slice(-2);
+            }
+
+            // 4. Số Tiến (1234, 6789, 2345)
+            if (/(0123|1234|2345|3456|4567|5678|6789)$/.test(numStr)) {
+                score += 35;
+                categories.push('sotien');
+                reasons.push('Tiến Lên Đẹp');
+                highlight = highlight || numStr.slice(-4);
+            } else if (/(012|123|234|345|456|567|678|789)$/.test(numStr)) {
+                score += 15;
+                categories.push('sotien');
+                reasons.push('Số Tiến');
+                highlight = highlight || numStr.slice(-3);
+            }
+
+            // 5. Số Lặp ABAB (6868, 7979)
+            if (/(\d{2})\1$/.test(numStr)) {
+                score += 20;
+                categories.push('solap');
+                reasons.push('Lặp Cặp');
+                highlight = highlight || numStr.slice(-4);
+            }
+
+            // 6. Đuôi Đẹp phong thủy (79: thần tài lớn, 39: thần tài nhỏ, 38: ông địa)
+            if (/(79|39)$/.test(numStr)) {
+                score += 20;
+                categories.push('duoidep');
+                reasons.push('Thần Tài');
+                highlight = highlight || numStr.slice(-2);
+            } else if (/(38|78)$/.test(numStr)) {
+                score += 15;
+                categories.push('duoidep');
+                reasons.push('Ông Địa');
+                highlight = highlight || numStr.slice(-2);
+            }
+
+            // 7. Tổng nút (tổng 4 số cuối = 10 hoặc 9 là đẹp)
+            const last4 = numStr.slice(-4);
+            const sum4 = last4.split('').reduce((acc, val) => acc + parseInt(val), 0);
+            const nut = sum4 % 10;
+            if (nut === 9 || nut === 0) { // Nút 9 hoặc 10
+                score += 10;
+                reasons.push('Nút ' + (nut===0?10:9));
+            }
+
+            // 8. Trừ điểm số kỵ (chứa 4, 7, 49, 53)
+            if (/49|53/.test(numStr)) {
+                score -= 15;
+            } else if (!/4/.test(numStr) && !/7/.test(numStr)) {
+                score += 10; // Số sạch không 4 không 7
+                reasons.push('Số Sạch (không 4,7)');
+            }
+
+            return {
+                score: score,
+                categories: categories,
+                reasonText: reasons.join(' + ') || 'Phong Thủy Khá',
+                highlight: highlight
+            };
+        }
+
+        // --- AUTO SCAN ENGINE ---
+        async function startAutoScan() {
+            const btnScan = document.getElementById('btnScan');
+            const progCont = document.getElementById('progressContainer');
+            const progBar = document.getElementById('progressBar');
+            const statusTxt = document.getElementById('statusText');
+            const filterTabs = document.getElementById('filterTabs');
+            
+            btnScan.disabled = true;
+            btnScan.innerHTML = '<span class="login-spinner" style="width: 18px; height: 18px; border-width: 2px;"></span> ĐANG QUÉT...';
+            progCont.style.display = 'block';
+            statusTxt.style.display = 'block';
+            filterTabs.style.display = 'none';
+            document.getElementById('resultGrid').innerHTML = '';
+            document.getElementById('emptyState').style.display = 'none';
+            
+            allScannedData = [];
+            scoredData = [];
+            currentCategory = 'all';
+            
+            const tasks = [];
+            for (const pref of PREFIXES) {
+                for (const c of COMMITS) {
+                    tasks.push({ pref, c });
+                }
+            }
+
+            const totalRequests = tasks.length;
+            let completedRequests = 0;
+            const CONCURRENCY = 15; // Gọi song song 15 request để nhanh nhưng không sập API
+
+            async function worker() {
+                while (tasks.length > 0) {
+                    const { pref, c } = tasks.shift();
+                    const url = `${BASE_API}?search=&prefix=${pref}&commit=${c}`;
+                    
+                    statusTxt.textContent = `Đang quét: ${completedRequests}/${totalRequests} (Phân tích 0${pref.slice(2)} - ${c==='0'?'0đ':(c/1000+'k')})`;
+                    
+                    try {
+                        const res = await fetch(url);
+                        const json = await res.json();
+                        if (json.errorCode === 0 && json.data) {
+                            allScannedData = allScannedData.concat(json.data);
+                        }
+                    } catch (e) {
+                        console.error("Fetch error:", url);
+                    }
+                    
+                    completedRequests++;
+                    progBar.style.width = `${(completedRequests / totalRequests) * 100}%`;
+                }
+            }
+
+            try {
+                const workers = [];
+                for (let i = 0; i < CONCURRENCY; i++) workers.push(worker());
+                await Promise.all(workers);
+                
+                statusTxt.textContent = 'Đang dùng AI chấm điểm số đẹp...';
+                
+                // Xử lý AI Score
+                processAIScores();
+                
+                if (scoredData.length > 0) {
+                    filterTabs.style.display = 'flex';
+                    renderResults();
+                } else {
+                    document.getElementById('emptyState').style.display = 'block';
+                    document.getElementById('emptyState').querySelector('p').textContent = 'Không tìm thấy số nào đạt tiêu chuẩn đẹp trong tầm giá này.';
+                }
+                
+                statusTxt.textContent = `Hoàn tất! Đã tìm thấy ${scoredData.length} số đẹp xuất sắc.`;
+                setTimeout(() => {
+                    progCont.style.display = 'none';
+                    statusTxt.style.display = 'none';
+                }, 3000);
+                
+            } catch (err) {
+                statusTxt.textContent = 'Có lỗi xảy ra khi quét API.';
+            } finally {
+                btnScan.disabled = false;
+                btnScan.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg> QUÉT LẠI (LÀM MỚI)';
+            }
+        }
+
+        function processAIScores() {
+            scoredData = [];
+            // Dùng Map để loại bỏ trùng lặp số
+            const uniqueSims = new Map();
+            
+            allScannedData.forEach(item => {
+                const fNum = formatNumber(item.so_tb);
+                if (!uniqueSims.has(fNum)) {
+                    const aiResult = analyzeSIM(fNum);
+                    // Chỉ lấy số >= 20 điểm
+                    if (aiResult.score >= 20) {
+                        uniqueSims.set(fNum, {
+                            ...item,
+                            fNum: fNum,
+                            ai: aiResult
+                        });
+                    }
+                }
+            });
+            
+            scoredData = Array.from(uniqueSims.values());
+            // Sắp xếp theo điểm từ cao xuống thấp
+            scoredData.sort((a, b) => b.ai.score - a.ai.score);
+        }
+
+        function filterCategory(cat) {
+            currentCategory = cat;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            renderResults();
+        }
+
+        function highlightHTML(num, hlString) {
+            if (!hlString) return num;
+            return num.replace(hlString, `<span class="hi">${hlString}</span>`);
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const toast = document.getElementById('toast');
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 2000);
+            });
+        }
+
+        function renderResults() {
+            const grid = document.getElementById('resultGrid');
+            grid.innerHTML = '';
+            
+            let displayData = scoredData;
+            if (currentCategory !== 'all') {
+                displayData = scoredData.filter(item => item.ai.categories.includes(currentCategory));
+            }
+            
+            if (displayData.length === 0) {
+                document.getElementById('emptyState').style.display = 'block';
+                document.getElementById('emptyState').querySelector('p').textContent = 'Không có số nào thuộc danh mục này.';
+                return;
+            }
+            document.getElementById('emptyState').style.display = 'none';
+
+            // Giới hạn hiển thị 100 số đẹp nhất để khỏi lag
+            displayData.slice(0, 100).forEach(item => {
+                const isFree = !item.monthly || item.monthly == 0 || item.monthly === "0";
+                const price = Number(item.monthly) || 0;
+                const priceText = isFree ? 'Miễn phí cước' : price.toLocaleString() + ' đ/tháng';
+                const commitText = (item.commitment && item.commitment > 0) ? `Cam kết ${item.commitment}T` : 'Không cam kết';
+                const hlNum = highlightHTML(item.fNum, item.ai.highlight);
+
+                const card = document.createElement('div');
+                card.className = 'sim-card';
+                card.onclick = () => copyToClipboard(item.fNum);
+                
+                card.innerHTML = `
+                    <div class="sim-score">⭐ ${item.ai.score} Điểm</div>
+                    <div class="sim-number">${hlNum}</div>
+                    <div class="sim-reason">${item.ai.reasonText}</div>
+                    <div class="sim-price-row">
+                        <div class="sim-price-box">
+                            <div class="sim-price">${priceText}</div>
+                            <div class="sim-sub">${isFree ? 'Giá mua SIM: ' + Number(item.price).toLocaleString() + 'đ' : 'Cam kết cước'}</div>
+                        </div>
+                        <div class="sim-commit">${commitText}</div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+    </script>
+</body>
+</html>

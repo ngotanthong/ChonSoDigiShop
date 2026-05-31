@@ -973,10 +973,6 @@
         }
 
         .btn-logout {
-            position: absolute;
-            right: 0;
-            top: 50%;
-            transform: translateY(-50%);
             background: rgba(239, 68, 68, 0.1);
             border: 1px solid rgba(239, 68, 68, 0.3);
             color: #ef4444;
@@ -995,6 +991,42 @@
             background: #ef4444;
             color: white;
             box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+        }
+
+        .header-actions {
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn-ai {
+            background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            box-shadow: 0 4px 12px rgba(236, 72, 153, 0.2);
+        }
+
+        .btn-ai:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(236, 72, 153, 0.3);
+        }
+
+        .btn-ai:active {
+            transform: translateY(0);
         }
 
         .btn-logout:active {
@@ -1017,6 +1049,19 @@
 
             .btn-logout:active {
                 transform: scale(0.98);
+            }
+
+            .header-actions {
+                position: static;
+                transform: none;
+                width: 100%;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+
+            .btn-ai, .btn-logout {
+                flex: 1;
+                justify-content: center;
             }
         }
     </style>
@@ -1056,15 +1101,23 @@
             <header class="header-wrapper">
                 <h1>ngotanthong
                     QUẢN LÝ KHO SIM VNPT</h1>
-                <button class="btn-logout" onclick="handleLogout()">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                        <polyline points="16 17 21 12 16 7"></polyline>
-                        <line x1="21" y1="12" x2="9" y2="12"></line>
-                    </svg>
-                    ĐĂNG XUẤT
-                </button>
+                <div class="header-actions">
+                    <a href="sodep.html" class="btn-ai">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                        </svg>
+                        AI GỢI Ý
+                    </a>
+                    <button class="btn-logout" onclick="handleLogout()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
+                        ĐĂNG XUẤT
+                    </button>
+                </div>
             </header>
 
             <div class="search-box">
