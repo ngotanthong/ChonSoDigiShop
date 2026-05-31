@@ -24460,14 +24460,14 @@
         refreshHints();
 
         // --- SECURE AUTHENTICATION SYSTEM ---
-        
+
         // CẤU HÌNH GOOGLE SHEET API (Ví dụ: 'https://script.google.com/macros/s/XXXXX/exec')
         // Dán đường dẫn Web App của anh vào đây để kích hoạt tính năng khóa thiết bị cố định!
-        const GAS_API_URL = ''; 
+        const GAS_API_URL = 'https://script.google.com/macros/s/AKfycby4Abq0CZBBcVSzapt-o2sKTLGSwh1qvWNEa0UHXcFPANekzuApakMb783NtDn93KmJ4Q/exec';
 
         // Sinh mã định danh thiết bị duy nhất (UUID)
         function generateUUID() {
-            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
                 var r = Math.random() * 16 | 0,
                     v = c == 'x' ? r : (r & 0x3 | 0x8);
                 return v.toString(16);
@@ -24491,16 +24491,16 @@
         // Kiểm tra session thiết bị thời gian thực
         async function checkDeviceSession() {
             if (!GAS_API_URL) return true; // Bỏ qua nếu chưa cấu hình URL (fallback offline)
-            
+
             const token = localStorage.getItem('simso_auth_token') || sessionStorage.getItem('simso_auth_token');
             const authUser = localStorage.getItem('simso_auth_user') || sessionStorage.getItem('simso_auth_user');
-            
+
             if (!token || !authUser) return false;
-            
+
             try {
                 const response = await fetch(`${GAS_API_URL}?action=check&user=${encodeURIComponent(authUser)}&deviceId=${deviceId}`);
                 const resData = await response.json();
-                
+
                 if (resData.status !== "ok") {
                     alert(resData.message || "Tài khoản của bạn đã bị khóa hoặc đăng nhập từ thiết bị khác!");
                     handleLogout();
@@ -24517,7 +24517,7 @@
         window.addEventListener('DOMContentLoaded', async () => {
             const token = localStorage.getItem('simso_auth_token') || sessionStorage.getItem('simso_auth_token');
             const authUser = localStorage.getItem('simso_auth_user') || sessionStorage.getItem('simso_auth_user');
-            
+
             if (token && authUser) {
                 // 1. Kiểm tra tính hợp lệ của token offline trước
                 let verified = false;
@@ -24528,14 +24528,14 @@
                         verified = true;
                     }
                 }
-                
+
                 // 2. Kiểm tra thiết bị online trên Google Sheet
                 if (verified) {
                     if (GAS_API_URL) {
                         try {
                             const response = await fetch(`${GAS_API_URL}?action=check&user=${encodeURIComponent(authUser)}&deviceId=${deviceId}`);
                             const resData = await response.json();
-                            
+
                             if (resData.status === "ok") {
                                 unlockApp();
                                 return;
@@ -24609,7 +24609,7 @@
                         try {
                             const response = await fetch(`${GAS_API_URL}?action=login&user=${encodeURIComponent(userVal)}&deviceId=${deviceId}&userAgent=${encodeURIComponent(navigator.userAgent)}`);
                             const resData = await response.json();
-                            
+
                             if (resData.status !== "ok") {
                                 showLoginError(resData.message || "Tài khoản đang liên kết với thiết bị khác!");
                                 return;
@@ -24655,7 +24655,7 @@
         // Đăng xuất
         window.handleLogout = async function () {
             const authUser = localStorage.getItem('simso_auth_user') || sessionStorage.getItem('simso_auth_user');
-            
+
             // Thông báo tắt trạng thái Online trên Google Sheet
             if (GAS_API_URL && authUser) {
                 try {
@@ -24664,7 +24664,7 @@
                     console.error("Lỗi đăng xuất online:", err);
                 }
             }
-            
+
             localStorage.removeItem('simso_auth_token');
             localStorage.removeItem('simso_auth_user');
             sessionStorage.removeItem('simso_auth_token');
