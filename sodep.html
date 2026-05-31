@@ -611,18 +611,18 @@
                 highlight = highlight || numStr.slice(-2);
             }
 
-            // 7. Tổng nút (tổng 4 số cuối = 7, 8, 9 hoặc 10 là đẹp)
+            // 7. Tổng nút (tổng 4 số cuối = 7, 8, 9 là đẹp)
             const last4 = numStr.slice(-4);
             const sum4 = last4.split('').reduce((acc, val) => acc + parseInt(val), 0);
             const nut = sum4 % 10;
-            if (nut >= 7 || nut === 0) { // Nút 7, 8, 9 hoặc 10 (0)
+            if (nut >= 7) { // Nút 7, 8, 9
                 let point = 5;
-                if (nut === 9 || nut === 0) {
-                    point = 10; // 9, 10 điểm cao hơn
-                    categories.push('phongthuy'); // Nút 9, 10 đưa vào bộ lọc Phong Thủy
+                if (nut === 9) {
+                    point = 10; // 9 điểm cao nhất
+                    categories.push('phongthuy'); // Nút 9 đưa vào bộ lọc Phong Thủy
                 }
                 score += point;
-                reasons.push('Nút ' + (nut===0?10:nut));
+                reasons.push('Nút ' + nut);
             }
 
             // 8. Trừ điểm số kỵ (chứa 4, 7, 49, 53)
