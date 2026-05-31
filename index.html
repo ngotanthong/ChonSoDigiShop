@@ -714,6 +714,48 @@
             padding: 20px;
         }
 
+        .login-loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            border-radius: 24px;
+            gap: 16px;
+        }
+
+        .login-loading-overlay.hidden {
+            display: none;
+        }
+
+        .login-spinner {
+            width: 36px;
+            height: 36px;
+            border: 3px solid rgba(255, 255, 255, 0.15);
+            border-top: 3px solid #38bdf8;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .login-loading-text {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
         @keyframes gradientBG {
             0% {
                 background-position: 0% 50%;
@@ -966,7 +1008,11 @@
 
     <!-- Màn hình Đăng nhập Bảo mật (Kính mờ) -->
     <div id="loginScreen">
-        <div class="login-card">
+        <div class="login-card" style="position: relative;">
+            <div class="login-loading-overlay hidden" id="loginLoadingOverlay">
+                <div class="login-spinner"></div>
+                <div class="login-loading-text">Đang kiểm tra phiên đăng nhập...</div>
+            </div>
             <h2>HỆ THỐNG KHO SIM</h2>
             <p>Vui lòng đăng nhập để truy cập kho số bảo mật</p>
             <div class="input-group">
@@ -24513,12 +24559,40 @@
             }
         }
 
+        // Hiển thị trạng thái loading trên form đăng nhập
+        function showLoginLoading(show) {
+            const overlay = document.getElementById('loginLoadingOverlay');
+            if (overlay) {
+                if (show) {
+                    overlay.classList.remove('hidden');
+                } else {
+                    overlay.classList.add('hidden');
+                }
+            }
+        }
+
         // Kiểm tra trạng thái đăng nhập khi trang tải (onload)
         window.addEventListener('DOMContentLoaded', async () => {
+            // Luôn hiển thị màn hình Login ngay lập tức (tránh lag trắng trang)
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('appContainer').style.display = 'none';
+
+            // Thêm phím Enter cho các input đăng nhập
+            document.getElementById('password').addEventListener('keydown', e => {
+                if (e.key === 'Enter') handleLogin();
+            });
+            document.getElementById('username').addEventListener('keydown', e => {
+                if (e.key === 'Enter') document.getElementById('password').focus();
+            });
+
+            // Kiểm tra phiên đăng nhập cũ (nền)
             const token = localStorage.getItem('simso_auth_token') || sessionStorage.getItem('simso_auth_token');
             const authUser = localStorage.getItem('simso_auth_user') || sessionStorage.getItem('simso_auth_user');
 
             if (token && authUser) {
+                // Hiển thị spinner "Đang kiểm tra phiên đăng nhập..." trên login card
+                showLoginLoading(true);
+
                 // 1. Kiểm tra tính hợp lệ của token offline trước
                 let verified = false;
                 if (window.ALLOWED_USERS && window.ALLOWED_USERS[authUser]) {
@@ -24541,8 +24615,11 @@
                                 return;
                             } else {
                                 alert(resData.message || "Thiết bị này không khớp với liên kết cố định của tài khoản!");
-                                handleLogout();
-                                return;
+                                // Xóa token cũ không hợp lệ
+                                localStorage.removeItem('simso_auth_token');
+                                localStorage.removeItem('simso_auth_user');
+                                sessionStorage.removeItem('simso_auth_token');
+                                sessionStorage.removeItem('simso_auth_user');
                             }
                         } catch (err) {
                             console.error("Lỗi xác thực thiết bị khi tải trang:", err);
@@ -24554,20 +24631,17 @@
                         unlockApp();
                         return;
                     }
+                } else {
+                    // Token không hợp lệ, xóa sạch dữ liệu phiên cũ
+                    localStorage.removeItem('simso_auth_token');
+                    localStorage.removeItem('simso_auth_user');
+                    sessionStorage.removeItem('simso_auth_token');
+                    sessionStorage.removeItem('simso_auth_user');
                 }
+
+                // Ẩn spinner loading
+                showLoginLoading(false);
             }
-
-            // Hiển thị màn hình Login
-            document.getElementById('loginScreen').style.display = 'flex';
-            document.getElementById('appContainer').style.display = 'none';
-
-            // Thêm phím Enter cho các input đăng nhập
-            document.getElementById('password').addEventListener('keydown', e => {
-                if (e.key === 'Enter') handleLogin();
-            });
-            document.getElementById('username').addEventListener('keydown', e => {
-                if (e.key === 'Enter') document.getElementById('password').focus();
-            });
         });
 
         // Mở khóa ứng dụng chính
