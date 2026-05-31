@@ -584,10 +584,15 @@
             color: #e11d48;
         }
 
+        .sim-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            width: 100%;
+        }
+
         .sim-score {
-            position: absolute;
-            top: 16px;
-            right: 16px;
             background: #fffbeb;
             color: #d97706;
             padding: 4px 8px;
@@ -601,29 +606,27 @@
         }
 
         .btn-download-card {
-            position: absolute;
-            top: 16px;
-            right: 98px;
-            width: 26px;
-            height: 26px;
-            border-radius: 6px;
-            background: rgba(15, 23, 42, 0.04);
-            color: var(--text-sub);
-            border: 1px dashed var(--border);
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.12) 0%, rgba(236, 72, 153, 0.12) 100%);
+            color: #8b5cf6;
+            border: 1px solid rgba(139, 92, 246, 0.25);
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 8px rgba(139, 92, 246, 0.08);
             z-index: 10;
         }
 
         .btn-download-card:hover {
-            background: rgba(0, 91, 170, 0.08);
-            color: var(--primary);
-            border-color: var(--primary);
-            border-style: solid;
-            transform: scale(1.05);
+            background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+            color: white;
+            border-color: transparent;
+            transform: scale(1.1) rotate(5deg);
+            box-shadow: 0 4px 12px rgba(236, 72, 153, 0.35);
         }
 
         .sim-card.is-capturing .btn-download-card {
@@ -1495,13 +1498,15 @@
                 card.onclick = () => copyToClipboard(item.fNum);
 
                 card.innerHTML = `
-                    <div class="sim-score">⭐ ${item.ai.score} Điểm</div>
-                    <button class="btn-download-card" onclick="downloadCard('${item.fNum}', this, event)" title="Tải ảnh card để đăng MXH">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-                            <circle cx="12" cy="13" r="4"></circle>
-                        </svg>
-                    </button>
+                    <div class="sim-card-header">
+                        <button class="btn-download-card" onclick="downloadCard('${item.fNum}', this, event)" title="Tải ảnh card để đăng MXH">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                                <circle cx="12" cy="13" r="4"></circle>
+                            </svg>
+                        </button>
+                        <div class="sim-score">⭐ ${item.ai.score} Điểm</div>
+                    </div>
                     <div class="sim-number">${hlNum}</div>
                     <div class="sim-reason">${item.ai.reasonText}</div>
                     <div class="sim-price-row">
