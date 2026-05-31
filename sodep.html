@@ -343,6 +343,7 @@
                 <button class="tab-btn" onclick="filterCategory('sotien')">📈 Số Tiến</button>
                 <button class="tab-btn" onclick="filterCategory('solap')">🔁 Số Lặp</button>
                 <button class="tab-btn" onclick="filterCategory('duoidep')">✨ Đuôi Đẹp</button>
+                <button class="tab-btn" onclick="filterCategory('phongthuy')">☯️ Phong Thủy</button>
             </div>
 
             <div class="grid" id="resultGrid"></div>
@@ -599,11 +600,13 @@
             if (/(79|39)$/.test(numStr)) {
                 score += 20;
                 categories.push('duoidep');
+                categories.push('phongthuy');
                 reasons.push('Thần Tài');
                 highlight = highlight || numStr.slice(-2);
             } else if (/(38|78)$/.test(numStr)) {
                 score += 15;
                 categories.push('duoidep');
+                categories.push('phongthuy');
                 reasons.push('Ông Địa');
                 highlight = highlight || numStr.slice(-2);
             }
@@ -614,7 +617,10 @@
             const nut = sum4 % 10;
             if (nut >= 7 || nut === 0) { // Nút 7, 8, 9 hoặc 10 (0)
                 let point = 5;
-                if (nut === 9 || nut === 0) point = 10; // 9, 10 điểm cao hơn
+                if (nut === 9 || nut === 0) {
+                    point = 10; // 9, 10 điểm cao hơn
+                    categories.push('phongthuy'); // Nút 9, 10 đưa vào bộ lọc Phong Thủy
+                }
                 score += point;
                 reasons.push('Nút ' + (nut===0?10:nut));
             }
