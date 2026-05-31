@@ -1237,6 +1237,15 @@
             const filterTabs = document.getElementById('filterTabs');
             filterTabs.innerHTML = '<button class="tab-btn active" onclick="filterCategory(\'all\', event)">Tất cả</button>';
 
+            const hasFreeSims = scoredData.some(item => !item.monthly || item.monthly == 0 || item.monthly === "0");
+            if (hasFreeSims) {
+                const btn = document.createElement('button');
+                btn.className = 'tab-btn';
+                btn.textContent = '🎁 Cam Kết 0đ';
+                btn.onclick = (e) => filterCategory('free', e);
+                filterTabs.appendChild(btn);
+            }
+
             const sortedReasons = Array.from(allReasons).sort();
             sortedReasons.forEach(reason => {
                 const btn = document.createElement('button');
@@ -1284,7 +1293,11 @@
 
             let displayData = scoredData;
             if (currentCategory !== 'all') {
-                displayData = scoredData.filter(item => item.ai.reasonsArr.includes(currentCategory));
+                if (currentCategory === 'free') {
+                    displayData = scoredData.filter(item => !item.monthly || item.monthly == 0 || item.monthly === "0");
+                } else {
+                    displayData = scoredData.filter(item => item.ai.reasonsArr.includes(currentCategory));
+                }
             }
 
             if (displayData.length === 0) {
