@@ -902,6 +902,24 @@
             transform: translateY(0);
         }
 
+        .btn-login:disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+            transform: none !important;
+        }
+
+        .btn-login .btn-spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2.5px solid rgba(255, 255, 255, 0.3);
+            border-top: 2.5px solid #fff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+
         .error-msg {
             color: #ef4444;
             font-size: 13px;
@@ -24666,10 +24684,23 @@
             const rememberMe = document.getElementById('rememberMe').checked;
             const errorEl = document.getElementById('loginError');
             const cardEl = document.querySelector('.login-card');
+            const btnLogin = document.querySelector('.btn-login');
+            const btnOriginalHTML = btnLogin.innerHTML;
 
             if (!userVal || !passVal) {
                 showLoginError("Vui lòng điền đầy đủ thông tin!");
                 return;
+            }
+
+            // Hiệu ứng loading trên nút Đăng nhập
+            btnLogin.disabled = true;
+            btnLogin.innerHTML = '<span class="btn-spinner"></span>ĐANG XÁC THỰC...';
+            errorEl.style.display = 'none';
+
+            // Hàm khôi phục nút về trạng thái ban đầu
+            function resetButton() {
+                btnLogin.disabled = false;
+                btnLogin.innerHTML = btnOriginalHTML;
             }
 
             // 1. Kiểm tra tài khoản & mật khẩu cục bộ trước
@@ -24685,17 +24716,20 @@
                             const resData = await response.json();
 
                             if (resData.status !== "ok") {
+                                resetButton();
                                 showLoginError(resData.message || "Tài khoản đang liên kết với thiết bị khác!");
                                 return;
                             }
                         } catch (err) {
                             console.error("Lỗi kết nối đồng bộ thiết bị:", err);
+                            resetButton();
                             showLoginError("Không thể kết nối máy chủ bảo mật thiết bị!");
                             return;
                         }
                     }
 
-                    // Đăng nhập thành công
+                    // Đăng nhập thành công - đổi nút thành trạng thái thành công
+                    btnLogin.innerHTML = '✓ ĐĂNG NHẬP THÀNH CÔNG';
                     errorEl.style.display = 'none';
                     const authToken = await sha256(userVal + expectedPassHash);
 
@@ -24713,6 +24747,7 @@
             }
 
             // Đăng nhập thất bại - rung lắc form
+            resetButton();
             cardEl.classList.remove('shake');
             void cardEl.offsetWidth; // Trigger reflow
             cardEl.classList.add('shake');
