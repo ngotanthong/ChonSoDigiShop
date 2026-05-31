@@ -3,6 +3,7 @@
 <html lang="vi"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="accounts.js"></script>
     <title>VNPT SIM - Kho Số Liền Mạch &amp; Copy Nhanh</title>
     <style>
         :root {
@@ -20325,10 +20326,6 @@
 
     // --- SECURE AUTHENTICATION SYSTEM ---
     
-    // Tên đăng nhập & Mật khẩu được mã hóa SHA-256 (admin / vnpt2026)
-    const USER_HASH = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918';
-    const PASS_HASH = '0883fb27fe5c0a7721a78a406a86d4296b117d0e6527a6b5347996936526de92';
-    
     // Hàm băm chuỗi sử dụng Web Crypto API bảo mật và native
     async function sha256(message) {
         const msgBuffer = new TextEncoder().encode(message);
@@ -20341,13 +20338,24 @@
     window.addEventListener('DOMContentLoaded', async () => {
         const token = localStorage.getItem('simso_auth_token') || sessionStorage.getItem('simso_auth_token');
         if (token) {
-            // Kiểm tra tính hợp lệ của token
-            const expectedToken = await sha256(USER_HASH + PASS_HASH);
-            if (token === expectedToken) {
+            // Kiểm tra tính hợp lệ của token đối chiếu với mọi tài khoản được cấp phép
+            let verified = false;
+            if (window.ALLOWED_USERS) {
+                for (const user in window.ALLOWED_USERS) {
+                    const expectedPassHash = window.ALLOWED_USERS[user];
+                    const expectedToken = await sha256(user + expectedPassHash);
+                    if (token === expectedToken) {
+                        verified = true;
+                        break;
+                    }
+                }
+            }
+            if (verified) {
                 unlockApp();
                 return;
             }
         }
+        
         // Hiển thị màn hình Login
         document.getElementById('loginScreen').style.display = 'flex';
         document.getElementById('appContainer').style.display = 'none';
@@ -20377,9 +20385,9 @@
         }, 500);
     }
 
-    // Xử lý sự kiện đăng nhập
+    // Xử lý sự kiện đăng nhập đối chiếu động
     window.handleLogin = async function() {
-        const userVal = document.getElementById('username').value.trim();
+        const userVal = document.getElementById('username').value.trim().toLowerCase();
         const passVal = document.getElementById('password').value;
         const rememberMe = document.getElementById('rememberMe').checked;
         const errorEl = document.getElementById('loginError');
@@ -20390,28 +20398,34 @@
             return;
         }
 
-        const inputUserHash = await sha256(userVal);
-        const inputPassHash = await sha256(passVal);
+        // Kiểm tra xem tên đăng nhập có tồn tại trong danh sách accounts.js không
+        if (window.ALLOWED_USERS && window.ALLOWED_USERS[userVal]) {
+            const expectedPassHash = window.ALLOWED_USERS[userVal];
+            const inputPassHash = await sha256(passVal);
 
-        if (inputUserHash === USER_HASH && inputPassHash === PASS_HASH) {
-            // Đăng nhập thành công
-            errorEl.style.display = 'none';
-            const authToken = await sha256(USER_HASH + PASS_HASH);
-            
-            if (rememberMe) {
-                localStorage.setItem('simso_auth_token', authToken);
-            } else {
-                sessionStorage.setItem('simso_auth_token', authToken);
+            if (inputPassHash === expectedPassHash) {
+                // Đăng nhập thành công
+                errorEl.style.display = 'none';
+                
+                // Tạo token dựa trên cặp User + PassHash để phân biệt các tài khoản
+                const authToken = await sha256(userVal + expectedPassHash);
+                
+                if (rememberMe) {
+                    localStorage.setItem('simso_auth_token', authToken);
+                } else {
+                    sessionStorage.setItem('simso_auth_token', authToken);
+                }
+                
+                unlockApp();
+                return;
             }
-            
-            unlockApp();
-        } else {
-            // Đăng nhập thất bại - rung lắc form
-            cardEl.classList.remove('shake');
-            void cardEl.offsetWidth; // Trigger reflow
-            cardEl.classList.add('shake');
-            showLoginError("Tên đăng nhập hoặc mật khẩu không chính xác!");
         }
+        
+        // Đăng nhập thất bại - rung lắc form
+        cardEl.classList.remove('shake');
+        void cardEl.offsetWidth; // Trigger reflow
+        cardEl.classList.add('shake');
+        showLoginError("Tên đăng nhập hoặc mật khẩu không chính xác!");
     };
 
     // Hiển thị thông báo lỗi
