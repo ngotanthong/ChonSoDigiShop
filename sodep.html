@@ -88,7 +88,9 @@
         }
 
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         .login-loading-text {
@@ -99,9 +101,17 @@
         }
 
         @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
         }
 
         .login-card {
@@ -121,23 +131,71 @@
         }
 
         @keyframes cardEntrance {
-            from { transform: translateY(30px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+            from {
+                transform: translateY(30px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
 
-        .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        .shake {
+            animation: shake 0.5s cubic-bezier(.36, .07, .19, .97) both;
+        }
+
         @keyframes shake {
-            10%, 90% { transform: translate3d(-1px, 0, 0); }
-            20%, 80% { transform: translate3d(2px, 0, 0); }
-            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-            40%, 60% { transform: translate3d(4px, 0, 0); }
+
+            10%,
+            90% {
+                transform: translate3d(-1px, 0, 0);
+            }
+
+            20%,
+            80% {
+                transform: translate3d(2px, 0, 0);
+            }
+
+            30%,
+            50%,
+            70% {
+                transform: translate3d(-4px, 0, 0);
+            }
+
+            40%,
+            60% {
+                transform: translate3d(4px, 0, 0);
+            }
         }
 
-        .login-card h2 { margin-bottom: 10px; font-weight: 700; font-size: 24px; letter-spacing: 1px; }
-        .login-card p { margin-bottom: 30px; font-size: 14px; color: rgba(255, 255, 255, 0.8); }
+        .login-card h2 {
+            margin-bottom: 10px;
+            font-weight: 700;
+            font-size: 24px;
+            letter-spacing: 1px;
+        }
 
-        .input-group { margin-bottom: 20px; text-align: left; }
-        .input-group label { display: block; margin-bottom: 8px; font-size: 13px; font-weight: 600; color: rgba(255, 255, 255, 0.9); }
+        .login-card p {
+            margin-bottom: 30px;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
         .input-group input {
             width: 100%;
             padding: 14px 16px;
@@ -148,120 +206,482 @@
             font-size: 15px;
             transition: all 0.3s;
         }
-        .input-group input::placeholder { color: rgba(255, 255, 255, 0.5); }
-        .input-group input:focus { outline: none; border-color: #38bdf8; background: rgba(255, 255, 255, 0.15); box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2); }
 
-        .remember-group { display: flex; align-items: center; margin-bottom: 25px; gap: 8px; }
+        .input-group input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #38bdf8;
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+        }
+
+        .remember-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            gap: 8px;
+        }
+
         .remember-group input[type="checkbox"] {
-            appearance: none; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.4); border-radius: 4px; background: transparent; cursor: pointer; position: relative; transition: all 0.2s;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 4px;
+            background: transparent;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
         }
-        .remember-group input[type="checkbox"]:checked { background: #38bdf8; border-color: #38bdf8; }
+
+        .remember-group input[type="checkbox"]:checked {
+            background: #38bdf8;
+            border-color: #38bdf8;
+        }
+
         .remember-group input[type="checkbox"]:checked::after {
-            content: '✓'; position: absolute; color: white; font-size: 12px; font-weight: bold; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            content: '✓';
+            position: absolute;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
         }
-        .remember-group label { color: rgba(255, 255, 255, 0.9); font-size: 14px; cursor: pointer; user-select: none; }
+
+        .remember-group label {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+            cursor: pointer;
+            user-select: none;
+        }
 
         .btn-login {
-            width: 100%; height: 52px; background: linear-gradient(90deg, #38bdf8 0%, #005baa 100%); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3); letter-spacing: 0.5px;
+            width: 100%;
+            height: 52px;
+            background: linear-gradient(90deg, #38bdf8 0%, #005baa 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);
+            letter-spacing: 0.5px;
         }
-        .btn-login:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(56, 189, 248, 0.45); background: linear-gradient(90deg, #005baa 0%, #38bdf8 100%); }
-        .btn-login:active { transform: translateY(0); }
-        .btn-login:disabled { cursor: not-allowed; opacity: 0.7; transform: none !important; }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(56, 189, 248, 0.45);
+            background: linear-gradient(90deg, #005baa 0%, #38bdf8 100%);
+        }
+
+        .btn-login:active {
+            transform: translateY(0);
+        }
+
+        .btn-login:disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+            transform: none !important;
+        }
 
         .btn-login .btn-spinner {
-            display: inline-block; width: 18px; height: 18px; border: 2.5px solid rgba(255, 255, 255, 0.3); border-top: 2.5px solid #fff; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 8px;
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2.5px solid rgba(255, 255, 255, 0.3);
+            border-top: 2.5px solid #fff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            vertical-align: middle;
+            margin-right: 8px;
         }
 
-        .error-msg { color: #ef4444; font-size: 13px; font-weight: 600; margin-top: 15px; display: none; }
+        .error-msg {
+            color: #ef4444;
+            font-size: 13px;
+            font-weight: 600;
+            margin-top: 15px;
+            display: none;
+        }
 
         /* --- Ứng dụng chính --- */
-        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
 
         .header-wrapper {
-            display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding: 16px 20px; background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); flex-wrap: wrap; gap: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding: 16px 20px;
+            background: var(--surface);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            flex-wrap: wrap;
+            gap: 12px;
         }
-        .header-wrapper h1 { font-size: 20px; color: var(--primary); font-weight: 700; display: flex; align-items: center; gap: 8px; }
-        
-        .header-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-        
+
+        .header-wrapper h1 {
+            font-size: 20px;
+            color: var(--primary);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
         .btn-nav {
-            display: flex; align-items: center; gap: 6px; padding: 10px 16px; background: #f1f5f9; color: var(--text-main); border: 1px solid var(--border); border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 16px;
+            background: #f1f5f9;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
         }
-        .btn-nav:hover { background: #e2e8f0; }
+
+        .btn-nav:hover {
+            background: #e2e8f0;
+        }
 
         .btn-logout {
-            display: flex; align-items: center; gap: 6px; padding: 10px 16px; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 16px;
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
         }
-        .btn-logout:hover { background: rgba(239, 68, 68, 0.2); transform: translateY(-1px); }
+
+        .btn-logout:hover {
+            background: rgba(239, 68, 68, 0.2);
+            transform: translateY(-1px);
+        }
 
         /* --- Khu vực Quét AI --- */
         .scan-panel {
-            background: var(--surface); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); margin-bottom: 24px; text-align: center;
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: var(--shadow);
+            margin-bottom: 24px;
+            text-align: center;
         }
-        .scan-panel h2 { font-size: 18px; margin-bottom: 12px; color: var(--text-main); }
-        .scan-panel p { color: var(--text-sub); font-size: 14px; margin-bottom: 20px; }
+
+        .scan-panel h2 {
+            font-size: 18px;
+            margin-bottom: 12px;
+            color: var(--text-main);
+        }
+
+        .scan-panel p {
+            color: var(--text-sub);
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
 
         .btn-scan {
-            background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%); color: white; border: none; padding: 14px 32px; font-size: 16px; font-weight: 700; border-radius: 30px; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 15px rgba(236, 72, 153, 0.3); display: inline-flex; align-items: center; gap: 8px;
+            background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            font-size: 16px;
+            font-weight: 700;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(236, 72, 153, 0.3);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
-        .btn-scan:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(236, 72, 153, 0.4); }
-        .btn-scan:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+
+        .btn-scan:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(236, 72, 153, 0.4);
+        }
+
+        .btn-scan:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
 
         /* Progress Bar */
-        .progress-container { width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; margin: 20px auto 10px; overflow: hidden; max-width: 500px; display: none; }
-        .progress-bar { height: 100%; background: linear-gradient(90deg, #8b5cf6, #ec4899); width: 0%; transition: width 0.3s ease; }
-        .status-text { font-size: 13px; color: var(--text-sub); font-weight: 500; display: none; margin-bottom: 0; }
+        .progress-container {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            margin: 20px auto 10px;
+            overflow: hidden;
+            max-width: 500px;
+            display: none;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #8b5cf6, #ec4899);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .status-text {
+            font-size: 13px;
+            color: var(--text-sub);
+            font-weight: 500;
+            display: none;
+            margin-bottom: 0;
+        }
 
         /* --- Bộ lọc Danh mục --- */
-        .filter-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; justify-content: center; display: none; }
-        .tab-btn {
-            padding: 8px 16px; background: white; border: 1px solid var(--border); border-radius: 20px; font-size: 14px; font-weight: 500; color: var(--text-sub); cursor: pointer; transition: all 0.2s;
+        .filter-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+            justify-content: center;
+            display: none;
         }
-        .tab-btn:hover { border-color: var(--primary); color: var(--primary); }
-        .tab-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        .tab-btn {
+            padding: 8px 16px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-sub);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
 
         /* --- Kết quả SIM --- */
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
-        
-        .sim-card {
-            background: var(--surface); border-radius: var(--radius); padding: 16px; border: 1px solid var(--border); position: relative; transition: all 0.2s; cursor: pointer; display: flex; flex-direction: column; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
         }
-        .sim-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-color: #cbd5e1; }
-        
-        .sim-number { font-size: 22px; font-weight: 700; color: var(--primary); margin-bottom: 4px; letter-spacing: 0.5px; }
-        .sim-number .hi { color: #e11d48; }
-        
-        .sim-score { position: absolute; top: 16px; right: 16px; background: #fffbeb; color: #d97706; padding: 4px 8px; border-radius: 6px; font-size: 13px; font-weight: 700; border: 1px solid #fde68a; display: flex; align-items: center; gap: 4px; }
-        
-        .sim-reason { font-size: 13px; color: #059669; font-weight: 500; margin-bottom: 12px; background: #d1fae5; padding: 4px 8px; border-radius: 4px; display: inline-block; align-self: flex-start; }
-        
-        .sim-price-row { display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto; padding-top: 12px; border-top: 1px dashed var(--border); }
-        .sim-price-box { text-align: left; }
-        .sim-price { font-size: 16px; font-weight: 700; color: #ef4444; }
-        .sim-sub { font-size: 12px; color: var(--text-sub); }
-        .sim-commit { font-size: 13px; color: var(--text-main); font-weight: 500; background: #f1f5f9; padding: 4px 8px; border-radius: 4px; }
 
-        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-sub); display: none; grid-column: 1 / -1; }
-        .empty-state svg { margin-bottom: 16px; color: #cbd5e1; }
-        .empty-state p { font-size: 15px; }
+        .sim-card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 16px;
+            border: 1px solid var(--border);
+            position: relative;
+            transition: all 0.2s;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .sim-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow);
+            border-color: #cbd5e1;
+        }
+
+        .sim-number {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        .sim-number .hi {
+            color: #e11d48;
+        }
+
+        .sim-score {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: #fffbeb;
+            color: #d97706;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            border: 1px solid #fde68a;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .sim-reason {
+            font-size: 13px;
+            color: #059669;
+            font-weight: 500;
+            margin-bottom: 12px;
+            background: #d1fae5;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            align-self: flex-start;
+        }
+
+        .sim-price-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-top: auto;
+            padding-top: 12px;
+            border-top: 1px dashed var(--border);
+        }
+
+        .sim-price-box {
+            text-align: left;
+        }
+
+        .sim-price {
+            font-size: 16px;
+            font-weight: 700;
+            color: #ef4444;
+        }
+
+        .sim-sub {
+            font-size: 12px;
+            color: var(--text-sub);
+        }
+
+        .sim-commit {
+            font-size: 13px;
+            color: var(--text-main);
+            font-weight: 500;
+            background: #f1f5f9;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-sub);
+            display: none;
+            grid-column: 1 / -1;
+        }
+
+        .empty-state svg {
+            margin-bottom: 16px;
+            color: #cbd5e1;
+        }
+
+        .empty-state p {
+            font-size: 15px;
+        }
 
         .btn-load-more {
-            background: white; border: 1px solid var(--border); color: var(--text-main); font-weight: 600; font-size: 14px; padding: 12px 32px; border-radius: 30px; cursor: pointer; transition: all 0.2s; display: block; margin: 30px auto 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); display: none;
+            background: white;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            font-weight: 600;
+            font-size: 14px;
+            padding: 12px 32px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: block;
+            margin: 30px auto 10px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            display: none;
         }
-        .btn-load-more:hover { background: #f8fafc; border-color: #cbd5e1; transform: translateY(-1px); }
+
+        .btn-load-more:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+            transform: translateY(-1px);
+        }
 
         /* Toast thông báo */
         .toast {
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: rgba(15, 23, 42, 0.9); color: white; padding: 12px 24px; border-radius: 30px; font-size: 14px; font-weight: 500; box-shadow: 0 10px 25px rgba(0,0,0,0.2); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 9999; display: flex; align-items: center; gap: 8px; pointer-events: none;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(15, 23, 42, 0.9);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            pointer-events: none;
         }
-        .toast.show { transform: translateX(-50%) translateY(0); }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
 
         @media (max-width: 600px) {
-            .header-wrapper { flex-direction: column; align-items: stretch; }
-            .header-actions { justify-content: stretch; }
-            .btn-nav, .btn-logout { flex: 1; justify-content: center; }
-            .sim-card { padding: 12px; }
-            .sim-number { font-size: 20px; }
+            .header-wrapper {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .header-actions {
+                justify-content: stretch;
+            }
+
+            .btn-nav,
+            .btn-logout {
+                flex: 1;
+                justify-content: center;
+            }
+
+            .sim-card {
+                padding: 12px;
+            }
+
+            .sim-number {
+                font-size: 20px;
+            }
         }
     </style>
 </head>
@@ -283,7 +703,8 @@
             </div>
             <div class="input-group">
                 <label for="password">Mật khẩu</label>
-                <input type="password" id="password" placeholder="Nhập mật khẩu..." required autocomplete="current-password">
+                <input type="password" id="password" placeholder="Nhập mật khẩu..." required
+                    autocomplete="current-password">
             </div>
             <div class="remember-group">
                 <input type="checkbox" id="rememberMe">
@@ -299,18 +720,26 @@
         <div class="container">
             <header class="header-wrapper">
                 <h1>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path
+                            d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83">
+                        </path>
                     </svg>
                     AI GỢI Ý SỐ ĐẸP
                 </h1>
                 <div class="header-actions">
                     <a href="index.html" class="btn-nav">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
                         Tìm Thủ Công
                     </a>
                     <button class="btn-logout" onclick="handleLogout()">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                             <polyline points="16 17 21 12 16 7"></polyline>
                             <line x1="21" y1="12" x2="9" y2="12"></line>
@@ -322,10 +751,14 @@
 
             <div class="scan-panel">
                 <h2>Quét Tự Động Toàn Kho</h2>
-                <p>Hệ thống sẽ tự động tìm kiếm các số có cam kết 0 tháng hoặc giá &le; 400k/tháng, sau đó dùng AI chấm điểm và chọn ra những số đẹp nhất cho bạn.</p>
-                
+                <p>Hệ thống sẽ tự động tìm kiếm các số có cam kết 0 tháng hoặc giá &le; 400k/tháng, sau đó dùng AI chấm
+                    điểm và chọn ra những số đẹp nhất cho bạn.</p>
+
                 <button class="btn-scan" id="btnScan" onclick="startAutoScan()">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                    </svg>
                     BẮT ĐẦU QUÉT AI
                 </button>
 
@@ -348,18 +781,27 @@
             </div>
 
             <div class="grid" id="resultGrid"></div>
-            
+
             <button class="btn-load-more" id="btnLoadMore" onclick="loadMoreResults()">TẢI THÊM SỐ ĐẸP</button>
-            
+
             <div class="empty-state" id="emptyState">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
                 <p>Chưa có dữ liệu. Nhấn "Bắt đầu quét AI" để tìm số đẹp.</p>
             </div>
         </div>
     </div>
 
     <div class="toast" id="toast">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
         <span>Đã sao chép số điện thoại!</span>
     </div>
 
@@ -369,8 +811,8 @@
         const BASE_API = 'https://digishop.vnpt.vn/apiprod/v2/simso/num_search';
         const PREFIXES = ['8491', '8494', '8488', '8481', '8482', '8483', '8484', '8485'];
         // Lấy cam kết 0đ và giá rẻ <=400k
-        const COMMITS = ['0', '100000', '150000', '200000', '400000']; 
-        
+        const COMMITS = ['0', '100000', '150000', '200000', '400000'];
+
         let allScannedData = [];
         let scoredData = [];
         let currentCategory = 'all';
@@ -590,39 +1032,46 @@
             }
 
             // 5. Số Lặp Cao Cấp (Taxi, Lặp Kép) & Lặp Thường (ABAB)
+            let isLap = false;
             if (/(\d{2})\1\1$/.test(numStr)) { // ABABAB (Taxi 3 cặp)
                 score += 45;
                 categories.push('solap');
                 reasons.push('Taxi Đẹp');
                 highlight = highlight || numStr.slice(-6);
+                isLap = true;
             } else if (/(\d{3})\1$/.test(numStr)) { // ABCABC (Taxi cụm 3)
                 score += 40;
                 categories.push('solap');
                 reasons.push('Taxi Đẹp');
                 highlight = highlight || numStr.slice(-6);
-            } else if (/(\d)\1(\d)\2$/.test(numStr) && numStr.slice(-2,-1) !== numStr.slice(-1)) { // AABB
+                isLap = true;
+            } else if (/(\d)\1(\d)\2$/.test(numStr) && numStr.slice(-2, -1) !== numStr.slice(-1)) { // AABB
                 score += 25;
                 categories.push('solap');
                 reasons.push('Lặp Kép');
                 highlight = highlight || numStr.slice(-4);
+                isLap = true;
             } else if (/(\d{2})\1$/.test(numStr)) { // ABAB
                 score += 20;
                 categories.push('solap');
                 reasons.push('Lặp Cặp');
                 highlight = highlight || numStr.slice(-4);
+                isLap = true;
             }
 
             // 5.5. Số Gánh / Số Đảo (ABBA, ABA)
-            if (/(\d)(\d)\2\1$/.test(numStr) && numStr.slice(-1) !== numStr.slice(-2,-1)) { // ABBA
-                score += 25;
-                categories.push('soganh');
-                reasons.push('Gánh Đảo (ABBA)');
-                highlight = highlight || numStr.slice(-4);
-            } else if (/(\d)(\d)\1$/.test(numStr) && numStr.slice(-1) !== numStr.slice(-2,-1)) { // ABA
-                score += 15;
-                categories.push('soganh');
-                reasons.push('Gánh (ABA)');
-                highlight = highlight || numStr.slice(-3);
+            if (!isLap) {
+                if (/(\d)(\d)\2\1$/.test(numStr) && numStr.slice(-1) !== numStr.slice(-2, -1)) { // ABBA
+                    score += 25;
+                    categories.push('soganh');
+                    reasons.push('Gánh Đảo (ABBA)');
+                    highlight = highlight || numStr.slice(-4);
+                } else if (/(\d)(\d)\1$/.test(numStr) && numStr.slice(-1) !== numStr.slice(-2, -1)) { // ABA
+                    score += 15;
+                    categories.push('soganh');
+                    reasons.push('Gánh (ABA)');
+                    highlight = highlight || numStr.slice(-3);
+                }
             }
 
             // 6. Đuôi Đẹp phong thủy (79: thần tài lớn, 39: thần tài nhỏ, 38: ông địa)
@@ -678,7 +1127,7 @@
             const progBar = document.getElementById('progressBar');
             const statusTxt = document.getElementById('statusText');
             const filterTabs = document.getElementById('filterTabs');
-            
+
             btnScan.disabled = true;
             btnScan.innerHTML = '<span class="login-spinner" style="width: 18px; height: 18px; border-width: 2px;"></span> ĐANG QUÉT...';
             progCont.style.display = 'block';
@@ -686,13 +1135,13 @@
             filterTabs.style.display = 'none';
             document.getElementById('resultGrid').innerHTML = '';
             document.getElementById('emptyState').style.display = 'none';
-            
+
             allScannedData = [];
             scoredData = [];
             currentCategory = 'all';
             currentDisplayCount = 100;
             document.getElementById('btnLoadMore').style.display = 'none';
-            
+
             const tasks = [];
             for (const pref of PREFIXES) {
                 for (const c of COMMITS) {
@@ -708,9 +1157,9 @@
                 while (tasks.length > 0) {
                     const { pref, c } = tasks.shift();
                     const url = `${BASE_API}?search=&prefix=${pref}&commit=${c}`;
-                    
-                    statusTxt.textContent = `Đang quét: ${completedRequests}/${totalRequests} (Phân tích 0${pref.slice(2)} - ${c==='0'?'0đ':(c/1000+'k')})`;
-                    
+
+                    statusTxt.textContent = `Đang quét: ${completedRequests}/${totalRequests} (Phân tích 0${pref.slice(2)} - ${c === '0' ? '0đ' : (c / 1000 + 'k')})`;
+
                     try {
                         const res = await fetch(url);
                         const json = await res.json();
@@ -720,7 +1169,7 @@
                     } catch (e) {
                         console.error("Fetch error:", url);
                     }
-                    
+
                     completedRequests++;
                     progBar.style.width = `${(completedRequests / totalRequests) * 100}%`;
                 }
@@ -730,12 +1179,12 @@
                 const workers = [];
                 for (let i = 0; i < CONCURRENCY; i++) workers.push(worker());
                 await Promise.all(workers);
-                
+
                 statusTxt.textContent = 'Đang dùng AI chấm điểm số đẹp...';
-                
+
                 // Xử lý AI Score
                 processAIScores();
-                
+
                 if (scoredData.length > 0) {
                     filterTabs.style.display = 'flex';
                     renderResults();
@@ -743,13 +1192,13 @@
                     document.getElementById('emptyState').style.display = 'block';
                     document.getElementById('emptyState').querySelector('p').textContent = 'Không tìm thấy số nào đạt tiêu chuẩn đẹp trong tầm giá này.';
                 }
-                
+
                 statusTxt.textContent = `Hoàn tất! Đã tìm thấy ${scoredData.length} số đẹp xuất sắc.`;
                 setTimeout(() => {
                     progCont.style.display = 'none';
                     statusTxt.style.display = 'none';
                 }, 3000);
-                
+
             } catch (err) {
                 statusTxt.textContent = 'Có lỗi xảy ra khi quét API.';
             } finally {
@@ -763,7 +1212,7 @@
             // Dùng Map để loại bỏ trùng lặp số
             const uniqueSims = new Map();
             const allReasons = new Set();
-            
+
             allScannedData.forEach(item => {
                 const fNum = formatNumber(item.so_tb);
                 if (!uniqueSims.has(fNum)) {
@@ -779,7 +1228,7 @@
                     }
                 }
             });
-            
+
             scoredData = Array.from(uniqueSims.values());
             // Sắp xếp theo điểm từ cao xuống thấp
             scoredData.sort((a, b) => b.ai.score - a.ai.score);
@@ -787,7 +1236,7 @@
             // Tạo các nút filter động dựa trên các tag hiện có
             const filterTabs = document.getElementById('filterTabs');
             filterTabs.innerHTML = '<button class="tab-btn active" onclick="filterCategory(\'all\', event)">Tất cả</button>';
-            
+
             const sortedReasons = Array.from(allReasons).sort();
             sortedReasons.forEach(reason => {
                 const btn = document.createElement('button');
@@ -832,12 +1281,12 @@
         function renderResults() {
             const grid = document.getElementById('resultGrid');
             grid.innerHTML = '';
-            
+
             let displayData = scoredData;
             if (currentCategory !== 'all') {
                 displayData = scoredData.filter(item => item.ai.reasonsArr.includes(currentCategory));
             }
-            
+
             if (displayData.length === 0) {
                 document.getElementById('emptyState').style.display = 'block';
                 document.getElementById('emptyState').querySelector('p').textContent = 'Không có số nào thuộc danh mục này.';
@@ -848,7 +1297,7 @@
 
             // Phân trang bằng cách giới hạn số lượng hiển thị
             const dataToShow = displayData.slice(0, currentDisplayCount);
-            
+
             dataToShow.forEach(item => {
                 const isFree = !item.monthly || item.monthly == 0 || item.monthly === "0";
                 const price = Number(item.monthly) || 0;
@@ -859,7 +1308,7 @@
                 const card = document.createElement('div');
                 card.className = 'sim-card';
                 card.onclick = () => copyToClipboard(item.fNum);
-                
+
                 card.innerHTML = `
                     <div class="sim-score">⭐ ${item.ai.score} Điểm</div>
                     <div class="sim-number">${hlNum}</div>
@@ -885,4 +1334,5 @@
         }
     </script>
 </body>
+
 </html>
