@@ -245,6 +245,11 @@
         .empty-state svg { margin-bottom: 16px; color: #cbd5e1; }
         .empty-state p { font-size: 15px; }
 
+        .btn-load-more {
+            background: white; border: 1px solid var(--border); color: var(--text-main); font-weight: 600; font-size: 14px; padding: 12px 32px; border-radius: 30px; cursor: pointer; transition: all 0.2s; display: block; margin: 30px auto 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); display: none;
+        }
+        .btn-load-more:hover { background: #f8fafc; border-color: #cbd5e1; transform: translateY(-1px); }
+
         /* Toast thông báo */
         .toast {
             position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: rgba(15, 23, 42, 0.9); color: white; padding: 12px 24px; border-radius: 30px; font-size: 14px; font-weight: 500; box-shadow: 0 10px 25px rgba(0,0,0,0.2); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 9999; display: flex; align-items: center; gap: 8px; pointer-events: none;
@@ -317,7 +322,7 @@
 
             <div class="scan-panel">
                 <h2>Quét Tự Động Toàn Kho</h2>
-                <p>Hệ thống sẽ tự động tìm kiếm các số có cam kết 0 tháng hoặc giá dưới 200k/tháng, sau đó dùng AI chấm điểm và chọn ra những số đẹp nhất cho bạn.</p>
+                <p>Hệ thống sẽ tự động tìm kiếm các số có cam kết 0 tháng hoặc giá &le; 400k/tháng, sau đó dùng AI chấm điểm và chọn ra những số đẹp nhất cho bạn.</p>
                 
                 <button class="btn-scan" id="btnScan" onclick="startAutoScan()">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
@@ -342,6 +347,8 @@
 
             <div class="grid" id="resultGrid"></div>
             
+            <button class="btn-load-more" id="btnLoadMore" onclick="loadMoreResults()">TẢI THÊM SỐ ĐẸP</button>
+            
             <div class="empty-state" id="emptyState">
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
                 <p>Chưa có dữ liệu. Nhấn "Bắt đầu quét AI" để tìm số đẹp.</p>
@@ -359,12 +366,13 @@
         const GAS_API_URL = 'https://script.google.com/macros/s/AKfycby4Abq0CZBBcVSzapt-o2sKTLGSwh1qvWNEa0UHXcFPANekzuApakMb783NtDn93KmJ4Q/exec';
         const BASE_API = 'https://digishop.vnpt.vn/apiprod/v2/simso/num_search';
         const PREFIXES = ['8491', '8494', '8488', '8481', '8482', '8483', '8484', '8485'];
-        // Chỉ lấy cam kết 0đ và giá rẻ <200k (mã API tương ứng: '0', '100000', '150000', '200000')
-        const COMMITS = ['0', '100000', '150000', '200000']; 
+        // Lấy cam kết 0đ và giá rẻ <=400k
+        const COMMITS = ['0', '100000', '150000', '200000', '400000']; 
         
         let allScannedData = [];
         let scoredData = [];
         let currentCategory = 'all';
+        let currentDisplayCount = 100;
 
         // Sinh mã định danh thiết bị
         function generateUUID() {
@@ -600,13 +608,15 @@
                 highlight = highlight || numStr.slice(-2);
             }
 
-            // 7. Tổng nút (tổng 4 số cuối = 10 hoặc 9 là đẹp)
+            // 7. Tổng nút (tổng 4 số cuối = 7, 8, 9 hoặc 10 là đẹp)
             const last4 = numStr.slice(-4);
             const sum4 = last4.split('').reduce((acc, val) => acc + parseInt(val), 0);
             const nut = sum4 % 10;
-            if (nut === 9 || nut === 0) { // Nút 9 hoặc 10
-                score += 10;
-                reasons.push('Nút ' + (nut===0?10:9));
+            if (nut >= 7 || nut === 0) { // Nút 7, 8, 9 hoặc 10 (0)
+                let point = 5;
+                if (nut === 9 || nut === 0) point = 10; // 9, 10 điểm cao hơn
+                score += point;
+                reasons.push('Nút ' + (nut===0?10:nut));
             }
 
             // 8. Trừ điểm số kỵ (chứa 4, 7, 49, 53)
@@ -644,6 +654,8 @@
             allScannedData = [];
             scoredData = [];
             currentCategory = 'all';
+            currentDisplayCount = 100;
+            document.getElementById('btnLoadMore').style.display = 'none';
             
             const tasks = [];
             for (const pref of PREFIXES) {
@@ -737,8 +749,14 @@
 
         function filterCategory(cat) {
             currentCategory = cat;
+            currentDisplayCount = 100; // Reset pagination khi đổi danh mục
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
+            renderResults();
+        }
+
+        function loadMoreResults() {
+            currentDisplayCount += 100;
             renderResults();
         }
 
@@ -767,12 +785,15 @@
             if (displayData.length === 0) {
                 document.getElementById('emptyState').style.display = 'block';
                 document.getElementById('emptyState').querySelector('p').textContent = 'Không có số nào thuộc danh mục này.';
+                document.getElementById('btnLoadMore').style.display = 'none';
                 return;
             }
             document.getElementById('emptyState').style.display = 'none';
 
-            // Giới hạn hiển thị 100 số đẹp nhất để khỏi lag
-            displayData.slice(0, 100).forEach(item => {
+            // Phân trang bằng cách giới hạn số lượng hiển thị
+            const dataToShow = displayData.slice(0, currentDisplayCount);
+            
+            dataToShow.forEach(item => {
                 const isFree = !item.monthly || item.monthly == 0 || item.monthly === "0";
                 const price = Number(item.monthly) || 0;
                 const priceText = isFree ? 'Miễn phí cước' : price.toLocaleString() + ' đ/tháng';
@@ -797,6 +818,14 @@
                 `;
                 grid.appendChild(card);
             });
+
+            // Hiện nút "Tải Thêm" nếu còn dữ liệu chưa hiển thị
+            if (displayData.length > currentDisplayCount) {
+                document.getElementById('btnLoadMore').style.display = 'block';
+                document.getElementById('btnLoadMore').textContent = `TẢI THÊM SỐ ĐẸP (${currentDisplayCount} / ${displayData.length})`;
+            } else {
+                document.getElementById('btnLoadMore').style.display = 'none';
+            }
         }
     </script>
 </body>
