@@ -1314,7 +1314,7 @@
             dataToShow.forEach(item => {
                 const isFree = !item.monthly || item.monthly == 0 || item.monthly === "0";
                 const price = Number(item.monthly) || 0;
-                const priceText = isFree ? 'Miễn phí cước' : price.toLocaleString() + ' đ/tháng';
+                const priceText = isFree ? '0 đ/tháng' : price.toLocaleString() + ' đ/tháng';
                 const commitText = (item.commitment && item.commitment > 0) ? `Cam kết ${item.commitment}T` : 'Không cam kết';
                 const hlNum = highlightHTML(item.fNum, item.ai.highlight);
 
