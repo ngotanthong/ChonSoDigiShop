@@ -9,6 +9,7 @@
     <link rel="icon" type="image/x-icon" href="https://vnpt.com.vn/favicon.ico">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="accounts.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
             --bg: #f8fafc;
@@ -597,6 +598,41 @@
             display: flex;
             align-items: center;
             gap: 4px;
+        }
+
+        .btn-download-card {
+            position: absolute;
+            top: 16px;
+            right: 95px;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #f1f5f9;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            z-index: 10;
+        }
+
+        .btn-download-card:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            transform: scale(1.1);
+        }
+
+        .sim-card.is-capturing .btn-download-card {
+            display: none !important;
+        }
+
+        .sim-card.is-capturing {
+            border: 1px solid #cbd5e1 !important;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+            transform: none !important;
         }
 
         .sim-reason {
@@ -1378,6 +1414,50 @@
             });
         }
 
+        async function downloadCard(phoneNum, btnEl, event) {
+            event.stopPropagation(); // Ngăn sự kiện copy số điện thoại khi bấm nút tải
+            
+            const card = btnEl.closest('.sim-card');
+            if (!card) return;
+            
+            // Thêm class để ẩn nút tải khi chụp ảnh
+            card.classList.add('is-capturing');
+            
+            // Thay đổi giao diện nút tạm thời thành trạng thái loading
+            const originalHTML = btnEl.innerHTML;
+            btnEl.disabled = true;
+            btnEl.innerHTML = '<span class="login-spinner" style="width: 12px; height: 12px; border-width: 1.5px; border-top-color: currentColor;"></span>';
+            
+            try {
+                // Tạo ảnh chất lượng cao với scale=3 (cực kỳ sắc nét)
+                const canvas = await html2canvas(card, {
+                    scale: 3,
+                    useCORS: true,
+                    backgroundColor: '#ffffff', // Đảm bảo nền trắng
+                    logging: false
+                });
+                
+                // Chuyển canvas thành URL ảnh
+                const imgData = canvas.toDataURL('image/png');
+                
+                // Tạo phần tử tải ẩn
+                const link = document.createElement('a');
+                link.download = `SIM_VIP_${phoneNum}.png`;
+                link.href = imgData;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } catch (err) {
+                console.error("Lỗi chụp ảnh card:", err);
+                alert("Không thể tải ảnh card này. Vui lòng thử lại!");
+            } finally {
+                // Khôi phục giao diện ban đầu
+                card.classList.remove('is-capturing');
+                btnEl.disabled = false;
+                btnEl.innerHTML = originalHTML;
+            }
+        }
+
         function renderResults() {
             const grid = document.getElementById('resultGrid');
             grid.innerHTML = '';
@@ -1415,6 +1495,13 @@
 
                 card.innerHTML = `
                     <div class="sim-score">⭐ ${item.ai.score} Điểm</div>
+                    <button class="btn-download-card" onclick="downloadCard('${item.fNum}', this, event)" title="Tải ảnh card để đăng MXH">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                    </button>
                     <div class="sim-number">${hlNum}</div>
                     <div class="sim-reason">${item.ai.reasonText}</div>
                     <div class="sim-price-row">
