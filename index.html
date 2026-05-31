@@ -382,14 +382,271 @@
                 gap: 8px;
             }
         }
+
+        /* --- SECURE LOGIN STYLES --- */
+        
+        #loginScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0f172a 0%, #005baa 50%, #1e3a8a 100%);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            padding: 20px;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 24px;
+            padding: 40px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            color: white;
+            animation: cardEntrance 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes cardEntrance {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .login-card h2 {
+            font-size: 26px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+            color: #ffffff;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .login-card p {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 30px;
+            font-weight: 500;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            position: relative;
+            text-align: left;
+        }
+
+        .input-group label {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+            display: block;
+            letter-spacing: 0.5px;
+        }
+
+        .input-group input {
+            width: 100%;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1.5px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 0 16px;
+            font-size: 16px;
+            color: white;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .input-group input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .input-group input:focus {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: #38bdf8;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.35);
+        }
+
+        .remember-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 30px;
+            text-align: left;
+            user-select: none;
+        }
+
+        .remember-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #38bdf8;
+        }
+
+        .remember-group label {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.8);
+            cursor: pointer;
+            font-weight: 500;
+            margin-bottom: 0;
+            text-transform: none;
+        }
+
+        .btn-login {
+            width: 100%;
+            height: 52px;
+            background: linear-gradient(90deg, #38bdf8 0%, #005baa 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);
+            letter-spacing: 0.5px;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(56, 189, 248, 0.45);
+            background: linear-gradient(90deg, #005baa 0%, #38bdf8 100%);
+        }
+
+        .btn-login:active {
+            transform: translateY(0);
+        }
+
+        .error-msg {
+            color: #ef4444;
+            font-size: 13px;
+            font-weight: 600;
+            margin-top: 15px;
+            display: none;
+            text-align: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Shake animation for wrong password */
+        .shake {
+            animation: shakeAnim 0.4s ease;
+        }
+
+        @keyframes shakeAnim {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+
+        /* Header Logout Button */
+        .header-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        .btn-logout {
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-logout:hover {
+            background: #ef4444;
+            color: white;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+        }
+
+        .btn-logout:active {
+            transform: translateY(-50%) scale(0.95);
+        }
+
+        @media (max-width: 768px) {
+            .header-wrapper {
+                flex-direction: column;
+                gap: 12px;
+                margin-bottom: 1.5rem;
+            }
+            .btn-logout {
+                position: static;
+                transform: none;
+                width: 100%;
+                justify-content: center;
+            }
+            .btn-logout:active {
+                transform: scale(0.98);
+            }
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <header>
-        <h1>QUẢN LÝ KHO SIM VNPT</h1>
-    </header>
+<!-- Màn hình Đăng nhập Bảo mật (Kính mờ) -->
+<div id="loginScreen">
+    <div class="login-card">
+        <h2>HỆ THỐNG KHO SIM</h2>
+        <p>Vui lòng đăng nhập để truy cập kho số bảo mật</p>
+        <div class="input-group">
+            <label for="username">Tên đăng nhập</label>
+            <input type="text" id="username" placeholder="Nhập tên đăng nhập..." required autocomplete="username">
+        </div>
+        <div class="input-group">
+            <label for="password">Mật khẩu</label>
+            <input type="password" id="password" placeholder="Nhập mật khẩu..." required autocomplete="current-password">
+        </div>
+        <div class="remember-group">
+            <input type="checkbox" id="rememberMe">
+            <label for="rememberMe">Ghi nhớ đăng nhập</label>
+        </div>
+        <button class="btn-login" onclick="handleLogin()">ĐĂNG NHẬP</button>
+        <div class="error-msg" id="loginError">Tên đăng nhập hoặc mật khẩu không chính xác!</div>
+    </div>
+</div>
+
+<div id="appContainer" style="display: none;">
+    <div class="container">
+        <header class="header-wrapper">
+            <h1>QUẢN LÝ KHO SIM VNPT</h1>
+            <button class="btn-logout" onclick="handleLogout()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                ĐĂNG XUẤT
+            </button>
+        </header>
 
     <div class="search-box">
         <div class="controls">
@@ -19720,6 +19977,7 @@
                 </div>
             </div></div>
 </div>
+</div>
 
 <!-- Floating Action Pill for Mobile -->
 <div class="mobile-actions-pill" id="mobileActionsPill">
@@ -20064,6 +20322,111 @@
     document.getElementById('search').addEventListener('keydown', e => { if(e.key === 'Enter') handleGlobalSearch(); });
     
     refreshHints();
+
+    // --- SECURE AUTHENTICATION SYSTEM ---
+    
+    // Tên đăng nhập & Mật khẩu được mã hóa SHA-256 (admin / vnpt2026)
+    const USER_HASH = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918';
+    const PASS_HASH = '0883fb27fe5c0a7721a78a406a86d4296b117d0e6527a6b5347996936526de92';
+    
+    // Hàm băm chuỗi sử dụng Web Crypto API bảo mật và native
+    async function sha256(message) {
+        const msgBuffer = new TextEncoder().encode(message);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    // Kiểm tra trạng thái đăng nhập khi trang tải (onload)
+    window.addEventListener('DOMContentLoaded', async () => {
+        const token = localStorage.getItem('simso_auth_token') || sessionStorage.getItem('simso_auth_token');
+        if (token) {
+            // Kiểm tra tính hợp lệ của token
+            const expectedToken = await sha256(USER_HASH + PASS_HASH);
+            if (token === expectedToken) {
+                unlockApp();
+                return;
+            }
+        }
+        // Hiển thị màn hình Login
+        document.getElementById('loginScreen').style.display = 'flex';
+        document.getElementById('appContainer').style.display = 'none';
+        
+        // Thêm phím Enter cho các input đăng nhập
+        document.getElementById('password').addEventListener('keydown', e => {
+            if (e.key === 'Enter') handleLogin();
+        });
+        document.getElementById('username').addEventListener('keydown', e => {
+            if (e.key === 'Enter') document.getElementById('password').focus();
+        });
+    });
+
+    // Mở khóa ứng dụng chính
+    function unlockApp() {
+        const loginScreen = document.getElementById('loginScreen');
+        const appContainer = document.getElementById('appContainer');
+        
+        // Hiệu ứng mờ dần màn hình đăng nhập
+        loginScreen.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+        loginScreen.style.opacity = '0';
+        loginScreen.style.transform = 'scale(1.05)';
+        
+        setTimeout(() => {
+            loginScreen.style.display = 'none';
+            appContainer.style.display = 'block';
+        }, 500);
+    }
+
+    // Xử lý sự kiện đăng nhập
+    window.handleLogin = async function() {
+        const userVal = document.getElementById('username').value.trim();
+        const passVal = document.getElementById('password').value;
+        const rememberMe = document.getElementById('rememberMe').checked;
+        const errorEl = document.getElementById('loginError');
+        const cardEl = document.querySelector('.login-card');
+        
+        if (!userVal || !passVal) {
+            showLoginError("Vui lòng điền đầy đủ thông tin!");
+            return;
+        }
+
+        const inputUserHash = await sha256(userVal);
+        const inputPassHash = await sha256(passVal);
+
+        if (inputUserHash === USER_HASH && inputPassHash === PASS_HASH) {
+            // Đăng nhập thành công
+            errorEl.style.display = 'none';
+            const authToken = await sha256(USER_HASH + PASS_HASH);
+            
+            if (rememberMe) {
+                localStorage.setItem('simso_auth_token', authToken);
+            } else {
+                sessionStorage.setItem('simso_auth_token', authToken);
+            }
+            
+            unlockApp();
+        } else {
+            // Đăng nhập thất bại - rung lắc form
+            cardEl.classList.remove('shake');
+            void cardEl.offsetWidth; // Trigger reflow
+            cardEl.classList.add('shake');
+            showLoginError("Tên đăng nhập hoặc mật khẩu không chính xác!");
+        }
+    };
+
+    // Hiển thị thông báo lỗi
+    function showLoginError(msg) {
+        const errorEl = document.getElementById('loginError');
+        errorEl.textContent = msg;
+        errorEl.style.display = 'block';
+    }
+
+    // Đăng xuất
+    window.handleLogout = function() {
+        localStorage.removeItem('simso_auth_token');
+        sessionStorage.removeItem('simso_auth_token');
+        window.location.reload();
+    };
 
     // --- MOBILE & UX ENHANCEMENTS ---
     
