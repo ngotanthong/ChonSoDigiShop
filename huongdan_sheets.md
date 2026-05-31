@@ -64,7 +64,7 @@ function doGet(e) {
           sheet.getRange(userRowIndex, 5).setValue("Hết hạn");
           return ContentService.createTextOutput(JSON.stringify({ 
             status: "expired", 
-            message: "Tài khoản của bạn đã hết hạn sử dụng! Vui lòng liên hệ Admin để gia hạn." 
+            message: "Tài khoản của bạn đã hết hạn sử dụng! Vui lòng liên hệ Admin qua SĐT 0947.050.848 để gia hạn." 
           })).setMimeType(ContentService.MimeType.JSON);
         }
       }
@@ -73,7 +73,7 @@ function doGet(e) {
       if (status.toString().toLowerCase() === "locked" || status.toString().toLowerCase() === "bị khóa" || status.toString().toLowerCase() === "hết hạn") {
         return ContentService.createTextOutput(JSON.stringify({ 
           status: "locked", 
-          message: status.toString().toLowerCase() === "hết hạn" ? "Tài khoản của bạn đã hết hạn sử dụng! Vui lòng liên hệ Admin để gia hạn." : "Tài khoản của bạn đã bị khóa bởi Admin!" 
+          message: status.toString().toLowerCase() === "hết hạn" ? "Tài khoản của bạn đã hết hạn sử dụng! Vui lòng liên hệ Admin qua SĐT 0947.050.848 để gia hạn." : "Tài khoản của bạn đã bị khóa! Vui lòng liên hệ SĐT 0947.050.848 để được hỗ trợ." 
         })).setMimeType(ContentService.MimeType.JSON);
       }
       
@@ -82,7 +82,7 @@ function doGet(e) {
         if (currentActiveDevice && currentActiveDevice !== deviceId) {
           return ContentService.createTextOutput(JSON.stringify({ 
             status: "device_mismatch", 
-            message: "Tài khoản này đã được liên kết cố định với một thiết bị khác! Vui lòng liên hệ Admin để mở khóa." 
+            message: "Tài khoản này đã được liên kết cố định với một thiết bị khác! Vui lòng liên hệ Admin qua SĐT 0947.050.848 để mở khóa." 
           })).setMimeType(ContentService.MimeType.JSON);
         }
         
