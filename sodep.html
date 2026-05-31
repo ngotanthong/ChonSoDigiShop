@@ -665,6 +665,7 @@
             return {
                 score: score,
                 categories: categories,
+                reasonsArr: reasons,
                 reasonText: reasons.join(' + ') || 'Phong Thủy Khá',
                 highlight: highlight
             };
@@ -761,6 +762,7 @@
             scoredData = [];
             // Dùng Map để loại bỏ trùng lặp số
             const uniqueSims = new Map();
+            const allReasons = new Set();
             
             allScannedData.forEach(item => {
                 const fNum = formatNumber(item.so_tb);
@@ -773,6 +775,7 @@
                             fNum: fNum,
                             ai: aiResult
                         });
+                        aiResult.reasonsArr.forEach(r => allReasons.add(r));
                     }
                 }
             });
@@ -780,13 +783,31 @@
             scoredData = Array.from(uniqueSims.values());
             // Sắp xếp theo điểm từ cao xuống thấp
             scoredData.sort((a, b) => b.ai.score - a.ai.score);
+
+            // Tạo các nút filter động dựa trên các tag hiện có
+            const filterTabs = document.getElementById('filterTabs');
+            filterTabs.innerHTML = '<button class="tab-btn active" onclick="filterCategory(\'all\', event)">Tất cả</button>';
+            
+            const sortedReasons = Array.from(allReasons).sort();
+            sortedReasons.forEach(reason => {
+                const btn = document.createElement('button');
+                btn.className = 'tab-btn';
+                btn.textContent = reason;
+                btn.onclick = (e) => filterCategory(reason, e);
+                filterTabs.appendChild(btn);
+            });
         }
 
-        function filterCategory(cat) {
+        function filterCategory(cat, event) {
             currentCategory = cat;
             currentDisplayCount = 100; // Reset pagination khi đổi danh mục
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
+            if (event && event.target) {
+                event.target.classList.add('active');
+            } else {
+                const firstBtn = document.querySelector('.tab-btn');
+                if (firstBtn) firstBtn.classList.add('active');
+            }
             renderResults();
         }
 
@@ -814,7 +835,7 @@
             
             let displayData = scoredData;
             if (currentCategory !== 'all') {
-                displayData = scoredData.filter(item => item.ai.categories.includes(currentCategory));
+                displayData = scoredData.filter(item => item.ai.reasonsArr.includes(currentCategory));
             }
             
             if (displayData.length === 0) {
