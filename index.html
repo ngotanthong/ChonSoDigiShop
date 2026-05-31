@@ -24189,6 +24189,12 @@
         }
 
         async function handleGlobalSearch() {
+            // Kiểm tra session thiết bị trước khi cho phép tìm kiếm/quét
+            if (typeof checkDeviceSession === 'function') {
+                const isSessionValid = await checkDeviceSession();
+                if (!isSessionValid) return;
+            }
+
             const search = document.getElementById('search').value.trim();
             const commitValue = document.getElementById('commit').value;
             const prefixSelect = document.getElementById('prefixSelect').value;
@@ -24454,6 +24460,25 @@
         refreshHints();
 
         // --- SECURE AUTHENTICATION SYSTEM ---
+        
+        // CẤU HÌNH GOOGLE SHEET API (Ví dụ: 'https://script.google.com/macros/s/XXXXX/exec')
+        // Dán đường dẫn Web App của anh vào đây để kích hoạt tính năng khóa thiết bị cố định!
+        const GAS_API_URL = ''; 
+
+        // Sinh mã định danh thiết bị duy nhất (UUID)
+        function generateUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0,
+                    v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
+        let deviceId = localStorage.getItem('simso_device_id');
+        if (!deviceId) {
+            deviceId = generateUUID();
+            localStorage.setItem('simso_device_id', deviceId);
+        }
 
         // Hàm băm chuỗi sử dụng Web Crypto API bảo mật và native
         async function sha256(message) {
@@ -24463,25 +24488,72 @@
             return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
         }
 
+        // Kiểm tra session thiết bị thời gian thực
+        async function checkDeviceSession() {
+            if (!GAS_API_URL) return true; // Bỏ qua nếu chưa cấu hình URL (fallback offline)
+            
+            const token = localStorage.getItem('simso_auth_token') || sessionStorage.getItem('simso_auth_token');
+            const authUser = localStorage.getItem('simso_auth_user') || sessionStorage.getItem('simso_auth_user');
+            
+            if (!token || !authUser) return false;
+            
+            try {
+                const response = await fetch(`${GAS_API_URL}?action=check&user=${encodeURIComponent(authUser)}&deviceId=${deviceId}`);
+                const resData = await response.json();
+                
+                if (resData.status !== "ok") {
+                    alert(resData.message || "Tài khoản của bạn đã bị khóa hoặc đăng nhập từ thiết bị khác!");
+                    handleLogout();
+                    return false;
+                }
+                return true;
+            } catch (err) {
+                console.error("Lỗi đồng bộ thiết bị:", err);
+                return true; // Fallback khi lỗi mạng để không làm phiền trải nghiệm người dùng
+            }
+        }
+
         // Kiểm tra trạng thái đăng nhập khi trang tải (onload)
         window.addEventListener('DOMContentLoaded', async () => {
             const token = localStorage.getItem('simso_auth_token') || sessionStorage.getItem('simso_auth_token');
-            if (token) {
-                // Kiểm tra tính hợp lệ của token đối chiếu với mọi tài khoản được cấp phép
+            const authUser = localStorage.getItem('simso_auth_user') || sessionStorage.getItem('simso_auth_user');
+            
+            if (token && authUser) {
+                // 1. Kiểm tra tính hợp lệ của token offline trước
                 let verified = false;
-                if (window.ALLOWED_USERS) {
-                    for (const user in window.ALLOWED_USERS) {
-                        const expectedPassHash = window.ALLOWED_USERS[user];
-                        const expectedToken = await sha256(user + expectedPassHash);
-                        if (token === expectedToken) {
-                            verified = true;
-                            break;
-                        }
+                if (window.ALLOWED_USERS && window.ALLOWED_USERS[authUser]) {
+                    const expectedPassHash = window.ALLOWED_USERS[authUser];
+                    const expectedToken = await sha256(authUser + expectedPassHash);
+                    if (token === expectedToken) {
+                        verified = true;
                     }
                 }
+                
+                // 2. Kiểm tra thiết bị online trên Google Sheet
                 if (verified) {
-                    unlockApp();
-                    return;
+                    if (GAS_API_URL) {
+                        try {
+                            const response = await fetch(`${GAS_API_URL}?action=check&user=${encodeURIComponent(authUser)}&deviceId=${deviceId}`);
+                            const resData = await response.json();
+                            
+                            if (resData.status === "ok") {
+                                unlockApp();
+                                return;
+                            } else {
+                                alert(resData.message || "Thiết bị này không khớp với liên kết cố định của tài khoản!");
+                                handleLogout();
+                                return;
+                            }
+                        } catch (err) {
+                            console.error("Lỗi xác thực thiết bị khi tải trang:", err);
+                            // Fallback cho phép truy cập nếu lỗi mạng và token offline hợp lệ
+                            unlockApp();
+                            return;
+                        }
+                    } else {
+                        unlockApp();
+                        return;
+                    }
                 }
             }
 
@@ -24503,7 +24575,6 @@
             const loginScreen = document.getElementById('loginScreen');
             const appContainer = document.getElementById('appContainer');
 
-            // Hiệu ứng mờ dần màn hình đăng nhập
             loginScreen.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
             loginScreen.style.opacity = '0';
             loginScreen.style.transform = 'scale(1.05)';
@@ -24514,7 +24585,7 @@
             }, 500);
         }
 
-        // Xử lý sự kiện đăng nhập đối chiếu động
+        // Xử lý sự kiện đăng nhập và khóa thiết bị cố định
         window.handleLogin = async function () {
             const userVal = document.getElementById('username').value.trim().toLowerCase();
             const passVal = document.getElementById('password').value;
@@ -24527,22 +24598,39 @@
                 return;
             }
 
-            // Kiểm tra xem tên đăng nhập có tồn tại trong danh sách accounts.js không
+            // 1. Kiểm tra tài khoản & mật khẩu cục bộ trước
             if (window.ALLOWED_USERS && window.ALLOWED_USERS[userVal]) {
                 const expectedPassHash = window.ALLOWED_USERS[userVal];
                 const inputPassHash = await sha256(passVal);
 
                 if (inputPassHash === expectedPassHash) {
+                    // 2. Đồng bộ khóa thiết bị cố định trên Google Sheet
+                    if (GAS_API_URL) {
+                        try {
+                            const response = await fetch(`${GAS_API_URL}?action=login&user=${encodeURIComponent(userVal)}&deviceId=${deviceId}&userAgent=${encodeURIComponent(navigator.userAgent)}`);
+                            const resData = await response.json();
+                            
+                            if (resData.status !== "ok") {
+                                showLoginError(resData.message || "Tài khoản đang liên kết với thiết bị khác!");
+                                return;
+                            }
+                        } catch (err) {
+                            console.error("Lỗi kết nối đồng bộ thiết bị:", err);
+                            showLoginError("Không thể kết nối máy chủ bảo mật thiết bị!");
+                            return;
+                        }
+                    }
+
                     // Đăng nhập thành công
                     errorEl.style.display = 'none';
-
-                    // Tạo token dựa trên cặp User + PassHash để phân biệt các tài khoản
                     const authToken = await sha256(userVal + expectedPassHash);
 
                     if (rememberMe) {
                         localStorage.setItem('simso_auth_token', authToken);
+                        localStorage.setItem('simso_auth_user', userVal);
                     } else {
                         sessionStorage.setItem('simso_auth_token', authToken);
+                        sessionStorage.setItem('simso_auth_user', userVal);
                     }
 
                     unlockApp();
@@ -24565,9 +24653,22 @@
         }
 
         // Đăng xuất
-        window.handleLogout = function () {
+        window.handleLogout = async function () {
+            const authUser = localStorage.getItem('simso_auth_user') || sessionStorage.getItem('simso_auth_user');
+            
+            // Thông báo tắt trạng thái Online trên Google Sheet
+            if (GAS_API_URL && authUser) {
+                try {
+                    await fetch(`${GAS_API_URL}?action=logout&user=${encodeURIComponent(authUser)}`);
+                } catch (err) {
+                    console.error("Lỗi đăng xuất online:", err);
+                }
+            }
+            
             localStorage.removeItem('simso_auth_token');
+            localStorage.removeItem('simso_auth_user');
             sessionStorage.removeItem('simso_auth_token');
+            sessionStorage.removeItem('simso_auth_user');
             window.location.reload();
         };
 
@@ -24602,9 +24703,15 @@
         };
 
         // Quick single-card tap-to-copy handler using event delegation
-        document.getElementById('results').addEventListener('click', (e) => {
+        document.getElementById('results').addEventListener('click', async (e) => {
             const card = e.target.closest('.sim-card');
             if (!card) return;
+
+            // Kiểm tra session thiết bị trước khi cho phép copy
+            if (typeof checkDeviceSession === 'function') {
+                const isSessionValid = await checkDeviceSession();
+                if (!isSessionValid) return;
+            }
 
             // Exclude copy if user clicks a button inside the card (none currently, but good practice)
             if (e.target.closest('button') || e.target.closest('a')) return;
