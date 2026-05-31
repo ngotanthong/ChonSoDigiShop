@@ -342,6 +342,7 @@
                 <button class="tab-btn" onclick="filterCategory('locphat')">🧧 Lộc Phát</button>
                 <button class="tab-btn" onclick="filterCategory('sotien')">📈 Số Tiến</button>
                 <button class="tab-btn" onclick="filterCategory('solap')">🔁 Số Lặp</button>
+                <button class="tab-btn" onclick="filterCategory('soganh')">⚖️ Số Gánh</button>
                 <button class="tab-btn" onclick="filterCategory('duoidep')">✨ Đuôi Đẹp</button>
                 <button class="tab-btn" onclick="filterCategory('phongthuy')">☯️ Phong Thủy</button>
             </div>
@@ -588,12 +589,40 @@
                 highlight = highlight || numStr.slice(-3);
             }
 
-            // 5. Số Lặp ABAB (6868, 7979)
-            if (/(\d{2})\1$/.test(numStr)) {
+            // 5. Số Lặp Cao Cấp (Taxi, Lặp Kép) & Lặp Thường (ABAB)
+            if (/(\d{2})\1\1$/.test(numStr)) { // ABABAB (Taxi 3 cặp)
+                score += 45;
+                categories.push('solap');
+                reasons.push('Taxi Đẹp');
+                highlight = highlight || numStr.slice(-6);
+            } else if (/(\d{3})\1$/.test(numStr)) { // ABCABC (Taxi cụm 3)
+                score += 40;
+                categories.push('solap');
+                reasons.push('Taxi Đẹp');
+                highlight = highlight || numStr.slice(-6);
+            } else if (/(\d)\1(\d)\2$/.test(numStr) && numStr.slice(-2,-1) !== numStr.slice(-1)) { // AABB
+                score += 25;
+                categories.push('solap');
+                reasons.push('Lặp Kép');
+                highlight = highlight || numStr.slice(-4);
+            } else if (/(\d{2})\1$/.test(numStr)) { // ABAB
                 score += 20;
                 categories.push('solap');
                 reasons.push('Lặp Cặp');
                 highlight = highlight || numStr.slice(-4);
+            }
+
+            // 5.5. Số Gánh / Số Đảo (ABBA, ABA)
+            if (/(\d)(\d)\2\1$/.test(numStr) && numStr.slice(-1) !== numStr.slice(-2,-1)) { // ABBA
+                score += 25;
+                categories.push('soganh');
+                reasons.push('Gánh Đảo (ABBA)');
+                highlight = highlight || numStr.slice(-4);
+            } else if (/(\d)(\d)\1$/.test(numStr) && numStr.slice(-1) !== numStr.slice(-2,-1)) { // ABA
+                score += 15;
+                categories.push('soganh');
+                reasons.push('Gánh (ABA)');
+                highlight = highlight || numStr.slice(-3);
             }
 
             // 6. Đuôi Đẹp phong thủy (79: thần tài lớn, 39: thần tài nhỏ, 38: ông địa)
