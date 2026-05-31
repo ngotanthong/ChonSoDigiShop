@@ -549,14 +549,14 @@
         /* --- Kết quả SIM --- */
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 16px;
+            grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+            gap: 12px;
         }
 
         .sim-card {
             background: var(--surface);
             border-radius: var(--radius);
-            padding: 16px;
+            padding: 12px 14px;
             border: 1px solid var(--border);
             position: relative;
             transition: all 0.2s;
@@ -567,13 +567,13 @@
         }
 
         .sim-card:hover {
-            transform: translateY(-3px);
+            transform: translateY(-2px);
             box-shadow: var(--shadow);
             border-color: #cbd5e1;
         }
 
         .sim-number {
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 700;
             color: var(--primary);
             margin-bottom: 4px;
@@ -586,10 +586,11 @@
 
         .sim-card-header {
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-end;
             align-items: center;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
             width: 100%;
+            gap: 6px;
         }
 
         .sim-score {
@@ -640,12 +641,12 @@
         }
 
         .sim-reason {
-            font-size: 13px;
+            font-size: 12px;
             color: #059669;
             font-weight: 500;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
             background: #d1fae5;
-            padding: 4px 8px;
+            padding: 3px 6px;
             border-radius: 4px;
             display: inline-block;
             align-self: flex-start;
@@ -656,7 +657,7 @@
             justify-content: space-between;
             align-items: flex-end;
             margin-top: auto;
-            padding-top: 12px;
+            padding-top: 10px;
             border-top: 1px dashed var(--border);
         }
 
@@ -665,22 +666,22 @@
         }
 
         .sim-price {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 700;
             color: #ef4444;
         }
 
         .sim-sub {
-            font-size: 12px;
+            font-size: 11px;
             color: var(--text-sub);
         }
 
         .sim-commit {
-            font-size: 13px;
+            font-size: 12px;
             color: var(--text-main);
             font-weight: 500;
             background: #f1f5f9;
-            padding: 4px 8px;
+            padding: 3px 6px;
             border-radius: 4px;
         }
 
