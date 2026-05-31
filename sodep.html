@@ -463,14 +463,63 @@
             margin-bottom: 0;
         }
 
-        /* --- Bộ lọc Danh mục --- */
+        /* --- Toolbar chứa lọc và sắp xếp --- */
+        .toolbar {
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+            background: var(--surface);
+            padding: 16px 20px;
+            border-radius: var(--radius);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+        }
+
         .filter-tabs {
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
-            margin-bottom: 20px;
-            justify-content: center;
-            display: none;
+            justify-content: flex-start;
+        }
+
+        .sort-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sort-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-sub);
+            white-space: nowrap;
+        }
+
+        .sort-select {
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-main);
+            background-color: white;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.2s;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .sort-select:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .sort-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
         }
 
         .tab-btn {
@@ -768,16 +817,18 @@
                 <div class="status-text" id="statusText">Đang chuẩn bị quét...</div>
             </div>
 
-            <div class="filter-tabs" id="filterTabs">
-                <button class="tab-btn active" onclick="filterCategory('all')">Tất cả</button>
-                <button class="tab-btn" onclick="filterCategory('tamhoa')">🔥 Tam Hoa</button>
-                <button class="tab-btn" onclick="filterCategory('tuquy')">💎 Tứ Quý</button>
-                <button class="tab-btn" onclick="filterCategory('locphat')">🧧 Lộc Phát</button>
-                <button class="tab-btn" onclick="filterCategory('sotien')">📈 Số Tiến</button>
-                <button class="tab-btn" onclick="filterCategory('solap')">🔁 Số Lặp</button>
-                <button class="tab-btn" onclick="filterCategory('soganh')">⚖️ Số Gánh</button>
-                <button class="tab-btn" onclick="filterCategory('duoidep')">✨ Đuôi Đẹp</button>
-                <button class="tab-btn" onclick="filterCategory('phongthuy')">☯️ Phong Thủy</button>
+            <div class="toolbar" id="toolbar">
+                <div class="filter-tabs" id="filterTabs">
+                    <button class="tab-btn active" onclick="filterCategory('all', event)">Tất cả</button>
+                </div>
+                <div class="sort-container">
+                    <label for="sortBy" class="sort-label">Sắp xếp:</label>
+                    <select id="sortBy" class="sort-select" onchange="handleSortChange()">
+                        <option value="score-desc">⭐ Điểm AI cao nhất</option>
+                        <option value="price-asc">💵 Giá cước: Thấp đến Cao</option>
+                        <option value="price-desc">💵 Giá cước: Cao đến Thấp</option>
+                    </select>
+                </div>
             </div>
 
             <div class="grid" id="resultGrid"></div>
@@ -817,6 +868,7 @@
         let scoredData = [];
         let currentCategory = 'all';
         let currentDisplayCount = 100;
+        let currentSort = 'score-desc';
 
         // Sinh mã định danh thiết bị
         function generateUUID() {
@@ -1141,13 +1193,13 @@
             const progCont = document.getElementById('progressContainer');
             const progBar = document.getElementById('progressBar');
             const statusTxt = document.getElementById('statusText');
-            const filterTabs = document.getElementById('filterTabs');
+            const toolbar = document.getElementById('toolbar');
 
             btnScan.disabled = true;
             btnScan.innerHTML = '<span class="login-spinner" style="width: 18px; height: 18px; border-width: 2px;"></span> ĐANG QUÉT...';
             progCont.style.display = 'block';
             statusTxt.style.display = 'block';
-            filterTabs.style.display = 'none';
+            if (toolbar) toolbar.style.display = 'none';
             document.getElementById('resultGrid').innerHTML = '';
             document.getElementById('emptyState').style.display = 'none';
 
@@ -1155,6 +1207,10 @@
             scoredData = [];
             currentCategory = 'all';
             currentDisplayCount = 100;
+            currentSort = 'score-desc';
+            if (document.getElementById('sortBy')) {
+                document.getElementById('sortBy').value = 'score-desc';
+            }
             document.getElementById('btnLoadMore').style.display = 'none';
 
             const tasks = [];
@@ -1201,7 +1257,7 @@
                 processAIScores();
 
                 if (scoredData.length > 0) {
-                    filterTabs.style.display = 'flex';
+                    if (toolbar) toolbar.style.display = 'flex';
                     renderResults();
                 } else {
                     document.getElementById('emptyState').style.display = 'block';
@@ -1245,8 +1301,8 @@
             });
 
             scoredData = Array.from(uniqueSims.values());
-            // Sắp xếp theo điểm từ cao xuống thấp
-            scoredData.sort((a, b) => b.ai.score - a.ai.score);
+            // Sắp xếp theo cấu hình hiện tại
+            sortScoredData();
 
             // Tạo các nút filter động dựa trên các tag hiện có
             const filterTabs = document.getElementById('filterTabs');
@@ -1269,6 +1325,26 @@
                 btn.onclick = (e) => filterCategory(reason, e);
                 filterTabs.appendChild(btn);
             });
+        }
+
+        function sortScoredData() {
+            if (currentSort === 'score-desc') {
+                scoredData.sort((a, b) => b.ai.score - a.ai.score);
+            } else if (currentSort === 'price-asc') {
+                scoredData.sort((a, b) => (Number(a.monthly) || 0) - (Number(b.monthly) || 0));
+            } else if (currentSort === 'price-desc') {
+                scoredData.sort((a, b) => (Number(b.monthly) || 0) - (Number(a.monthly) || 0));
+            }
+        }
+
+        function handleSortChange() {
+            const sortBy = document.getElementById('sortBy');
+            if (sortBy) {
+                currentSort = sortBy.value;
+                sortScoredData();
+                currentDisplayCount = 100; // Reset pagination
+                renderResults();
+            }
         }
 
         function filterCategory(cat, event) {
