@@ -1389,10 +1389,13 @@
             }
             document.getElementById('btnLoadMore').style.display = 'none';
 
-            let scanPrefixes = prefVal ? [prefVal] : PREFIXES;
+            let scanPrefixes = prefVal ? [prefVal] : (searchVal ? [''] : PREFIXES);
             
-            let scanCommits = ['']; // Default fetch all if price is "Tất cả mức giá"
-            if (priceVal === "0") scanCommits = ['0'];
+            let scanCommits = COMMITS; // Default fetch standard commits if price is "Tất cả mức giá"
+            if (searchVal && priceVal === "") {
+                // Nếu có tìm kiếm cụ thể và không chọn giá, thử quét rỗng để lấy tất cả
+                scanCommits = [''];
+            } else if (priceVal === "0") scanCommits = ['0'];
             else if (priceVal === "100000") scanCommits = ['0', '100000'];
             else if (priceVal === "200000") scanCommits = ['0', '100000', '150000', '200000'];
             else if (priceVal === "400000") scanCommits = ['0', '100000', '150000', '200000', '300000', '400000'];
@@ -1405,6 +1408,11 @@
                 for (const c of scanCommits) {
                     tasks.push({ pref, c, search: searchVal });
                 }
+            }
+            
+            // Nếu có nhập số và có chọn đầu số hoặc giá, thêm 1 luồng quét chính xác số đó trên toàn hệ thống
+            if (searchVal) {
+                tasks.push({ pref: '', c: '', search: searchVal });
             }
 
             const totalRequests = tasks.length;
@@ -1440,8 +1448,8 @@
 
                 statusTxt.textContent = 'Đang dùng AI chấm điểm số đẹp...';
 
-                // Nếu có tìm kiếm số cụ thể, cho phép mọi mức điểm (0) để hiển thị số tìm được
-                processAIScores(searchVal ? 0 : 20);
+                // Nếu có tìm kiếm số cụ thể, cho phép mọi mức điểm (-100) để hiển thị số tìm được
+                processAIScores(searchVal ? -100 : 20);
 
                 if (scoredData.length > 0) {
                     if (toolbar) toolbar.style.display = 'flex';
