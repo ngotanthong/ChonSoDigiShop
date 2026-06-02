@@ -1154,9 +1154,14 @@
                 isLap = true;
             }
 
-            // 5.5. Số Gánh / Số Đảo (ABBA, ABA)
+            // 5.5. Số Gánh / Số Đảo (ABBA, ABA, AB CD AB)
             if (!isLap) {
-                if (/(\d)(\d)\2\1$/.test(numStr) && numStr.slice(-1) !== numStr.slice(-2, -1)) { // ABBA
+                if (/(\d{2})\d{2}\1$/.test(numStr)) { // AB CD AB (Gánh cặp 6 số, ví dụ 757475)
+                    score += 30;
+                    categories.push('soganh');
+                    reasons.push('Gánh Cặp');
+                    highlight = highlight || numStr.slice(-6);
+                } else if (/(\d)(\d)\2\1$/.test(numStr) && numStr.slice(-1) !== numStr.slice(-2, -1)) { // ABBA
                     score += 25;
                     categories.push('soganh');
                     reasons.push('Gánh Đảo (ABBA)');
@@ -1425,18 +1430,18 @@
 
         async function downloadCard(phoneNum, btnEl, event) {
             event.stopPropagation(); // Ngăn sự kiện copy số điện thoại khi bấm nút tải
-            
+
             const card = btnEl.closest('.sim-card');
             if (!card) return;
-            
+
             // Thêm class để ẩn nút tải khi chụp ảnh
             card.classList.add('is-capturing');
-            
+
             // Thay đổi giao diện nút tạm thời thành trạng thái loading
             const originalHTML = btnEl.innerHTML;
             btnEl.disabled = true;
             btnEl.innerHTML = '<span class="login-spinner" style="width: 12px; height: 12px; border-width: 1.5px; border-top-color: currentColor;"></span>';
-            
+
             try {
                 // Tạo ảnh chất lượng cao với scale=3 (cực kỳ sắc nét)
                 const canvas = await html2canvas(card, {
@@ -1445,10 +1450,10 @@
                     backgroundColor: '#ffffff', // Đảm bảo nền trắng
                     logging: false
                 });
-                
+
                 // Chuyển canvas thành URL ảnh
                 const imgData = canvas.toDataURL('image/png');
-                
+
                 // Tạo phần tử tải ẩn
                 const link = document.createElement('a');
                 link.download = `SIM_VIP_${phoneNum}.png`;
