@@ -860,27 +860,6 @@
                     </h3>
                     <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
                         <input type="text" id="advSearch" placeholder="Nhập số mong muốn (VD: 6868)..." style="flex: 1; min-width: 200px; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); font-size: 14px; outline: none; transition: all 0.3s;" onfocus="this.style.borderColor='var(--primary)'; this.style.boxShadow='0 0 0 2px rgba(0,91,170,0.15)'" onblur="this.style.borderColor='var(--border)'; this.style.boxShadow='none'">
-                        <select id="advPrefix" style="padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); font-size: 14px; outline: none; background: #fff; min-width: 150px; transition: all 0.3s;" onfocus="this.style.borderColor='var(--primary)'; this.style.boxShadow='0 0 0 2px rgba(0,91,170,0.15)'" onblur="this.style.borderColor='var(--border)'; this.style.boxShadow='none'">
-                            <option value="">Tất cả đầu số</option>
-                            <option value="8491">091</option>
-                            <option value="8494">094</option>
-                            <option value="8488">088</option>
-                            <option value="8481">081</option>
-                            <option value="8482">082</option>
-                            <option value="8483">083</option>
-                            <option value="8484">084</option>
-                            <option value="8485">085</option>
-                        </select>
-                        <select id="advPrice" style="padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); font-size: 14px; outline: none; background: #fff; min-width: 150px; transition: all 0.3s;" onfocus="this.style.borderColor='var(--primary)'; this.style.boxShadow='0 0 0 2px rgba(0,91,170,0.15)'" onblur="this.style.borderColor='var(--border)'; this.style.boxShadow='none'">
-                            <option value="">Tất cả mức giá</option>
-                            <option value="0">Cam kết 0đ</option>
-                            <option value="100000">Dưới 100k/tháng</option>
-                            <option value="200000">Dưới 200k/tháng</option>
-                            <option value="400000">Dưới 400k/tháng</option>
-                            <option value="500000">Dưới 500k/tháng</option>
-                            <option value="1000000">Dưới 1 Triệu/tháng</option>
-                            <option value="2000000">Dưới 2 Triệu/tháng</option>
-                        </select>
                     </div>
                     <button class="btn-scan" id="btnScanAdv" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); width: 100%; justify-content: center; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); transition: all 0.3s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(16,185,129,0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(16,185,129,0.3)'" onclick="startAdvancedScan()">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1360,8 +1339,11 @@
 
         async function startAdvancedScan() {
             const searchVal = document.getElementById('advSearch').value.trim();
-            const prefVal = document.getElementById('advPrefix').value;
-            const priceVal = document.getElementById('advPrice').value;
+
+            if (!searchVal) {
+                alert("Vui lòng nhập số bạn muốn tìm!");
+                return;
+            }
 
             const btnScan = document.getElementById('btnScan');
             const btnScanAdv = document.getElementById('btnScanAdv');
@@ -1389,42 +1371,21 @@
             }
             document.getElementById('btnLoadMore').style.display = 'none';
 
-            let scanPrefixes = prefVal ? [prefVal] : (searchVal ? [''] : PREFIXES);
-            
-            let scanCommits = COMMITS; // Default fetch standard commits if price is "Tất cả mức giá"
-            if (searchVal && priceVal === "") {
-                // Nếu có tìm kiếm cụ thể và không chọn giá, thử quét rỗng để lấy tất cả
-                scanCommits = [''];
-            } else if (priceVal === "0") scanCommits = ['0'];
-            else if (priceVal === "100000") scanCommits = ['0', '100000'];
-            else if (priceVal === "200000") scanCommits = ['0', '100000', '150000', '200000'];
-            else if (priceVal === "400000") scanCommits = ['0', '100000', '150000', '200000', '300000', '400000'];
-            else if (priceVal === "500000") scanCommits = ['0', '100000', '150000', '200000', '300000', '400000', '500000'];
-            else if (priceVal === "1000000") scanCommits = ['0', '100000', '150000', '200000', '300000', '400000', '500000', '600000', '700000', '800000', '900000', '1000000'];
-            else if (priceVal === "2000000") scanCommits = ['0', '100000', '150000', '200000', '300000', '400000', '500000', '600000', '700000', '800000', '900000', '1000000', '1500000', '2000000'];
-
-            const tasks = [];
-            for (const pref of scanPrefixes) {
-                for (const c of scanCommits) {
-                    tasks.push({ pref, c, search: searchVal });
-                }
-            }
-            
-            // Nếu có nhập số và có chọn đầu số hoặc giá, thêm 1 luồng quét chính xác số đó trên toàn hệ thống
-            if (searchVal) {
-                tasks.push({ pref: '', c: '', search: searchVal });
-            }
+            // Quét toàn hệ thống cho chuỗi tìm kiếm cụ thể
+            const tasks = [
+                { pref: '', c: '', search: searchVal }
+            ];
 
             const totalRequests = tasks.length;
             let completedRequests = 0;
-            const CONCURRENCY = 15; 
+            const CONCURRENCY = 1; 
 
             async function worker() {
                 while (tasks.length > 0) {
                     const { pref, c, search } = tasks.shift();
                     const url = `${BASE_API}?search=${search}&prefix=${pref}&commit=${c}`;
 
-                    statusTxt.textContent = `Đang quét: ${completedRequests}/${totalRequests} (Phân tích ${pref ? '0'+pref.slice(2) : 'Tất cả'} - ${c === '' ? 'Tất cả giá' : (c === '0' ? '0đ' : (c / 1000 + 'k'))})`;
+                    statusTxt.textContent = `Đang tìm kiếm dãy số: ${search}...`;
 
                     try {
                         const res = await fetch(url);
