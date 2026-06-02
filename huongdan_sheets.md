@@ -286,7 +286,7 @@ function sendTelegramDirect(txt) {
 function runAutoScanVipSims() {
   const prefixes = ['8491', '8494', '8488', '8481', '8482', '8483', '8484', '8485'];
   const commits = ['0', '100000', '150000', '200000', '400000'];
-  const MULTIPLIER = 5; // Lặp lại request 5 lần để gom được lượng số gấp 5 lần
+  const MULTIPLIER = 7; // Lặp lại request 7 lần để gom được lượng số gấp 7 lần
   
   Logger.log("Bắt đầu quét kho số VNPT...");
   

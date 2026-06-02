@@ -1337,7 +1337,7 @@
             document.getElementById('btnLoadMore').style.display = 'none';
 
             const tasks = [];
-            const MULTIPLIER = 5; // Lặp lại request 5 lần để gom được nhiều số ngẫu nhiên hơn (VNPT trả về ngẫu nhiên mỗi lần gọi)
+            const MULTIPLIER = 7; // Lặp lại request 7 lần để gom được nhiều số ngẫu nhiên hơn (VNPT trả về ngẫu nhiên mỗi lần gọi)
             for (let i = 0; i < MULTIPLIER; i++) {
                 for (const pref of PREFIXES) {
                     for (const c of COMMITS) {
@@ -1371,7 +1371,7 @@
                     progBar.style.width = `${(completedRequests / totalRequests) * 100}%`;
 
                     // Hiển thị kết quả từ từ (Progressive Rendering) để người dùng không phải chờ quá lâu
-                    if (completedRequests === 40 || completedRequests === 100 || completedRequests === 160) {
+                    if (completedRequests === 40 || completedRequests === 100 || completedRequests === 160 || completedRequests === 220) {
                         processAIScores();
                         if (scoredData.length > 0) {
                             if (toolbar) toolbar.style.display = 'flex';
