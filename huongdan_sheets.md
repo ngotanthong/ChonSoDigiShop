@@ -286,26 +286,29 @@ function sendTelegramDirect(txt) {
 function runAutoScanVipSims() {
   const prefixes = ['8491', '8494', '8488', '8481', '8482', '8483', '8484', '8485'];
   const commits = ['0', '100000', '150000', '200000', '400000'];
+  const MULTIPLIER = 5; // Lặp lại request 5 lần để gom được lượng số gấp 5 lần
   
   Logger.log("Bắt đầu quét kho số VNPT...");
   
   // Chuẩn bị các request song song cực kỳ nhanh
   const requests = [];
-  prefixes.forEach(pref => {
-    commits.forEach(c => {
-      requests.push({
-        url: "https://digishop.vnpt.vn/apiprod/v2/simso/num_search?search=&prefix=" + pref + "&commit=" + c,
-        method: "get",
-        headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-          "Accept": "application/json, text/plain, */*",
-          "Origin": "https://digishop.vnpt.vn",
-          "Referer": "https://digishop.vnpt.vn/"
-        },
-        muteHttpExceptions: true
+  for (let i = 0; i < MULTIPLIER; i++) {
+    prefixes.forEach(pref => {
+      commits.forEach(c => {
+        requests.push({
+          url: "https://digishop.vnpt.vn/apiprod/v2/simso/num_search?search=&prefix=" + pref + "&commit=" + c,
+          method: "get",
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "application/json, text/plain, */*",
+            "Origin": "https://digishop.vnpt.vn",
+            "Referer": "https://digishop.vnpt.vn/"
+          },
+          muteHttpExceptions: true
+        });
       });
     });
-  });
+  }
   
   // Tải dữ liệu song song từ VNPT API
   const responses = UrlFetchApp.fetchAll(requests);

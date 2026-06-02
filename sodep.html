@@ -1263,9 +1263,12 @@
             document.getElementById('btnLoadMore').style.display = 'none';
 
             const tasks = [];
-            for (const pref of PREFIXES) {
-                for (const c of COMMITS) {
-                    tasks.push({ pref, c });
+            const MULTIPLIER = 5; // Lặp lại request 5 lần để gom được nhiều số ngẫu nhiên hơn (VNPT trả về ngẫu nhiên mỗi lần gọi)
+            for (let i = 0; i < MULTIPLIER; i++) {
+                for (const pref of PREFIXES) {
+                    for (const c of COMMITS) {
+                        tasks.push({ pref, c });
+                    }
                 }
             }
 
