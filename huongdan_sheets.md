@@ -607,9 +607,8 @@ function analyzeSIM(numStr, monthlyFee = 0) {
   }
   
   // 7. Tổng nút
-  const last4 = numStr.slice(-4);
-  const sum4 = last4.split('').reduce(function(acc, val) { return acc + parseInt(val); }, 0);
-  const nut = sum4 % 10;
+  const sum10 = numStr.split('').reduce(function(acc, val) { return acc + parseInt(val); }, 0);
+  const nut = sum10 % 10;
   if (nut >= 7) {
     let point = 5;
     if (nut === 9) {

@@ -1205,10 +1205,9 @@
                 highlight = highlight || numStr.slice(-2);
             }
 
-            // 7. Tổng nút (tổng 4 số cuối = 7, 8, 9 là đẹp)
-            const last4 = numStr.slice(-4);
-            const sum4 = last4.split('').reduce((acc, val) => acc + parseInt(val), 0);
-            const nut = sum4 % 10;
+            // 7. Tổng nút (tổng 10 số = 7, 8, 9 là đẹp)
+            const sum10 = numStr.split('').reduce((acc, val) => acc + parseInt(val), 0);
+            const nut = sum10 % 10;
             if (nut >= 7) { // Nút 7, 8, 9
                 let point = 5;
                 if (nut === 9) {
