@@ -23,6 +23,31 @@
 3. Copy toàn bộ đoạn mã bên dưới và dán vào:
 
 ```javascript
+// ==========================================
+// CẤU HÌNH BOT TELEGRAM (BỎ TRỐNG NẾU KHÔNG DÙNG)
+// ==========================================
+var TELEGRAM_BOT_TOKEN = "ĐIỀN_TOKEN_BOT_VÀO_ĐÂY"; 
+var TELEGRAM_CHAT_ID = "ĐIỀN_CHAT_ID_VÀO_ĐÂY";
+
+function sendTelegramMessage(text) {
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID || TELEGRAM_BOT_TOKEN === "ĐIỀN_TOKEN_BOT_VÀO_ĐÂY") return;
+  var url = "https://api.telegram.org/bot" + TELEGRAM_BOT_TOKEN + "/sendMessage";
+  var payload = {
+    "chat_id": TELEGRAM_CHAT_ID,
+    "text": text,
+    "parse_mode": "HTML"
+  };
+  var options = {
+    "method": "post",
+    "contentType": "application/json",
+    "payload": JSON.stringify(payload),
+    "muteHttpExceptions": true
+  };
+  try {
+    UrlFetchApp.fetch(url, options);
+  } catch (e) {}
+}
+
 function doGet(e) {
   var action = e.parameter.action;
   var user = e.parameter.user;
@@ -61,7 +86,10 @@ function doGet(e) {
         
         if (now.getTime() > expiryDate.getTime()) {
           // Tự động ghi nhận Hết hạn lên Sheet
-          sheet.getRange(userRowIndex, 5).setValue("Hết hạn");
+          if (status.toString().toLowerCase() !== "hết hạn") {
+            sheet.getRange(userRowIndex, 5).setValue("Hết hạn");
+            sendTelegramMessage("⛔️ <b>TÀI KHOẢN HẾT HẠN:</b>\n👤 User: <code>" + user + "</code>\n⏰ Đã khóa tự động.");
+          }
           return ContentService.createTextOutput(JSON.stringify({ 
             status: "expired", 
             message: "Tài khoản của bạn đã hết hạn sử dụng! Vui lòng liên hệ Admin qua SĐT 0947.050.848 để gia hạn." 
@@ -71,6 +99,9 @@ function doGet(e) {
       
       // 2. Kiểm tra tài khoản bị Admin khóa hoặc đã ghi nhận hết hạn
       if (status.toString().toLowerCase() === "locked" || status.toString().toLowerCase() === "bị khóa" || status.toString().toLowerCase() === "hết hạn") {
+        if (action === "login") {
+            sendTelegramMessage("🚫 <b>TRUY CẬP TÀI KHOẢN BỊ KHÓA:</b>\n👤 User: <code>" + user + "</code>\n📱 Cố gắng đăng nhập từ: " + userAgent);
+        }
         return ContentService.createTextOutput(JSON.stringify({ 
           status: "locked", 
           message: status.toString().toLowerCase() === "hết hạn" ? "Tài khoản của bạn đã hết hạn sử dụng! Vui lòng liên hệ Admin qua SĐT 0947.050.848 để gia hạn." : "Tài khoản của bạn đã bị khóa! Vui lòng liên hệ SĐT 0947.050.848 để được hỗ trợ." 
@@ -80,6 +111,7 @@ function doGet(e) {
       if (action === "login") {
         // Kiểm tra liên kết thiết bị cố định
         if (currentActiveDevice && currentActiveDevice !== deviceId) {
+          sendTelegramMessage("⚠️ <b>CẢNH BÁO THIẾT BỊ LẠ:</b>\n👤 User: <code>" + user + "</code>\n📱 Đăng nhập từ: " + userAgent + "\n<i>(Đã bị chặn do khác thiết bị gốc)</i>");
           return ContentService.createTextOutput(JSON.stringify({ 
             status: "device_mismatch", 
             message: "Tài khoản này đã được liên kết cố định với một thiết bị khác! Vui lòng liên hệ Admin qua SĐT 0947.050.848 để mở khóa." 
@@ -91,6 +123,10 @@ function doGet(e) {
           sheet.getRange(userRowIndex, 2).setValue(deviceId);
           sheet.getRange(userRowIndex, 3).setValue(userAgent);
           sheet.getRange(userRowIndex, 5).setValue("Online");
+          sendTelegramMessage("🔒 <b>ĐÃ KHÓA THIẾT BỊ MỚI:</b>\n👤 User: <code>" + user + "</code>\n📱 Trình duyệt: " + userAgent);
+        } else {
+          sheet.getRange(userRowIndex, 5).setValue("Online");
+          sendTelegramMessage("✅ <b>ĐĂNG NHẬP THÀNH CÔNG:</b>\n👤 User: <code>" + user + "</code>");
         }
         
         sheet.getRange(userRowIndex, 4).setValue(now);
@@ -108,6 +144,7 @@ function doGet(e) {
     } else {
       // Thêm mới tài khoản và liên kết cố định thiết bị hiện tại
       sheet.appendRow([user, deviceId, userAgent, now, "Online", ""]);
+      sendTelegramMessage("🆕 <b>TÀI KHOẢN MỚI ĐĂNG NHẬP:</b>\n👤 User: <code>" + user + "</code>\n📱 Trình duyệt: " + userAgent);
     }
     return ContentService.createTextOutput(JSON.stringify({ status: "ok" }))
                          .setMimeType(ContentService.MimeType.JSON);
@@ -118,6 +155,7 @@ function doGet(e) {
       var currentStatus = sheet.getRange(userRowIndex, 5).getValue().toString();
       if (currentStatus !== "Hết hạn") {
         sheet.getRange(userRowIndex, 5).setValue("Offline");
+        sendTelegramMessage("👋 <b>ĐÃ ĐĂNG XUẤT:</b>\n👤 User: <code>" + user + "</code>");
       }
     }
     return ContentService.createTextOutput(JSON.stringify({ status: "ok" }))
