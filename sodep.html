@@ -900,11 +900,8 @@
     </div>
 
     <script>
-        // --- CẤU HÌNH BẢO MẬT & API ---
-        const GAS_API_URL = 'https://script.google.com/macros/s/AKfycby4Abq0CZBBcVSzapt-o2sKTLGSwh1qvWNEa0UHXcFPANekzuApakMb783NtDn93KmJ4Q/exec';
         const BASE_API = 'https://digishop.vnpt.vn/apiprod/v2/simso/num_search';
         const PREFIXES = ['8491', '8494', '8488', '8481', '8482', '8483', '8484', '8485'];
-        // Lấy cam kết 0đ và giá rẻ <=400k
         const COMMITS = ['0', '100000', '150000', '200000', '400000'];
 
         let allScannedData = [];
@@ -1305,6 +1302,10 @@
 
         // --- AUTO SCAN ENGINE ---
         async function startAutoScan() {
+            clearTimeout(bgScanTimeout);
+            bgScanCount = 0;
+            isBackgroundScanning = false;
+
             const btnScan = document.getElementById('btnScan');
             const progCont = document.getElementById('progressContainer');
             const progBar = document.getElementById('progressBar');
@@ -1393,11 +1394,14 @@
                     document.getElementById('emptyState').querySelector('p').textContent = 'Không tìm thấy số nào đạt tiêu chuẩn đẹp trong tầm giá này.';
                 }
 
-                statusTxt.textContent = `Hoàn tất! Đã tìm thấy ${scoredData.length} số đẹp xuất sắc.`;
+                statusTxt.textContent = `Hoàn tất vòng 1! Đã tìm thấy ${scoredData.length} số đẹp. Đang cày ngầm tiếp...`;
                 setTimeout(() => {
                     progCont.style.display = 'none';
                     statusTxt.style.display = 'none';
                 }, 3000);
+
+                // Khởi động cày ngầm sau 30 giây
+                bgScanTimeout = setTimeout(runBackgroundScanBatch, 30000);
 
             } catch (err) {
                 statusTxt.textContent = 'Có lỗi xảy ra khi quét API.';
@@ -1532,11 +1536,16 @@
             return html;
         }
 
+        function showToast(message, duration = 3000) {
+            const toast = document.getElementById('toast');
+            toast.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> ${message}`;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), duration);
+        }
+
         function copyToClipboard(text) {
             navigator.clipboard.writeText(text).then(() => {
-                const toast = document.getElementById('toast');
-                toast.classList.add('show');
-                setTimeout(() => toast.classList.remove('show'), 2000);
+                showToast("Đã copy số điện thoại!");
             });
         }
 
@@ -1648,6 +1657,55 @@
                 document.getElementById('btnLoadMore').textContent = `TẢI THÊM SỐ ĐẸP (${currentDisplayCount} / ${displayData.length})`;
             } else {
                 document.getElementById('btnLoadMore').style.display = 'none';
+            }
+        }
+
+        async function runBackgroundScanBatch() {
+            if (bgScanCount >= 6) return;
+            bgScanCount++;
+            isBackgroundScanning = true;
+
+            const tasks = [];
+            for (const pref of PREFIXES) {
+                for (const c of COMMITS) {
+                    tasks.push({ pref, c });
+                }
+            }
+
+            async function bgWorker() {
+                while (tasks.length > 0) {
+                    const { pref, c } = tasks.shift();
+                    const url = `${BASE_API}?search=&prefix=${pref}&commit=${c}`;
+                    try {
+                        const res = await fetch(url);
+                        const json = await res.json();
+                        if (json.errorCode === 0 && json.data) {
+                            allScannedData = allScannedData.concat(json.data);
+                        }
+                    } catch (e) { }
+                }
+            }
+
+            const workers = [];
+            for (let i = 0; i < 15; i++) workers.push(bgWorker());
+            await Promise.all(workers);
+
+            const oldLength = scoredData.length;
+            processAIScores();
+            const newCount = scoredData.length - oldLength;
+            
+            if (newCount > 0) {
+                renderResults();
+                showToast(`🔥 Vừa cày ngầm thêm được ${newCount} số đẹp mới! (Mẻ ${bgScanCount}/6)`);
+            } else {
+                showToast(`Đang cày ngầm mẻ ${bgScanCount}/6... Chờ thêm số mới!`);
+            }
+
+            if (bgScanCount < 6) {
+                bgScanTimeout = setTimeout(runBackgroundScanBatch, 30000);
+            } else {
+                showToast(`✅ Đã hoàn tất 6/6 mẻ quét ngầm tự động!`);
+                isBackgroundScanning = false;
             }
         }
     </script>
