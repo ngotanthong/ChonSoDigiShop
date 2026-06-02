@@ -604,6 +604,60 @@ function analyzeSIM(numStr) {
     reasons.push('Số Sạch (không 4,7)');
   }
   
+  // 9. Thuật toán "Số Ít Phím" (Dễ nhớ)
+  const uniqueDigitsCount = new Set(numStr.split('')).size;
+  if (uniqueDigitsCount <= 3) {
+    score += 30;
+    categories.push('denho');
+    reasons.push('Siêu Dễ Nhớ (Chỉ ' + uniqueDigitsCount + ' phím)');
+  } else if (uniqueDigitsCount === 4) {
+    score += 15;
+    categories.push('denho');
+    reasons.push('Dễ Nhớ (Chỉ 4 phím)');
+  }
+  
+  // 10. Tiến Chẵn / Tiến Lẻ
+  if (/(1357|3579)$/.test(numStr)) {
+    score += 20;
+    categories.push('sotien');
+    reasons.push('Tiến Lẻ Đều');
+  } else if (/(2468|0246|4680)$/.test(numStr)) {
+    score += 20;
+    categories.push('sotien');
+    reasons.push('Tiến Chẵn Đều');
+  }
+  
+  // 11. Đầu Đuôi Tương Phùng
+  const prefix = numStr.slice(0, 3);
+  if (numStr.endsWith(prefix)) {
+    score += 20;
+    categories.push('denho');
+    reasons.push('Đầu Đuôi Tương Phùng');
+  } else if (numStr.endsWith(prefix.slice(1))) {
+    score += 15;
+    categories.push('denho');
+    reasons.push('Đuôi Trùng Đầu Số');
+  }
+  
+  // 12. Độ bằng phẳng (Lộn xộn)
+  let flipCount = 0;
+  let lastDirection = 0;
+  for (let i = 1; i < numStr.length; i++) {
+    let diff = parseInt(numStr[i]) - parseInt(numStr[i-1]);
+    if (diff > 0) {
+      if (lastDirection === -1) flipCount++;
+      lastDirection = 1;
+    } else if (diff < 0) {
+      if (lastDirection === 1) flipCount++;
+      lastDirection = -1;
+    }
+  }
+  if (flipCount > 5) {
+    score -= 10;
+  } else if (flipCount <= 2 && uniqueDigitsCount >= 5) {
+    score += 5;
+  }
+  
   return {
     score: score,
     categories: categories,
