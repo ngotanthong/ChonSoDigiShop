@@ -536,7 +536,8 @@ function analyzeSIM(numStr) {
   
   // 5.5. Số Gánh / Số Đảo
   if (!isLap) {
-    if (/(\d{2})\d{2}\1$/.test(numStr)) {
+    const matchGanhCap = numStr.match(/(\d{2})(\d{2})\1$/);
+    if (matchGanhCap && Math.abs(parseInt(matchGanhCap[1]) - parseInt(matchGanhCap[2])) <= 2) {
       score += 30;
       categories.push('soganh');
       reasons.push('Gánh Cặp (AB CD AB)');

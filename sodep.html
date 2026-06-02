@@ -1156,7 +1156,8 @@
 
             // 5.5. Số Gánh / Số Đảo (ABBA, ABA, AB CD AB)
             if (!isLap) {
-                if (/(\d{2})\d{2}\1$/.test(numStr)) { // AB CD AB (Gánh cặp 6 số, ví dụ 757475)
+                const matchGanhCap = numStr.match(/(\d{2})(\d{2})\1$/);
+                if (matchGanhCap && Math.abs(parseInt(matchGanhCap[1]) - parseInt(matchGanhCap[2])) <= 2) { // AB CD AB (Gánh cặp 6 số gần nhau)
                     score += 30;
                     categories.push('soganh');
                     reasons.push('Gánh Cặp');
@@ -1438,14 +1439,14 @@
 
             let html = '';
             const idx = matchStr ? numStr.lastIndexOf(matchStr) : -1;
-            
+
             for (let i = 0; i < numStr.length; i++) {
                 if (dotIndexes.includes(i)) html += ' '; // Dùng dấu cách để dễ nhìn
-                
+
                 if (i === idx) html += '<span class="hi">';
-                
+
                 html += numStr[i];
-                
+
                 if (matchStr && i === idx + matchStr.length - 1) html += '</span>';
             }
             return html;
