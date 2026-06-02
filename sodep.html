@@ -641,12 +641,12 @@
         }
 
         .sim-reason {
-            font-size: 12px;
+            font-size: 11px;
             color: #059669;
             font-weight: 500;
             margin-bottom: 8px;
             background: #d1fae5;
-            padding: 3px 6px;
+            padding: 2px 5px;
             border-radius: 4px;
             display: inline-block;
             align-self: flex-start;
@@ -1165,12 +1165,12 @@
                 } else if (/(\d)(\d)\2\1$/.test(numStr) && numStr.slice(-1) !== numStr.slice(-2, -1)) { // ABBA
                     score += 25;
                     categories.push('soganh');
-                    reasons.push('Gánh Đảo (ABBA)');
+                    reasons.push('Gánh Đảo');
                     highlight = highlight || numStr.slice(-4);
                 } else if (/(\d)(\d)\1$/.test(numStr) && numStr.slice(-1) !== numStr.slice(-2, -1)) { // ABA
                     score += 15;
                     categories.push('soganh');
-                    reasons.push('Gánh (ABA)');
+                    reasons.push('Gánh');
                     highlight = highlight || numStr.slice(-3);
                 }
             }
@@ -1224,7 +1224,7 @@
                 score -= 15;
             } else if (!/4/.test(numStr) && !/7/.test(numStr)) {
                 score += 10;
-                reasons.push('Số Sạch (không 4,7)');
+                reasons.push('Số Sạch');
             }
 
             // 9. Thuật toán "Số Ít Phím" (Dễ nhớ)
@@ -1232,11 +1232,11 @@
             if (uniqueDigitsCount <= 3) {
                 score += 30;
                 categories.push('denho');
-                reasons.push('Siêu Dễ Nhớ (Chỉ ' + uniqueDigitsCount + ' phím)');
+                reasons.push('Siêu Dễ Nhớ');
             } else if (uniqueDigitsCount === 4) {
                 score += 15;
                 categories.push('denho');
-                reasons.push('Dễ Nhớ (Chỉ 4 phím)');
+                reasons.push('Dễ Nhớ');
             }
 
             // 10. Tiến Chẵn / Tiến Lẻ

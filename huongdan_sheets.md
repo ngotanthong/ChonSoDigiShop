@@ -543,15 +543,15 @@ function analyzeSIM(numStr) {
     if (matchGanhCap && Math.abs(parseInt(matchGanhCap[1]) - parseInt(matchGanhCap[2])) <= 2) {
       score += 30;
       categories.push('soganh');
-      reasons.push('Gánh Cặp (AB CD AB)');
+      reasons.push('Gánh Cặp');
     } else if (/(\d)(\d)\2\1$/.test(numStr) && numStr.slice(-1) !== numStr.slice(-2, -1)) {
       score += 25;
       categories.push('soganh');
-      reasons.push('Gánh Đảo (ABBA)');
+      reasons.push('Gánh Đảo');
     } else if (/(\d)(\d)\1$/.test(numStr) && numStr.slice(-1) !== numStr.slice(-2, -1)) {
       score += 15;
       categories.push('soganh');
-      reasons.push('Gánh (ABA)');
+      reasons.push('Gánh');
     }
   }
   
@@ -601,7 +601,7 @@ function analyzeSIM(numStr) {
     score -= 15;
   } else if (!/4/.test(numStr) && !/7/.test(numStr)) {
     score += 10;
-    reasons.push('Số Sạch (không 4,7)');
+    reasons.push('Số Sạch');
   }
   
   // 9. Thuật toán "Số Ít Phím" (Dễ nhớ)
@@ -609,11 +609,11 @@ function analyzeSIM(numStr) {
   if (uniqueDigitsCount <= 3) {
     score += 30;
     categories.push('denho');
-    reasons.push('Siêu Dễ Nhớ (Chỉ ' + uniqueDigitsCount + ' phím)');
+    reasons.push('Siêu Dễ Nhớ');
   } else if (uniqueDigitsCount === 4) {
     score += 15;
     categories.push('denho');
-    reasons.push('Dễ Nhớ (Chỉ 4 phím)');
+    reasons.push('Dễ Nhớ');
   }
   
   // 10. Tiến Chẵn / Tiến Lẻ
