@@ -633,6 +633,10 @@ function analyzeSIM(numStr, monthlyFee = 0) {
     score += 20;
     categories.push('denho');
     reasons.push('Đầu Đuôi Tương Phùng');
+  } else if (numStr.endsWith(prefix.slice(1))) {
+    score += 15;
+    categories.push('denho');
+    reasons.push('Đuôi Trùng Đầu Số');
   }
   
   // 12. Độ bằng phẳng (Lộn xộn)
