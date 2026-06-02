@@ -628,15 +628,17 @@ function analyzeSIM(numStr, monthlyFee = 0) {
   }
   
   // 11. Đầu Đuôi Tương Phùng
-  const prefix = numStr.slice(0, 3);
-  if (numStr.endsWith(prefix)) {
+  const prefix3 = numStr.slice(0, 3);
+  const prefix4 = numStr.slice(0, 4);
+  
+  if (numStr.endsWith(prefix4)) {
+    score += 25;
+    categories.push('denho');
+    reasons.push('Đầu Đuôi Tương Phùng');
+  } else if (numStr.endsWith(prefix3)) {
     score += 20;
     categories.push('denho');
     reasons.push('Đầu Đuôi Tương Phùng');
-  } else if (numStr.endsWith(prefix.slice(1))) {
-    score += 15;
-    categories.push('denho');
-    reasons.push('Đuôi Trùng Đầu Số');
   }
   
   // 12. Độ bằng phẳng (Lộn xộn)
