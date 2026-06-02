@@ -343,12 +343,13 @@ function runAutoScanVipSims() {
     const allRawData = [];
     let isRateLimited = false;
     
-    responses.forEach((res, index) => {
+    for (let i = 0; i < responses.length; i++) {
+      const res = responses[i];
       try {
         const code = res.getResponseCode();
         if (code === 429 || code === 403) {
           isRateLimited = true;
-          return;
+          break; // Thoát khỏi vòng lặp kiểm tra kết quả ngay lập tức
         }
         if (code === 200) {
           const json = JSON.parse(res.getContentText());
@@ -357,7 +358,7 @@ function runAutoScanVipSims() {
           }
         }
       } catch (e) {}
-    });
+    }
     
     // Rút lui chiến thuật nếu bị chặn
     if (isRateLimited) {
