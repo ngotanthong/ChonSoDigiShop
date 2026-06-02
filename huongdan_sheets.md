@@ -286,113 +286,125 @@ function sendTelegramDirect(txt) {
 function runAutoScanVipSims() {
   const prefixes = ['8491', '8494', '8488', '8481', '8482', '8483', '8484', '8485'];
   const commits = ['0', '100000', '150000', '200000', '400000'];
-  const MULTIPLIER = 7; // Lặp lại request 7 lần để gom được lượng số gấp 7 lần
+  const MULTIPLIER = 7; 
   
-  Logger.log("Bắt đầu quét kho số VNPT...");
+  Logger.log("Bắt đầu chiến dịch DeepSearch kho số VNPT...");
   
-  // Chuẩn bị các request song song cực kỳ nhanh
-  const requests = [];
-  for (let i = 0; i < MULTIPLIER; i++) {
-    prefixes.forEach(pref => {
-      commits.forEach(c => {
-        requests.push({
-          url: "https://digishop.vnpt.vn/apiprod/v2/simso/num_search?search=&prefix=" + pref + "&commit=" + c,
-          method: "get",
-          headers: {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Accept": "application/json, text/plain, */*",
-            "Origin": "https://digishop.vnpt.vn",
-            "Referer": "https://digishop.vnpt.vn/"
-          },
-          muteHttpExceptions: true
-        });
-      });
-    });
-  }
-  
-  // Tải dữ liệu song song từ VNPT API
-  const responses = UrlFetchApp.fetchAll(requests);
-  const allRawData = [];
-  
-  responses.forEach((res, index) => {
-    try {
-      const code = res.getResponseCode();
-      if (code === 200) {
-        const json = JSON.parse(res.getContentText());
-        if (json.errorCode === 0 && json.data) {
-          allRawData.push(...json.data);
-        }
-      } else {
-        Logger.log("Lỗi HTTP " + code + " khi gọi request index " + index);
-      }
-    } catch (e) {
-      Logger.log("Lỗi parse dữ liệu: " + e.message);
-    }
-  });
-  
-  Logger.log("Đã quét được tổng cộng " + allRawData.length + " số trong kho.");
-  
-  // Loại bỏ trùng lặp số
-  const uniqueSims = {};
-  allRawData.forEach(item => {
-    const fNum = formatNumber(item.so_tb);
-    if (!uniqueSims[fNum]) {
-      uniqueSims[fNum] = item;
-    }
-  });
-  
-  const vipList = [];
-  
-  // Chấm điểm AI cho từng số
-  for (const fNum in uniqueSims) {
-    const item = uniqueSims[fNum];
-    const aiResult = analyzeSIM(fNum, item.monthly);
-    
-    // Chỉ chọn các số đạt từ điểm sàn cấu hình trở lên
-    if (aiResult.score >= ALERT_MIN_SCORE) {
-      vipList.push({
-        so_tb: fNum,
-        monthly: item.monthly,
-        commitment: item.commitment,
-        score: aiResult.score,
-        reasons: aiResult.reasonsArr.join(" + ")
-      });
-    }
-  }
-  
-  Logger.log("Tìm thấy " + vipList.length + " số siêu đẹp đạt tiêu chuẩn.");
-  
-  if (vipList.length === 0) return;
-  
-  // Lấy lịch sử số đã thông báo từ PropertiesService để tránh trùng lặp
+  // 1. Lấy lịch sử số đã thông báo từ PropertiesService để tránh gửi trùng
   const scriptProperties = PropertiesService.getScriptProperties();
   let notifiedSims = [];
   try {
     const rawList = scriptProperties.getProperty("NOTIFIED_VIP_SIMS");
     if (rawList) notifiedSims = JSON.parse(rawList);
   } catch (e) {}
-  
-  let newNotifiedCount = 0;
-  
-  // Gửi thông báo cho từng số đẹp mới phát hiện
-  vipList.forEach(sim => {
-    if (notifiedSims.indexOf(sim.so_tb) === -1) {
-      // Số mới hoàn toàn chưa từng thông báo!
-      sendTelegramNotification(sim);
-      notifiedSims.push(sim.so_tb);
-      newNotifiedCount++;
+
+  const MAX_EXECUTION_TIME = 4.5 * 60 * 1000; // 4.5 phút (bảo vệ khỏi giới hạn 6 phút của Google)
+  const startTime = Date.now();
+  let loopCount = 0;
+  let totalNewVipFound = 0;
+
+  // 2. Bắt đầu vòng lặp cày nát API
+  while (Date.now() - startTime < MAX_EXECUTION_TIME) {
+    loopCount++;
+    Logger.log(`--- Đang chạy vòng lặp DeepSearch thứ ${loopCount} ---`);
+    
+    const requests = [];
+    for (let i = 0; i < MULTIPLIER; i++) {
+      prefixes.forEach(pref => {
+        commits.forEach(c => {
+          requests.push({
+            url: "https://digishop.vnpt.vn/apiprod/v2/simso/num_search?search=&prefix=" + pref + "&commit=" + c,
+            method: "get",
+            headers: {
+              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+              "Accept": "application/json, text/plain, */*",
+              "Origin": "https://digishop.vnpt.vn",
+              "Referer": "https://digishop.vnpt.vn/"
+            },
+            muteHttpExceptions: true
+          });
+        });
+      });
     }
-  });
-  
-  // Giới hạn lịch sử lưu trữ 500 số cuối cùng để tránh quá tải bộ nhớ
-  if (notifiedSims.length > 500) {
-    notifiedSims = notifiedSims.slice(-500);
+    
+    // Tải dữ liệu song song
+    const responses = UrlFetchApp.fetchAll(requests);
+    const allRawData = [];
+    let isRateLimited = false;
+    
+    responses.forEach((res, index) => {
+      try {
+        const code = res.getResponseCode();
+        if (code === 429 || code === 403) {
+          isRateLimited = true;
+          return;
+        }
+        if (code === 200) {
+          const json = JSON.parse(res.getContentText());
+          if (json.errorCode === 0 && json.data) {
+            allRawData.push(...json.data);
+          }
+        }
+      } catch (e) {}
+    });
+    
+    // Rút lui chiến thuật nếu bị chặn
+    if (isRateLimited) {
+      Logger.log("⚠️ CẢNH BÁO: VNPT đang chặn Rate Limit (Lỗi 429). Ngừng ngay vòng lặp để bảo vệ IP!");
+      break; 
+    }
+    
+    // Lọc trùng lặp cục bộ trong mẻ này
+    const uniqueSims = {};
+    allRawData.forEach(item => {
+      const fNum = formatNumber(item.so_tb);
+      if (!uniqueSims[fNum]) {
+        uniqueSims[fNum] = item;
+      }
+    });
+    
+    let meVipMoi = 0;
+    
+    // Chấm điểm và gửi ngay Telegram
+    for (const fNum in uniqueSims) {
+      // Nếu số đã từng báo cáo rồi thì bỏ qua luôn, khỏi chấm điểm cho nhẹ máy
+      if (notifiedSims.indexOf(fNum) !== -1) continue;
+
+      const item = uniqueSims[fNum];
+      const aiResult = analyzeSIM(fNum, item.monthly);
+      
+      if (aiResult.score >= ALERT_MIN_SCORE) {
+        const simData = {
+          so_tb: fNum,
+          monthly: item.monthly,
+          commitment: item.commitment,
+          score: aiResult.score,
+          reasons: aiResult.reasonsArr.join(" + ")
+        };
+        
+        // Gửi Telegram
+        sendTelegramNotification(simData);
+        
+        // Đánh dấu đã báo cáo
+        notifiedSims.push(fNum);
+        meVipMoi++;
+        totalNewVipFound++;
+      }
+    }
+    
+    Logger.log(`Kết thúc vòng ${loopCount}. Bắt được ${meVipMoi} số VIP. Tạm nghỉ 10 giây...`);
+    
+    // 3. Tạm nghỉ 10 giây để đánh lừa WAF của VNPT trước khi cào mẻ mới
+    Utilities.sleep(10000); 
   }
   
-  // Lưu lại lịch sử mới
+  // 4. Kết thúc toàn bộ chiến dịch: Lưu lại danh sách đã báo cáo để giờ sau không báo trùng
+  if (notifiedSims.length > 1000) {
+    notifiedSims = notifiedSims.slice(-1000); // Tăng mức lưu trữ history lên 1000 số cho dư dả
+  }
   scriptProperties.setProperty("NOTIFIED_VIP_SIMS", JSON.stringify(notifiedSims));
   
-  Logger.log("Đã gửi thêm " + newNotifiedCount + " thông báo SIM VIP mới về Telegram.");
+  Logger.log(`=== HOÀN TẤT DEEPSEARCH ===\nĐã chạy ${loopCount} vòng lặp. Tổng cộng thu hoạch được ${totalNewVipFound} số VIP siêu cấp!`);
 }
 
 /**
