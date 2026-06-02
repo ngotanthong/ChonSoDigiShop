@@ -1079,7 +1079,7 @@
             return num.startsWith('84') ? '0' + num.slice(2) : num;
         }
 
-        function analyzeSIM(numStr) {
+        function analyzeSIM(numStr, monthlyFee = 0) {
             let score = 0;
             let categories = [];
             let reasons = [];
@@ -1285,6 +1285,20 @@
                 score += 5;
             }
 
+            // 13. Ưu tiên số Rẻ & Đẹp (Cam kết <= 100k) có từ 3 tag trở lên
+            const fee = Number(monthlyFee) || 0;
+            if (fee <= 100000) {
+                if (reasons.length >= 4) {
+                    score += 20;
+                    categories.push('phongthuy');
+                    reasons.push('Rẻ & Siêu Đẹp');
+                } else if (reasons.length === 3) {
+                    score += 10;
+                    categories.push('phongthuy');
+                    reasons.push('Rẻ & Đẹp');
+                }
+            }
+
             return {
                 score: score,
                 categories: categories,
@@ -1409,7 +1423,7 @@
             allScannedData.forEach(item => {
                 const fNum = formatNumber(item.so_tb);
                 if (!uniqueSims.has(fNum)) {
-                    const aiResult = analyzeSIM(fNum);
+                    const aiResult = analyzeSIM(fNum, item.monthly);
                     // Lọc theo điểm chuẩn
                     if (aiResult.score >= minScore) {
                         uniqueSims.set(fNum, {

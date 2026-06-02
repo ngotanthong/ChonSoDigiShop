@@ -346,7 +346,7 @@ function runAutoScanVipSims() {
   // Chấm điểm AI cho từng số
   for (const fNum in uniqueSims) {
     const item = uniqueSims[fNum];
-    const aiResult = analyzeSIM(fNum);
+    const aiResult = analyzeSIM(fNum, item.monthly);
     
     // Chỉ chọn các số đạt từ điểm sàn cấu hình trở lên
     if (aiResult.score >= ALERT_MIN_SCORE) {
@@ -473,7 +473,7 @@ function formatNumber(num) {
 /**
  * Bộ não AI Chấm điểm số đẹp (Đồng nhất 100% với Web)
  */
-function analyzeSIM(numStr) {
+function analyzeSIM(numStr, monthlyFee = 0) {
   let score = 0;
   let categories = [];
   let reasons = [];
@@ -656,6 +656,20 @@ function analyzeSIM(numStr) {
     score -= 10;
   } else if (flipCount <= 2 && uniqueDigitsCount >= 5) {
     score += 5;
+  }
+  
+  // 13. Ưu tiên số Rẻ & Đẹp (Cam kết <= 100k) có từ 3 tag trở lên
+  const fee = Number(monthlyFee) || 0;
+  if (fee <= 100000) {
+    if (reasons.length >= 4) {
+      score += 20;
+      categories.push('phongthuy');
+      reasons.push('Rẻ & Siêu Đẹp');
+    } else if (reasons.length === 3) {
+      score += 10;
+      categories.push('phongthuy');
+      reasons.push('Rẻ & Đẹp');
+    }
   }
   
   return {
