@@ -460,15 +460,12 @@ function sendTelegramNotification(sim) {
   const fPhone = formatPhoneDisplay(sim.so_tb); // Áp dụng định dạng hiển thị đẹp
   
   const messageText = 
-    "🔔 *[AI PHÁT HIỆN SIM VIP MỚI]*\n\n" +
+    "🔔 *[CÓ SIM VIP MỚI]*\n\n" +
     "📱 *Số điện thoại:* `" + fPhone + "`\n" +
-    "⭐ *Điểm số AI:* `" + sim.score + " Điểm`\n" +
     "✨ *Đặc điểm:* " + sim.reasons + "\n" +
     "💵 *Cước cam kết:* " + priceText + "\n" +
     "⏳ *Thời hạn:* " + commitText + "\n" +
-    "🤵 *Mua SIM:* LH nhân viên\n" +
-    "──────────────────\n" +
-    "👉 _Mở web chốt cọc ngay lập tức kẻo lỡ!_";
+    "👉 _Lh 0947 050 848 chốt ngay!_";
     
   const url = "https://api.telegram.org/bot" + TELEGRAM_BOT_TOKEN + "/sendMessage";
   const payload = {
