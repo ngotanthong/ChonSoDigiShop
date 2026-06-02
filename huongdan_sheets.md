@@ -26,8 +26,8 @@
 // ==========================================
 // CẤU HÌNH BOT TELEGRAM (BỎ TRỐNG NẾU KHÔNG DÙNG)
 // ==========================================
-var TELEGRAM_BOT_TOKEN = "ĐIỀN_TOKEN_BOT_VÀO_ĐÂY"; 
-var TELEGRAM_CHAT_ID = "ĐIỀN_CHAT_ID_VÀO_ĐÂY";
+var TELEGRAM_BOT_TOKEN = "8985605068:AAHWSdxaHnGgJ9H41YFToGzgSxAJk90vIQs"; 
+var TELEGRAM_CHAT_ID = "7007784178";
 
 function sendTelegramMessage(text) {
   if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID || TELEGRAM_BOT_TOKEN === "ĐIỀN_TOKEN_BOT_VÀO_ĐÂY") return;
