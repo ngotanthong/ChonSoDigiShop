@@ -327,8 +327,19 @@ function runAutoScanVipSims() {
       });
     }
     
-    // Tải dữ liệu song song
-    const responses = UrlFetchApp.fetchAll(requests);
+    // Tải dữ liệu song song nhưng chia thành các mẻ nhỏ để tránh lỗi "Service invoked too many times" của Google
+    const responses = [];
+    const BATCH_SIZE = 40; 
+    for (let i = 0; i < requests.length; i += BATCH_SIZE) {
+      const batch = requests.slice(i, i + BATCH_SIZE);
+      try {
+        const batchResponses = UrlFetchApp.fetchAll(batch);
+        responses.push(...batchResponses);
+      } catch (e) {
+        Logger.log("Lỗi tải mẻ nhỏ: " + e.message);
+      }
+      Utilities.sleep(1000); // Tạm nghỉ 1s giữa các mẻ nhỏ theo gợi ý của hệ thống
+    }
     const allRawData = [];
     let isRateLimited = false;
     
