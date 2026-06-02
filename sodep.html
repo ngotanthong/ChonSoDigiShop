@@ -852,23 +852,7 @@
                     BẮT ĐẦU QUÉT AI
                 </button>
 
-                <!-- Lọc Nâng Cao -->
-                <div class="advanced-filter-panel" style="margin-top: 20px; padding-top: 20px; border-top: 1px dashed var(--border); text-align: left;">
-                    <h3 style="font-size: 15px; margin-bottom: 12px; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-                        Lọc Nâng Cao (Tìm theo ý muốn)
-                    </h3>
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
-                        <input type="text" id="advSearch" placeholder="Nhập số mong muốn (VD: 6868)..." style="flex: 1; min-width: 200px; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); font-size: 14px; outline: none; transition: all 0.3s;" onfocus="this.style.borderColor='var(--primary)'; this.style.boxShadow='0 0 0 2px rgba(0,91,170,0.15)'" onblur="this.style.borderColor='var(--border)'; this.style.boxShadow='none'">
-                    </div>
-                    <button class="btn-scan" id="btnScanAdv" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); width: 100%; justify-content: center; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); transition: all 0.3s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(16,185,129,0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(16,185,129,0.3)'" onclick="startAdvancedScan()">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="11" cy="11" r="8"></circle>
-                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                        </svg>
-                        TÌM VÀ CHỌN SỐ ĐẸP NHẤT
-                    </button>
-                </div>
+
 
                 <div class="progress-container" id="progressContainer">
                     <div class="progress-bar" id="progressBar"></div>
@@ -1337,103 +1321,7 @@
             }
         }
 
-        async function startAdvancedScan() {
-            const searchVal = document.getElementById('advSearch').value.trim();
 
-            if (!searchVal) {
-                alert("Vui lòng nhập số bạn muốn tìm!");
-                return;
-            }
-
-            const btnScan = document.getElementById('btnScan');
-            const btnScanAdv = document.getElementById('btnScanAdv');
-            const progCont = document.getElementById('progressContainer');
-            const progBar = document.getElementById('progressBar');
-            const statusTxt = document.getElementById('statusText');
-            const toolbar = document.getElementById('toolbar');
-
-            btnScan.disabled = true;
-            btnScanAdv.disabled = true;
-            btnScanAdv.innerHTML = '<span class="login-spinner" style="width: 18px; height: 18px; border-width: 2px;"></span> ĐANG TÌM...';
-            progCont.style.display = 'block';
-            statusTxt.style.display = 'block';
-            if (toolbar) toolbar.style.display = 'none';
-            document.getElementById('resultGrid').innerHTML = '';
-            document.getElementById('emptyState').style.display = 'none';
-
-            allScannedData = [];
-            scoredData = [];
-            currentCategory = 'all';
-            currentDisplayCount = 100;
-            currentSort = 'score-desc';
-            if (document.getElementById('sortBy')) {
-                document.getElementById('sortBy').value = 'score-desc';
-            }
-            document.getElementById('btnLoadMore').style.display = 'none';
-
-            // Quét toàn hệ thống cho chuỗi tìm kiếm cụ thể
-            const tasks = [
-                { pref: '', c: '', search: searchVal }
-            ];
-
-            const totalRequests = tasks.length;
-            let completedRequests = 0;
-            const CONCURRENCY = 1; 
-
-            async function worker() {
-                while (tasks.length > 0) {
-                    const { pref, c, search } = tasks.shift();
-                    const url = `${BASE_API}?search=${search}&prefix=${pref}&commit=${c}`;
-
-                    statusTxt.textContent = `Đang tìm kiếm dãy số: ${search}...`;
-
-                    try {
-                        const res = await fetch(url);
-                        const json = await res.json();
-                        if (json.errorCode === 0 && json.data) {
-                            allScannedData = allScannedData.concat(json.data);
-                        }
-                    } catch (e) {
-                        console.error("Fetch error:", url);
-                    }
-
-                    completedRequests++;
-                    progBar.style.width = `${(completedRequests / totalRequests) * 100}%`;
-                }
-            }
-
-            try {
-                const workers = [];
-                for (let i = 0; i < CONCURRENCY; i++) workers.push(worker());
-                await Promise.all(workers);
-
-                statusTxt.textContent = 'Đang dùng AI chấm điểm số đẹp...';
-
-                // Nếu có tìm kiếm số cụ thể, cho phép mọi mức điểm (-100) để hiển thị số tìm được
-                processAIScores(searchVal ? -100 : 20);
-
-                if (scoredData.length > 0) {
-                    if (toolbar) toolbar.style.display = 'flex';
-                    renderResults();
-                } else {
-                    document.getElementById('emptyState').style.display = 'block';
-                    document.getElementById('emptyState').querySelector('p').textContent = 'Không tìm thấy số nào khớp với điều kiện tìm kiếm hoặc không đủ chuẩn đẹp.';
-                }
-
-                statusTxt.textContent = `Hoàn tất! Đã tìm thấy ${scoredData.length} số.`;
-                setTimeout(() => {
-                    progCont.style.display = 'none';
-                    statusTxt.style.display = 'none';
-                }, 3000);
-
-            } catch (err) {
-                statusTxt.textContent = 'Có lỗi xảy ra khi quét API.';
-            } finally {
-                btnScan.disabled = false;
-                btnScanAdv.disabled = false;
-                btnScanAdv.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> TÌM VÀ CHỌN SỐ ĐẸP NHẤT';
-            }
-        }
 
         function processAIScores(minScore = 20) {
             scoredData = [];
