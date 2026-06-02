@@ -1295,6 +1295,16 @@
 
                     completedRequests++;
                     progBar.style.width = `${(completedRequests / totalRequests) * 100}%`;
+                    
+                    // Hiển thị kết quả từ từ (Progressive Rendering) để người dùng không phải chờ quá lâu
+                    if (completedRequests === 40 || completedRequests === 100 || completedRequests === 160) {
+                        processAIScores();
+                        if (scoredData.length > 0) {
+                            if (toolbar) toolbar.style.display = 'flex';
+                            document.getElementById('emptyState').style.display = 'none';
+                            renderResults();
+                        }
+                    }
                 }
             }
 
