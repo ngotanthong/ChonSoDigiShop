@@ -1770,8 +1770,8 @@
             let topData = [...scoredData].sort((a,b) => b.ai.score - a.ai.score).slice(0, 200);
             topData = shuffle(topData);
             
-            // Lấy khoảng 56 số (4 cột x 14 hàng) kết hợp nới lỏng CSS để fill vừa khít 1 trang
-            const selectedForPrint = topData.slice(0, 56);
+            // Lấy khoảng 48 số (4 cột x 12 hàng) kết hợp nới lỏng CSS để fill vừa khít 1 trang
+            const selectedForPrint = topData.slice(0, 48);
 
             const printArea = document.getElementById('printArea');
             let html = `
