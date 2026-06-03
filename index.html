@@ -24618,6 +24618,9 @@
 
             if (!token || !authUser) return false;
 
+            const isMultiDeviceUser = window.MULTI_DEVICE_USERS && window.MULTI_DEVICE_USERS.includes(authUser);
+            if (isMultiDeviceUser) return true; // VIP/Admin không bị khóa thiết bị
+
             try {
                 const response = await fetch(`${GAS_API_URL}?action=check&user=${encodeURIComponent(authUser)}&deviceId=${deviceId}`);
                 const resData = await response.json();
@@ -24680,7 +24683,8 @@
 
                 // 2. Kiểm tra thiết bị online trên Google Sheet
                 if (verified) {
-                    if (GAS_API_URL) {
+                    const isMultiDeviceUser = window.MULTI_DEVICE_USERS && window.MULTI_DEVICE_USERS.includes(authUser);
+                    if (GAS_API_URL && !isMultiDeviceUser) {
                         try {
                             const response = await fetch(`${GAS_API_URL}?action=check&user=${encodeURIComponent(authUser)}&deviceId=${deviceId}`);
                             const resData = await response.json();
@@ -24767,7 +24771,8 @@
 
                 if (inputPassHash === expectedPassHash) {
                     // 2. Đồng bộ khóa thiết bị cố định trên Google Sheet
-                    if (GAS_API_URL) {
+                    const isMultiDeviceUser = window.MULTI_DEVICE_USERS && window.MULTI_DEVICE_USERS.includes(userVal);
+                    if (GAS_API_URL && !isMultiDeviceUser) {
                         try {
                             const response = await fetch(`${GAS_API_URL}?action=login&user=${encodeURIComponent(userVal)}&deviceId=${deviceId}&userAgent=${encodeURIComponent(navigator.userAgent)}`);
                             const resData = await response.json();
@@ -24821,9 +24826,10 @@
         // Đăng xuất
         window.handleLogout = async function () {
             const authUser = localStorage.getItem('simso_auth_user') || sessionStorage.getItem('simso_auth_user');
+            const isMultiDeviceUser = window.MULTI_DEVICE_USERS && window.MULTI_DEVICE_USERS.includes(authUser);
 
-            // Thông báo tắt trạng thái Online trên Google Sheet
-            if (GAS_API_URL && authUser) {
+            // Thông báo tắt trạng thái Online trên Google Sheet (Bỏ qua với VIP)
+            if (GAS_API_URL && authUser && !isMultiDeviceUser) {
                 try {
                     await fetch(`${GAS_API_URL}?action=logout&user=${encodeURIComponent(authUser)}`);
                 } catch (err) {

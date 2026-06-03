@@ -965,7 +965,8 @@
                 }
 
                 if (verified) {
-                    if (GAS_API_URL) {
+                    const isMultiDeviceUser = window.MULTI_DEVICE_USERS && window.MULTI_DEVICE_USERS.includes(authUser);
+                    if (GAS_API_URL && !isMultiDeviceUser) {
                         try {
                             const response = await fetch(`${GAS_API_URL}?action=check&user=${encodeURIComponent(authUser)}&deviceId=${deviceId}`);
                             const resData = await response.json();
@@ -1033,7 +1034,8 @@
                 const inputPassHash = await sha256(passVal);
 
                 if (inputPassHash === expectedPassHash) {
-                    if (GAS_API_URL) {
+                    const isMultiDeviceUser = window.MULTI_DEVICE_USERS && window.MULTI_DEVICE_USERS.includes(userVal);
+                    if (GAS_API_URL && !isMultiDeviceUser) {
                         try {
                             const response = await fetch(`${GAS_API_URL}?action=login&user=${encodeURIComponent(userVal)}&deviceId=${deviceId}&userAgent=${encodeURIComponent(navigator.userAgent)}`);
                             const resData = await response.json();
