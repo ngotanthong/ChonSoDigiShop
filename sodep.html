@@ -776,47 +776,127 @@
 
         /* --- MODAL & JPG EXPORT STYLES --- */
         .modal-overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(15, 23, 42, 0.75); z-index: 1000;
-            display: flex; align-items: center; justify-content: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.75);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
+
         .modal-content {
-            background: white; padding: 25px; border-radius: 16px; width: 95%; max-width: 900px;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); text-align: center;
-            display: flex; flex-direction: column; max-height: 90vh;
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            width: 95%;
+            max-width: 900px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            max-height: 90vh;
         }
-        .modal-content h3 { margin-top: 0; margin-bottom: 15px; color: #1e293b; font-size: 22px; }
+
+        .modal-content h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #1e293b;
+            font-size: 22px;
+        }
 
         .preview-wrapper {
-            flex: 1; overflow: auto; background: #e2e8f0; border-radius: 8px; border: 1px solid #cbd5e1;
-            margin-bottom: 20px; text-align: left;
+            flex: 1;
+            overflow: auto;
+            background: #e2e8f0;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            margin-bottom: 20px;
+            text-align: left;
         }
 
         #jpgExportArea {
-            width: 1200px; /* Cố định chiều rộng để ảnh xuất ra luôn nét căng */
+            width: 1200px;
+            /* Cố định chiều rộng để ảnh xuất ra luôn nét căng */
             background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-            padding: 50px; font-family: 'Inter', Arial, sans-serif;
-            color: #1e293b; margin: 0 auto; box-sizing: border-box;
+            padding: 50px;
+            font-family: 'Inter', Arial, sans-serif;
+            color: #1e293b;
+            margin: 0 auto;
+            box-sizing: border-box;
         }
-        #jpgExportArea .print-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+
+        #jpgExportArea .print-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
         #jpgExportArea .print-item {
-            background: white; border: none; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
-            border-radius: 12px; padding: 16px; text-align: center; display: flex; flex-direction: column; justify-content: space-between;
+            background: white;
+            border: none;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
-        #jpgExportArea .p-num { color: #dc2626; font-size: 28px; font-weight: 800; margin-bottom: 12px; letter-spacing: 1px; }
-        
+
+        #jpgExportArea .p-num {
+            color: #dc2626;
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 12px;
+            letter-spacing: 1px;
+        }
+
         #jpgExportArea .p-tags-container {
-            display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+            margin-bottom: 12px;
         }
+
         #jpgExportArea .p-tag {
-            background: #d1fae5; color: #059669; padding: 4px 8px;
-            border-radius: 12px; font-size: 13px; font-weight: 700;
+            background: #d1fae5;
+            color: #059669;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 700;
         }
-        #jpgExportArea .p-info { font-size: 16px; color: #475569; font-weight: 600; margin-top: auto; }
-        
-        #jpgExportArea .print-header { text-align: center; margin-bottom: 35px; }
-        #jpgExportArea .print-header h2 { color: #1e3a8a; font-size: 36px; font-weight: 900; margin: 0 0 12px 0; text-transform: uppercase; }
-        #jpgExportArea .print-header p { color: #64748b; font-size: 18px; margin: 0; }
+
+        #jpgExportArea .p-info {
+            font-size: 16px;
+            color: #475569;
+            font-weight: 600;
+            margin-top: auto;
+        }
+
+        #jpgExportArea .print-header {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+
+        #jpgExportArea .print-header h2 {
+            color: #1e3a8a;
+            font-size: 36px;
+            font-weight: 900;
+            margin: 0 0 12px 0;
+            text-transform: uppercase;
+        }
+
+        #jpgExportArea .print-header p {
+            color: #64748b;
+            font-size: 18px;
+            margin: 0;
+        }
     </style>
 </head>
 
@@ -889,14 +969,16 @@
                     điểm và chọn ra những số đẹp nhất cho bạn.</p>
 
                 <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
-                    <button class="btn-scan" id="btnScan" onclick="startAutoScan()" style="margin: 0; max-width: 250px;">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                            stroke-linecap="round" stroke-linejoin="round">
+                    <button class="btn-scan" id="btnScan" onclick="startAutoScan()"
+                        style="margin: 0; max-width: 250px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
                         </svg>
                         BẮT ĐẦU QUÉT AI
                     </button>
-                    <button class="btn-scan" style="background: #10b981; margin: 0; max-width: 200px;" onclick="generatePrintList()">
+                    <button class="btn-scan" style="background: #10b981; margin: 0; max-width: 200px;"
+                        onclick="generatePrintList()">
                         🖨️ TẠO BẢNG IN
                     </button>
                 </div>
@@ -957,20 +1039,25 @@
         <div class="modal-content">
             <h3>🖼️ Xem trước & Xuất Ảnh Báo Giá</h3>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <label style="display: flex; align-items: center; cursor: pointer; font-weight: 600; font-size: 15px; color: #333;">
-                    <input type="checkbox" id="printShowTag" style="width: 20px; height: 20px; margin-right: 8px; cursor: pointer;" checked onchange="renderPreview()">
+                <label
+                    style="display: flex; align-items: center; cursor: pointer; font-weight: 600; font-size: 15px; color: #333;">
+                    <input type="checkbox" id="printShowTag"
+                        style="width: 20px; height: 20px; margin-right: 8px; cursor: pointer;" checked
+                        onchange="renderPreview()">
                     Kèm theo Tag ý nghĩa số
                 </label>
                 <span style="font-size: 13px; color: #64748b;">(Vuốt sang ngang hoặc xuống để xem hết bảng)</span>
             </div>
-            
+
             <div class="preview-wrapper" id="previewContainer">
                 <!-- Nội dung ảnh sẽ được render vào đây -->
             </div>
 
             <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                <button class="btn-scan" style="background: #94a3b8; padding: 12px; margin: 0; width: 120px;" onclick="closePrintModal()">Hủy</button>
-                <button class="btn-scan" style="background: #10b981; padding: 12px; margin: 0; width: 200px;" onclick="downloadJPG()">📥 TẢI ẢNH JPG</button>
+                <button class="btn-scan" style="background: #94a3b8; padding: 12px; margin: 0; width: 120px;"
+                    onclick="closePrintModal()">Hủy</button>
+                <button class="btn-scan" style="background: #10b981; padding: 12px; margin: 0; width: 200px;"
+                    onclick="downloadJPG()">📥 TẢI ẢNH JPG</button>
             </div>
         </div>
     </div>
@@ -1343,7 +1430,7 @@
             // 11. Đầu Đuôi Tương Phùng
             const prefix3 = numStr.slice(0, 3);
             const prefix4 = numStr.slice(0, 4);
-            
+
             if (numStr.endsWith(prefix4)) {
                 score += 25;
                 categories.push('denho');
@@ -1775,10 +1862,10 @@
                 alert("Vui lòng 'BẮT ĐẦU QUÉT AI' và đảm bảo bộ lọc hiện tại có dữ liệu!");
                 return;
             }
-            
+
             // Xáo trộn dữ liệu đang hiển thị (ở bộ lọc hiện tại) để ra danh sách ngẫu nhiên hấp dẫn
-            let topData = [...displayData].sort((a,b) => b.ai.score - a.ai.score).slice(0, 200);
-            
+            let topData = [...displayData].sort((a, b) => b.ai.score - a.ai.score).slice(0, 200);
+
             function shuffle(array) {
                 let currentIndex = array.length, randomIndex;
                 while (currentIndex > 0) {
@@ -1801,7 +1888,7 @@
 
         function renderPreview() {
             const showTag = document.getElementById('printShowTag').checked;
-            
+
             // Động thái thay đổi số lượng: có tag thì lấy 36 số (9 dòng), không tag thì lấy 48 số (12 dòng) để luôn vừa khít 1 mặt A4
             const limit = showTag ? 36 : 48;
             const selectedForPrint = currentExportData.slice(0, limit);
@@ -1809,14 +1896,14 @@
             let html = `
             <div id="jpgExportArea" style="zoom: 0.65; margin: 0 auto; width: 1200px;">
                 <div class="print-header">
-                    <h2>DANH SÁCH SIM SỐ ĐẸP VIP</h2>
+                    <h2>DANH SÁCH SIM SỐ</h2>
                     <p>Ngày cập nhật: ${new Date().toLocaleDateString('vi-VN')} - Vui lòng liên hệ để giữ số</p>
                 </div>
                 <div class="print-grid">
             `;
 
             selectedForPrint.forEach(item => {
-                const formatNum = highlightHTML(item.fNum, ''); 
+                const formatNum = highlightHTML(item.fNum, '');
                 const price = Number(item.monthly) || 0;
                 const priceText = (price === 0) ? 'Trả trước' : (price / 1000) + 'k/Tháng';
                 const commitText = (item.commitment && item.commitment > 0) ? ` - Cam kết: ${item.commitment}T` : '';
@@ -1859,15 +1946,15 @@
                 document.body.appendChild(exportClone);
 
                 const canvas = await html2canvas(exportClone, { scale: 2, useCORS: true, backgroundColor: "#e2e8f0" });
-                
+
                 document.body.removeChild(exportClone); // Xoá bản sao sau khi chụp xong
 
                 const imgData = canvas.toDataURL('image/jpeg', 0.9);
                 const link = document.createElement('a');
-                link.download = `Bang_So_VIP_${new Date().toISOString().slice(0,10)}.jpg`;
+                link.download = `Bang_So_VIP_${new Date().toISOString().slice(0, 10)}.jpg`;
                 link.href = imgData;
                 link.click();
-                
+
                 toast.querySelector('span').textContent = 'Tải ảnh JPG thành công!';
             } catch (err) {
                 console.error("Lỗi xuất ảnh:", err);
