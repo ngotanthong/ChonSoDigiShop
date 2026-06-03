@@ -784,24 +784,24 @@
             .print-grid {
                 display: grid;
                 grid-template-columns: repeat(4, 1fr);
-                gap: 10px 8px; /* Khoảng cách siêu gọn */
+                gap: 12px 10px; /* Tăng khoảng cách để giãn đều */
                 width: 100%;
             }
 
             .print-item {
-                border: 1px solid #cbd5e1; /* Viền mỏng nhẹ gọn gàng */
-                padding: 6px 4px;
+                border: 1px solid #cbd5e1;
+                padding: 10px 6px; /* Tăng padding để ô to hơn một chút */
                 text-align: center;
                 border-radius: 4px;
                 break-inside: avoid;
             }
 
             .print-item .p-num {
-                font-size: 15px;
+                font-size: 16px; /* Chữ to hơn một chút */
                 font-weight: 700;
                 font-family: monospace;
                 color: #000;
-                margin-bottom: 3px;
+                margin-bottom: 6px; /* Dãn cách với dòng dưới */
                 letter-spacing: 0.5px;
             }
 
@@ -1770,8 +1770,8 @@
             let topData = [...scoredData].sort((a,b) => b.ai.score - a.ai.score).slice(0, 200);
             topData = shuffle(topData);
             
-            // Lấy khoảng 48 số (4 cột x 12 hàng) để gói gọn y chang 1 trang A4
-            const selectedForPrint = topData.slice(0, 48);
+            // Lấy khoảng 56 số (4 cột x 14 hàng) kết hợp nới lỏng CSS để fill vừa khít 1 trang
+            const selectedForPrint = topData.slice(0, 56);
 
             const printArea = document.getElementById('printArea');
             let html = `
