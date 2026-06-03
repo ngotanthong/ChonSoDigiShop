@@ -776,7 +776,8 @@
 
         /* --- PRINT STYLES --- */
         @media print {
-            body { background: white; padding: 0; margin: 0; color: #000; }
+            @page { margin: 0; } /* Tắt header/footer url rườm rà của trình duyệt */
+            body { background: white; padding: 1.5cm; margin: 0; color: #000; }
             #loginScreen, #appContainer, #toast, .toolbar, .scan-panel, .header-wrapper, .btn-load-more { display: none !important; }
             #printArea { display: block !important; }
 
@@ -1774,8 +1775,8 @@
             const printArea = document.getElementById('printArea');
             let html = `
                 <div class="print-header">
-                    <h2>BẢNG CHỌN SIM SỐ ĐẸP VIP</h2>
-                    <p>Ngày cập nhật: ${new Date().toLocaleDateString('vi-VN')} - Vui lòng liên hệ nhân viên để giữ số</p>
+                    <h2>DANH SÁCH SỐ SIM TRẢ SAU</h2>
+                    <p>Ngày cập nhật: ${new Date().toLocaleDateString('vi-VN')}</p>
                 </div>
                 <div class="print-grid">
             `;
