@@ -777,46 +777,47 @@
         /* --- PRINT STYLES --- */
         @media print {
             @page { margin: 0; } /* Tắt header/footer url rườm rà của trình duyệt */
-            body { background: white; padding: 1.5cm; margin: 0; color: #000; }
+            body { background: white; padding: 1cm; margin: 0; color: #000; font-family: Arial, sans-serif; }
             #loginScreen, #appContainer, #toast, .toolbar, .scan-panel, .header-wrapper, .btn-load-more { display: none !important; }
             #printArea { display: block !important; }
 
             .print-grid {
                 display: grid;
                 grid-template-columns: repeat(4, 1fr);
-                gap: 15px 10px;
+                gap: 10px 8px; /* Khoảng cách siêu gọn */
                 width: 100%;
             }
 
             .print-item {
-                border: 1px dashed #94a3b8;
-                padding: 8px;
+                border: 1px solid #cbd5e1; /* Viền mỏng nhẹ gọn gàng */
+                padding: 6px 4px;
                 text-align: center;
                 border-radius: 4px;
                 break-inside: avoid;
             }
 
             .print-item .p-num {
-                font-size: 16px;
+                font-size: 15px;
                 font-weight: 700;
                 font-family: monospace;
                 color: #000;
-                margin-bottom: 4px;
+                margin-bottom: 3px;
+                letter-spacing: 0.5px;
             }
 
             .print-item .p-info {
                 font-size: 11px;
-                color: #333;
+                color: #1e293b;
             }
             
             .print-header {
                 text-align: center;
-                margin-bottom: 20px;
-                border-bottom: 2px solid #000;
+                margin-bottom: 15px;
+                border-bottom: 1px solid #cbd5e1;
                 padding-bottom: 10px;
             }
-            .print-header h2 { margin: 0 0 5px 0; font-size: 20px; text-transform: uppercase; }
-            .print-header p { margin: 0; font-size: 13px; font-style: italic; }
+            .print-header h2 { margin: 0 0 5px 0; font-size: 18px; font-weight: bold; text-transform: uppercase; }
+            .print-header p { margin: 0; font-size: 12px; font-style: italic; color: #475569; }
         }
     </style>
 </head>
@@ -1769,8 +1770,8 @@
             let topData = [...scoredData].sort((a,b) => b.ai.score - a.ai.score).slice(0, 200);
             topData = shuffle(topData);
             
-            // Lấy khoảng 60 số (4 cột x 15 hàng) để in đẹp vừa vặn trên 1 trang A4
-            const selectedForPrint = topData.slice(0, 60);
+            // Lấy khoảng 48 số (4 cột x 12 hàng) để gói gọn y chang 1 trang A4
+            const selectedForPrint = topData.slice(0, 48);
 
             const printArea = document.getElementById('printArea');
             let html = `
@@ -1785,8 +1786,8 @@
                 // highlightHTML với matchStr='' chỉ dùng để tạo khoảng cách dễ nhìn (vd: 091 234 5678)
                 const formatNum = highlightHTML(item.fNum, ''); 
                 const price = Number(item.monthly) || 0;
-                const priceText = (price === 0) ? 'Giá: Trả trước' : (price / 1000) + 'k/Tháng';
-                const commitText = (item.commitment && item.commitment > 0) ? ` - CK: ${item.commitment}T` : '';
+                const priceText = (price === 0) ? 'Trả trước' : (price / 1000) + 'k/Tháng';
+                const commitText = (item.commitment && item.commitment > 0) ? ` - Cam kết: ${item.commitment}T` : '';
 
                 html += `
                     <div class="print-item">
