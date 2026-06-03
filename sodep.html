@@ -773,6 +773,50 @@
                 font-size: 20px;
             }
         }
+
+        /* --- PRINT STYLES --- */
+        @media print {
+            body { background: white; padding: 0; margin: 0; color: #000; }
+            #loginScreen, #appContainer, #toast, .toolbar, .scan-panel, .header-wrapper, .btn-load-more { display: none !important; }
+            #printArea { display: block !important; }
+
+            .print-grid {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 15px 10px;
+                width: 100%;
+            }
+
+            .print-item {
+                border: 1px dashed #94a3b8;
+                padding: 8px;
+                text-align: center;
+                border-radius: 4px;
+                break-inside: avoid;
+            }
+
+            .print-item .p-num {
+                font-size: 16px;
+                font-weight: 700;
+                font-family: monospace;
+                color: #000;
+                margin-bottom: 4px;
+            }
+
+            .print-item .p-info {
+                font-size: 11px;
+                color: #333;
+            }
+            
+            .print-header {
+                text-align: center;
+                margin-bottom: 20px;
+                border-bottom: 2px solid #000;
+                padding-bottom: 10px;
+            }
+            .print-header h2 { margin: 0 0 5px 0; font-size: 20px; text-transform: uppercase; }
+            .print-header p { margin: 0; font-size: 13px; font-style: italic; }
+        }
     </style>
 </head>
 
@@ -865,6 +909,7 @@
                     <button class="tab-btn active" onclick="filterCategory('all', event)">Tất cả</button>
                 </div>
                 <div class="sort-container">
+                    <button class="btn-scan" style="background: #10b981; margin: 0 15px 0 0; padding: 10px 16px; font-size: 13px; display: inline-flex; width: auto;" onclick="generatePrintList()">🖨️ BẢNG IN</button>
                     <label for="filterPrefix" class="sort-label">Đầu số:</label>
                     <select id="filterPrefix" class="sort-select" onchange="handlePrefixFilter()">
                         <option value="all">Tất cả</option>
@@ -902,6 +947,9 @@
             </div>
         </div>
     </div>
+
+    <!-- Khu vực dành riêng cho in ấn -->
+    <div id="printArea" style="display: none;"></div>
 
     <div class="toast" id="toast">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"
@@ -1692,6 +1740,64 @@
             } else {
                 document.getElementById('btnLoadMore').style.display = 'none';
             }
+        }
+
+        // --- PRINT ENGINE ---
+        function generatePrintList() {
+            if (!scoredData || scoredData.length === 0) {
+                alert("Vui lòng 'BẮT ĐẦU QUÉT AI' trước để có dữ liệu in!");
+                return;
+            }
+
+            // Hàm trộn mảng ngẫu nhiên
+            function shuffle(array) {
+                let currentIndex = array.length, randomIndex;
+                while (currentIndex > 0) {
+                    randomIndex = Math.floor(Math.random() * currentIndex);
+                    currentIndex--;
+                    [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+                }
+                return array;
+            }
+
+            // Chọn ngẫu nhiên từ top 200 số điểm cao nhất để đảm bảo chất lượng đẹp
+            let topData = [...scoredData].sort((a,b) => b.ai.score - a.ai.score).slice(0, 200);
+            topData = shuffle(topData);
+            
+            // Lấy khoảng 60 số (4 cột x 15 hàng) để in đẹp vừa vặn trên 1 trang A4
+            const selectedForPrint = topData.slice(0, 60);
+
+            const printArea = document.getElementById('printArea');
+            let html = `
+                <div class="print-header">
+                    <h2>BẢNG CHỌN SIM SỐ ĐẸP VIP</h2>
+                    <p>Ngày cập nhật: ${new Date().toLocaleDateString('vi-VN')} - Vui lòng liên hệ nhân viên để giữ số</p>
+                </div>
+                <div class="print-grid">
+            `;
+
+            selectedForPrint.forEach(item => {
+                // highlightHTML với matchStr='' chỉ dùng để tạo khoảng cách dễ nhìn (vd: 091 234 5678)
+                const formatNum = highlightHTML(item.fNum, ''); 
+                const price = Number(item.monthly) || 0;
+                const priceText = (price === 0) ? 'Giá: Trả trước' : (price / 1000) + 'k/Tháng';
+                const commitText = (item.commitment && item.commitment > 0) ? ` - CK: ${item.commitment}T` : '';
+
+                html += `
+                    <div class="print-item">
+                        <div class="p-num">${formatNum}</div>
+                        <div class="p-info">${priceText}${commitText}</div>
+                    </div>
+                `;
+            });
+
+            html += `</div>`;
+            printArea.innerHTML = html;
+
+            // Đợi render xong HTML rồi kích hoạt hộp thoại In của trình duyệt
+            setTimeout(() => {
+                window.print();
+            }, 300);
         }
     </script>
 </body>
