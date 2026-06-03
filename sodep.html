@@ -1789,7 +1789,7 @@
                 return array;
             }
             topData = shuffle(topData);
-            currentExportData = topData.slice(0, 48); // Cố định 48 số (12 dòng) cho bảng đẹp
+            currentExportData = topData; // Lưu toàn bộ danh sách đã trộn để dùng khi render
 
             document.getElementById('printOptionsModal').style.display = 'flex';
             renderPreview(); // Hiển thị preview ngay lập tức
@@ -1802,6 +1802,10 @@
         function renderPreview() {
             const showTag = document.getElementById('printShowTag').checked;
             
+            // Động thái thay đổi số lượng: có tag thì lấy 36 số (9 dòng), không tag thì lấy 48 số (12 dòng) để luôn vừa khít 1 mặt A4
+            const limit = showTag ? 36 : 48;
+            const selectedForPrint = currentExportData.slice(0, limit);
+
             let html = `
             <div id="jpgExportArea" style="zoom: 0.65; margin: 0 auto; width: 1200px;">
                 <div class="print-header">
@@ -1811,7 +1815,7 @@
                 <div class="print-grid">
             `;
 
-            currentExportData.forEach(item => {
+            selectedForPrint.forEach(item => {
                 const formatNum = highlightHTML(item.fNum, ''); 
                 const price = Number(item.monthly) || 0;
                 const priceText = (price === 0) ? 'Trả trước' : (price / 1000) + 'k/Tháng';
