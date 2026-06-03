@@ -865,7 +865,20 @@
                     <button class="tab-btn active" onclick="filterCategory('all', event)">Tất cả</button>
                 </div>
                 <div class="sort-container">
-                    <label for="sortBy" class="sort-label">Sắp xếp:</label>
+                    <label for="filterPrefix" class="sort-label">Đầu số:</label>
+                    <select id="filterPrefix" class="sort-select" onchange="handlePrefixFilter()">
+                        <option value="all">Tất cả</option>
+                        <option value="091">091</option>
+                        <option value="094">094</option>
+                        <option value="088">088</option>
+                        <option value="081">081</option>
+                        <option value="082">082</option>
+                        <option value="083">083</option>
+                        <option value="084">084</option>
+                        <option value="085">085</option>
+                    </select>
+
+                    <label for="sortBy" class="sort-label" style="margin-left: 10px;">Sắp xếp:</label>
                     <select id="sortBy" class="sort-select" onchange="handleSortChange()">
                         <option value="score-desc">⭐ Điểm AI cao nhất</option>
                         <option value="price-asc">💵 Giá cước: Thấp đến Cao</option>
@@ -912,6 +925,7 @@
         let currentCategory = 'all';
         let currentDisplayCount = 100;
         let currentSort = 'score-desc';
+        let currentPrefix = 'all';
 
         // Sinh mã định danh thiết bị
         function generateUUID() {
@@ -1332,8 +1346,12 @@
             currentCategory = 'all';
             currentDisplayCount = 100;
             currentSort = 'score-desc';
+            currentPrefix = 'all';
             if (document.getElementById('sortBy')) {
                 document.getElementById('sortBy').value = 'score-desc';
+            }
+            if (document.getElementById('filterPrefix')) {
+                document.getElementById('filterPrefix').value = 'all';
             }
             document.getElementById('btnLoadMore').style.display = 'none';
 
@@ -1486,6 +1504,15 @@
             }
         }
 
+        function handlePrefixFilter() {
+            const prefix = document.getElementById('filterPrefix');
+            if (prefix) {
+                currentPrefix = prefix.value;
+                currentDisplayCount = 100; // Reset pagination
+                renderResults();
+            }
+        }
+
         function filterCategory(cat, event) {
             currentCategory = cat;
             currentDisplayCount = 100; // Reset pagination khi đổi danh mục
@@ -1597,11 +1624,19 @@
             grid.innerHTML = '';
 
             let displayData = scoredData;
+
+            if (currentPrefix !== 'all') {
+                displayData = displayData.filter(item => {
+                    const formatNum = formatNumber(item.fNum);
+                    return formatNum.startsWith(currentPrefix);
+                });
+            }
+
             if (currentCategory !== 'all') {
                 if (currentCategory === 'free') {
-                    displayData = scoredData.filter(item => !item.monthly || item.monthly == 0 || item.monthly === "0");
+                    displayData = displayData.filter(item => !item.monthly || item.monthly == 0 || item.monthly === "0");
                 } else {
-                    displayData = scoredData.filter(item => item.ai.reasonsArr.includes(currentCategory));
+                    displayData = displayData.filter(item => item.ai.reasonsArr.includes(currentCategory));
                 }
             }
 
