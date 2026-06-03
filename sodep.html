@@ -897,6 +897,33 @@
             font-size: 18px;
             margin: 0;
         }
+
+        #jpgExportArea .print-footer-container {
+            text-align: center;
+            margin-top: 35px;
+            margin-bottom: 10px;
+        }
+
+        #jpgExportArea .print-footer {
+            background: linear-gradient(90deg, #dc2626 0%, #991b1b 100%);
+            color: white;
+            padding: 16px 45px;
+            border-radius: 50px;
+            font-size: 26px;
+            font-weight: 800;
+            box-shadow: 0 10px 25px -5px rgba(220, 38, 38, 0.4);
+            display: inline-block;
+            letter-spacing: 1px;
+            border: 4px solid #fca5a5;
+            text-transform: uppercase;
+        }
+
+        #jpgExportArea .print-footer span {
+            color: #fef08a; /* Vàng nhạt nổi bật */
+            font-size: 32px;
+            margin-left: 12px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
     </style>
 </head>
 
@@ -1038,15 +1065,22 @@
     <div id="printOptionsModal" class="modal-overlay" style="display: none;">
         <div class="modal-content">
             <h3>🖼️ Xem trước & Xuất Ảnh Báo Giá</h3>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <label
-                    style="display: flex; align-items: center; cursor: pointer; font-weight: 600; font-size: 15px; color: #333;">
-                    <input type="checkbox" id="printShowTag"
-                        style="width: 20px; height: 20px; margin-right: 8px; cursor: pointer;" checked
-                        onchange="renderPreview()">
-                    Kèm theo Tag ý nghĩa số
-                </label>
-                <span style="font-size: 13px; color: #64748b;">(Vuốt sang ngang hoặc xuống để xem hết bảng)</span>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; text-align: left;">
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <label style="display: flex; align-items: center; cursor: pointer; font-weight: 600; font-size: 15px; color: #333;">
+                        <input type="checkbox" id="printShowTag"
+                            style="width: 20px; height: 20px; margin-right: 10px; cursor: pointer;" checked
+                            onchange="renderPreview()">
+                        Kèm theo Tag ý nghĩa số
+                    </label>
+                    <label style="display: flex; align-items: center; cursor: pointer; font-weight: 600; font-size: 15px; color: #333;">
+                        <input type="checkbox" id="printShowContact"
+                            style="width: 20px; height: 20px; margin-right: 10px; cursor: pointer;" checked
+                            onchange="renderPreview()">
+                        Kèm theo Thông tin Nhân viên (LH)
+                    </label>
+                </div>
+                <span style="font-size: 13px; color: #64748b; margin-top: 5px;">(Vuốt để xem hết bảng)</span>
             </div>
 
             <div class="preview-wrapper" id="previewContainer">
@@ -1888,6 +1922,7 @@
 
         function renderPreview() {
             const showTag = document.getElementById('printShowTag').checked;
+            const showContact = document.getElementById('printShowContact').checked;
 
             // Động thái thay đổi số lượng: có tag thì lấy 36 số (9 dòng), không tag thì lấy 48 số (12 dòng) để luôn vừa khít 1 mặt A4
             const limit = showTag ? 36 : 48;
@@ -1924,7 +1959,16 @@
                 `;
             });
 
-            html += `</div></div>`;
+            html += `</div>`;
+
+            if (showContact) {
+                html += `
+                <div class="print-footer-container">
+                    <div class="print-footer">📞 LIÊN HỆ NGAY: <span>0947.050.848</span></div>
+                </div>`;
+            }
+
+            html += `</div>`;
             document.getElementById('previewContainer').innerHTML = html;
         }
 
