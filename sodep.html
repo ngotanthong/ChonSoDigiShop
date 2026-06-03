@@ -1924,8 +1924,11 @@
             const showTag = document.getElementById('printShowTag').checked;
             const showContact = document.getElementById('printShowContact').checked;
 
-            // Động thái thay đổi số lượng: có tag thì lấy 36 số (9 dòng), không tag thì lấy 48 số (12 dòng) để luôn vừa khít 1 mặt A4
-            const limit = showTag ? 36 : 48;
+            // Động thái thay đổi số lượng: có tag thì lấy 36 số (9 dòng), không tag thì lấy 48 số (12 dòng)
+            let limit = showTag ? 36 : 48;
+            // Nếu có thêm Footer liên hệ, giảm đi 1 dòng (4 số) để bù trừ không gian, tránh tràn trang A4
+            if (showContact) limit -= 4;
+            
             const selectedForPrint = currentExportData.slice(0, limit);
 
             let html = `
