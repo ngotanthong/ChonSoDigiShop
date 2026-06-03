@@ -888,13 +888,18 @@
                 <p>Hệ thống sẽ tự động tìm kiếm các số có cam kết 0 tháng hoặc giá &le; 400k/tháng, sau đó dùng AI chấm
                     điểm và chọn ra những số đẹp nhất cho bạn.</p>
 
-                <button class="btn-scan" id="btnScan" onclick="startAutoScan()">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                    </svg>
-                    BẮT ĐẦU QUÉT AI
-                </button>
+                <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                    <button class="btn-scan" id="btnScan" onclick="startAutoScan()" style="margin: 0; max-width: 250px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                        </svg>
+                        BẮT ĐẦU QUÉT AI
+                    </button>
+                    <button class="btn-scan" style="background: #10b981; margin: 0; max-width: 200px;" onclick="generatePrintList()">
+                        🖨️ TẠO BẢNG IN
+                    </button>
+                </div>
 
 
 
@@ -909,7 +914,6 @@
                     <button class="tab-btn active" onclick="filterCategory('all', event)">Tất cả</button>
                 </div>
                 <div class="sort-container">
-                    <button class="btn-scan" style="background: #10b981; margin: 0 15px 0 0; padding: 10px 16px; font-size: 13px; display: inline-flex; width: auto;" onclick="generatePrintList()">🖨️ BẢNG IN</button>
                     <label for="filterPrefix" class="sort-label">Đầu số:</label>
                     <select id="filterPrefix" class="sort-select" onchange="handlePrefixFilter()">
                         <option value="all">Tất cả</option>
