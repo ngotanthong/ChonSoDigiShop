@@ -992,8 +992,9 @@
         // Lấy cam kết 0đ và giá rẻ <=400k
         const COMMITS = ['0', '100000', '150000', '200000', '400000'];
 
-        let allScannedData = [];
+        let rawData = [];
         let scoredData = [];
+        let displayData = [];
         let currentCategory = 'all';
         let currentDisplayCount = 100;
         let currentSort = 'score-desc';
@@ -1413,7 +1414,7 @@
             document.getElementById('resultGrid').innerHTML = '';
             document.getElementById('emptyState').style.display = 'none';
 
-            allScannedData = [];
+            rawData = [];
             scoredData = [];
             currentCategory = 'all';
             currentDisplayCount = 100;
@@ -1452,7 +1453,7 @@
                         const res = await fetch(url);
                         const json = await res.json();
                         if (json.errorCode === 0 && json.data) {
-                            allScannedData = allScannedData.concat(json.data);
+                            rawData = rawData.concat(json.data);
                         }
                     } catch (e) {
                         console.error("Fetch error:", url);
@@ -1513,7 +1514,7 @@
             const uniqueSims = new Map();
             const allReasons = new Set();
 
-            allScannedData.forEach(item => {
+            rawData.forEach(item => {
                 const fNum = formatNumber(item.so_tb);
                 if (!uniqueSims.has(fNum)) {
                     const aiResult = analyzeSIM(fNum, item.monthly);
@@ -1695,7 +1696,7 @@
             const grid = document.getElementById('resultGrid');
             grid.innerHTML = '';
 
-            let displayData = scoredData;
+            displayData = scoredData;
 
             if (currentPrefix !== 'all') {
                 displayData = displayData.filter(item => {
@@ -1770,13 +1771,13 @@
         let currentExportData = [];
 
         function generatePrintList() {
-            if (!scoredData || scoredData.length === 0) {
-                alert("Vui lòng 'BẮT ĐẦU QUÉT AI' trước để có dữ liệu xuất ảnh!");
+            if (!displayData || displayData.length === 0) {
+                alert("Vui lòng 'BẮT ĐẦU QUÉT AI' và đảm bảo bộ lọc hiện tại có dữ liệu!");
                 return;
             }
             
-            // Xáo trộn 200 số đẹp nhất để ra danh sách ngẫu nhiên hấp dẫn
-            let topData = [...scoredData].sort((a,b) => b.ai.score - a.ai.score).slice(0, 200);
+            // Xáo trộn dữ liệu đang hiển thị (ở bộ lọc hiện tại) để ra danh sách ngẫu nhiên hấp dẫn
+            let topData = [...displayData].sort((a,b) => b.ai.score - a.ai.score).slice(0, 200);
             
             function shuffle(array) {
                 let currentIndex = array.length, randomIndex;
@@ -1802,7 +1803,7 @@
             const showTag = document.getElementById('printShowTag').checked;
             
             let html = `
-            <div id="jpgExportArea">
+            <div id="jpgExportArea" style="zoom: 0.65; margin: 0 auto; width: 1200px;">
                 <div class="print-header">
                     <h2>DANH SÁCH SIM SỐ ĐẸP VIP</h2>
                     <p>Ngày cập nhật: ${new Date().toLocaleDateString('vi-VN')} - Vui lòng liên hệ để giữ số</p>
@@ -1844,11 +1845,19 @@
             toast.querySelector('span').textContent = 'Đang xử lý ảnh, vui lòng chờ...';
             toast.classList.add('show');
 
-            // Ẩn modal lúc đang chụp để mượt hơn (tuỳ chọn)
-            document.getElementById('printOptionsModal').style.display = 'none';
-
             try {
-                const canvas = await html2canvas(jpgArea, { scale: 2, useCORS: true, backgroundColor: "#e2e8f0" });
+                // Tạo một bản sao để chụp ảnh (ẩn khỏi màn hình nhưng vẫn render được)
+                const exportClone = jpgArea.cloneNode(true);
+                exportClone.style.zoom = '1'; // Phóng to 100% để nét
+                exportClone.style.position = 'absolute';
+                exportClone.style.top = '-9999px';
+                exportClone.style.left = '0';
+                document.body.appendChild(exportClone);
+
+                const canvas = await html2canvas(exportClone, { scale: 2, useCORS: true, backgroundColor: "#e2e8f0" });
+                
+                document.body.removeChild(exportClone); // Xoá bản sao sau khi chụp xong
+
                 const imgData = canvas.toDataURL('image/jpeg', 0.9);
                 const link = document.createElement('a');
                 link.download = `Bang_So_VIP_${new Date().toISOString().slice(0,10)}.jpg`;
@@ -1859,7 +1868,6 @@
             } catch (err) {
                 console.error("Lỗi xuất ảnh:", err);
                 alert("Không thể tạo ảnh, vui lòng thử lại!");
-                document.getElementById('printOptionsModal').style.display = 'flex'; // Hiện lại nếu lỗi
             } finally {
                 setTimeout(() => {
                     toast.classList.remove('show');
