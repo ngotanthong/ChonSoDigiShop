@@ -774,11 +774,46 @@
             }
         }
 
+        /* --- MODAL & JPG EXPORT STYLES --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.75); z-index: 1000;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .modal-content {
+            background: white; padding: 25px; border-radius: 16px; width: 90%; max-width: 450px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); text-align: center;
+        }
+        .modal-content h3 { margin-top: 0; color: #1e293b; font-size: 20px; }
+
+        #jpgExportArea {
+            position: absolute; top: -9999px; left: 0;
+            width: 1200px; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            padding: 50px; font-family: 'Inter', Arial, sans-serif;
+            color: #1e293b; z-index: -1;
+        }
+        #jpgExportArea .print-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+        #jpgExportArea .print-item {
+            background: white; border: none; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
+            border-radius: 12px; padding: 16px; text-align: center;
+        }
+        #jpgExportArea .p-num { color: #dc2626; font-size: 28px; font-weight: 800; margin-bottom: 8px; letter-spacing: 1px; }
+        #jpgExportArea .p-tag {
+            background: #d1fae5; color: #059669; padding: 4px 10px;
+            border-radius: 20px; font-size: 13px; margin-bottom: 10px; display: inline-block; font-weight: 700;
+        }
+        #jpgExportArea .p-info { font-size: 15px; color: #475569; font-weight: 600; }
+        #jpgExportArea .print-header { text-align: center; margin-bottom: 35px; }
+        #jpgExportArea .print-header h2 { color: #1e3a8a; font-size: 36px; font-weight: 900; margin: 0 0 12px 0; text-transform: uppercase; }
+        #jpgExportArea .print-header p { color: #64748b; font-size: 18px; margin: 0; }
+        
+        .print-item .p-tag-print { font-size: 11px; font-style: italic; color: #64748b; margin-bottom: 4px; }
+
         /* --- PRINT STYLES --- */
         @media print {
             @page { margin: 0; } /* Tắt header/footer url rườm rà của trình duyệt */
             body { background: white; padding: 1cm; margin: 0; color: #000; font-family: Arial, sans-serif; }
-            #loginScreen, #appContainer, #toast, .toolbar, .scan-panel, .header-wrapper, .btn-load-more { display: none !important; }
+            #loginScreen, #appContainer, #toast, .toolbar, .scan-panel, .header-wrapper, .btn-load-more, #printOptionsModal, #jpgExportArea { display: none !important; }
             #printArea { display: block !important; }
 
             .print-grid {
@@ -956,6 +991,27 @@
 
     <!-- Khu vực dành riêng cho in ấn -->
     <div id="printArea" style="display: none;"></div>
+
+    <!-- Hộp thoại Tùy chọn In/Xuất ảnh -->
+    <div id="printOptionsModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <h3>🖨️ Tùy chọn xuất danh sách</h3>
+            <div class="input-group" style="margin-top: 20px; margin-bottom: 25px; text-align: left;">
+                <label style="display: flex; align-items: center; cursor: pointer; font-weight: 600; font-size: 15px;">
+                    <input type="checkbox" id="printShowTag" style="width: 20px; height: 20px; margin-right: 12px; cursor: pointer;">
+                    Hiển thị Ý Nghĩa Số (Tag)
+                </label>
+                <p style="font-size: 12px; color: #64748b; margin-top: 8px; margin-left: 32px;">Nếu in giấy A4, số lượng sim sẽ tự giảm xuống 40 để có chỗ hiển thị tag mà không tràn trang.</p>
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: space-between;">
+                <button class="btn-scan" style="background: #94a3b8; padding: 12px; margin: 0; width: auto;" onclick="closePrintModal()">Hủy</button>
+                <div style="display: flex; gap: 10px; flex: 1; justify-content: flex-end;">
+                    <button class="btn-scan" style="background: #3b82f6; padding: 12px; margin: 0; width: auto;" onclick="executePrint('print')">IN GIẤY (A4)</button>
+                    <button class="btn-scan" style="background: #10b981; padding: 12px; margin: 0; width: auto;" onclick="executePrint('jpg')">TẢI ẢNH JPG</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="toast" id="toast">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"
@@ -1748,12 +1804,22 @@
             }
         }
 
-        // --- PRINT ENGINE ---
+        // --- PRINT & EXPORT ENGINE ---
         function generatePrintList() {
             if (!scoredData || scoredData.length === 0) {
-                alert("Vui lòng 'BẮT ĐẦU QUÉT AI' trước để có dữ liệu in!");
+                alert("Vui lòng 'BẮT ĐẦU QUÉT AI' trước để có dữ liệu xuất!");
                 return;
             }
+            document.getElementById('printOptionsModal').style.display = 'flex';
+        }
+
+        function closePrintModal() {
+            document.getElementById('printOptionsModal').style.display = 'none';
+        }
+
+        async function executePrint(type) {
+            closePrintModal();
+            const showTag = document.getElementById('printShowTag').checked;
 
             // Hàm trộn mảng ngẫu nhiên
             function shuffle(array) {
@@ -1770,10 +1836,13 @@
             let topData = [...scoredData].sort((a,b) => b.ai.score - a.ai.score).slice(0, 200);
             topData = shuffle(topData);
             
-            // Lấy khoảng 48 số (4 cột x 12 hàng) kết hợp nới lỏng CSS để fill vừa khít 1 trang
-            const selectedForPrint = topData.slice(0, 48);
+            // Xử lý số lượng hiển thị dựa trên tuỳ chọn
+            let limit = 56;
+            if (type === 'print' && showTag) limit = 40; // Giảm xuống 10 dòng để vừa A4 khi có tag
+            if (type === 'jpg') limit = 60; // Ảnh JPG tải thoải mái 15 dòng
+            
+            const selectedForPrint = topData.slice(0, limit);
 
-            const printArea = document.getElementById('printArea');
             let html = `
                 <div class="print-header">
                     <h2>DANH SÁCH SỐ SIM TRẢ SAU</h2>
@@ -1783,27 +1852,66 @@
             `;
 
             selectedForPrint.forEach(item => {
-                // highlightHTML với matchStr='' chỉ dùng để tạo khoảng cách dễ nhìn (vd: 091 234 5678)
                 const formatNum = highlightHTML(item.fNum, ''); 
                 const price = Number(item.monthly) || 0;
                 const priceText = (price === 0) ? 'Trả trước' : (price / 1000) + 'k/Tháng';
                 const commitText = (item.commitment && item.commitment > 0) ? ` - Cam kết: ${item.commitment}T` : '';
 
+                let tagHtml = '';
+                if (showTag) {
+                    const mainTag = item.ai.reasonText.split('+')[0].trim();
+                    if (type === 'jpg') {
+                        tagHtml = `<div class="p-tag">${mainTag}</div>`;
+                    } else {
+                        tagHtml = `<div class="p-tag-print">${mainTag}</div>`;
+                    }
+                }
+
                 html += `
                     <div class="print-item">
                         <div class="p-num">${formatNum}</div>
+                        ${tagHtml}
                         <div class="p-info">${priceText}${commitText}</div>
                     </div>
                 `;
             });
 
             html += `</div>`;
-            printArea.innerHTML = html;
+            
+            if (type === 'print') {
+                const printArea = document.getElementById('printArea');
+                printArea.innerHTML = html;
+                setTimeout(() => { window.print(); }, 300);
+            } else if (type === 'jpg') {
+                const jpgArea = document.createElement('div');
+                jpgArea.id = 'jpgExportArea';
+                jpgArea.innerHTML = html;
+                document.body.appendChild(jpgArea);
+                
+                const toast = document.getElementById('toast');
+                toast.querySelector('span').textContent = 'Đang xử lý ảnh, vui lòng chờ...';
+                toast.classList.add('show');
 
-            // Đợi render xong HTML rồi kích hoạt hộp thoại In của trình duyệt
-            setTimeout(() => {
-                window.print();
-            }, 300);
+                try {
+                    const canvas = await html2canvas(jpgArea, { scale: 2, useCORS: true });
+                    const imgData = canvas.toDataURL('image/jpeg', 0.9);
+                    const link = document.createElement('a');
+                    link.download = `Bang_So_VIP_${new Date().toISOString().slice(0,10)}.jpg`;
+                    link.href = imgData;
+                    link.click();
+                    
+                    toast.querySelector('span').textContent = 'Tải ảnh JPG thành công!';
+                } catch (err) {
+                    console.error("Lỗi xuất ảnh:", err);
+                    alert("Không thể tạo ảnh, vui lòng thử lại!");
+                } finally {
+                    document.body.removeChild(jpgArea);
+                    setTimeout(() => {
+                        toast.classList.remove('show');
+                        setTimeout(() => { toast.querySelector('span').textContent = 'Đã sao chép số điện thoại!'; }, 500);
+                    }, 3000);
+                }
+            }
         }
     </script>
 </body>
