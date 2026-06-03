@@ -9,7 +9,9 @@
     <link rel="icon" type="image/x-icon" href="https://vnpt.com.vn/favicon.ico">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="accounts.js"></script>
+    <link rel="stylesheet" href="components/sim-card.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="components/sim-card.js"></script>
     <style>
         :root {
             --bg: #f8fafc;
@@ -1422,7 +1424,7 @@
             const allReasons = new Set();
 
             allScannedData.forEach(item => {
-                const fNum = formatNumber(item.so_tb);
+                const fNum = formatSIMNumber(item.so_tb);
                 if (!uniqueSims.has(fNum)) {
                     const aiResult = analyzeSIM(fNum, item.monthly);
                     // Lọc theo điểm chuẩn
@@ -1502,92 +1504,12 @@
             renderResults();
         }
 
-        function highlightHTML(numStr, matchStr) {
-            if (!numStr || numStr.length !== 10) {
-                if (!matchStr) return numStr;
-                return numStr.replace(matchStr, `<span class="hi">${matchStr}</span>`);
-            }
-
-            let dotIndexes = [];
-            if (/(.)\1{4}$/.test(numStr)) { // Ngũ quý (VD: 091 23 88888)
-                dotIndexes = [3, 5];
-            } else if (/(.)\1{3}$/.test(numStr)) { // Tứ quý (VD: 091 234 8888)
-                dotIndexes = [3, 6];
-            } else if (/(\d{3})\1$/.test(numStr)) { // Taxi 3 cụm ABC ABC (VD: 0912 789 789)
-                dotIndexes = [4, 7];
-            } else if (/(\d{2})\1\1$/.test(numStr) || /(\d{2})\d{2}\1$/.test(numStr)) { // AB AB AB hoặc AB CD AB (VD: 0912 68 68 68)
-                dotIndexes = [4, 6, 8];
-            } else if (/(\d{2})\1$/.test(numStr) || /(\d)\1(\d)\2$/.test(numStr) || /(\d)(\d)\2\1$/.test(numStr)) { // Lặp cặp, gánh 4 số (VD: 091 234 68 68)
-                dotIndexes = [3, 6, 8];
-            } else {
-                dotIndexes = [3, 6]; // Mặc định 3-3-4 (VD: 091 234 5678)
-            }
-
-            let html = '';
-            const idx = matchStr ? numStr.lastIndexOf(matchStr) : -1;
-
-            for (let i = 0; i < numStr.length; i++) {
-                if (dotIndexes.includes(i)) html += ' '; // Dùng dấu cách để dễ nhìn
-
-                if (i === idx) html += '<span class="hi">';
-
-                html += numStr[i];
-
-                if (matchStr && i === idx + matchStr.length - 1) html += '</span>';
-            }
-            return html;
-        }
-
         function copyToClipboard(text) {
             navigator.clipboard.writeText(text).then(() => {
                 const toast = document.getElementById('toast');
                 toast.classList.add('show');
                 setTimeout(() => toast.classList.remove('show'), 2000);
             });
-        }
-
-        async function downloadCard(phoneNum, btnEl, event) {
-            event.stopPropagation(); // Ngăn sự kiện copy số điện thoại khi bấm nút tải
-
-            const card = btnEl.closest('.sim-card');
-            if (!card) return;
-
-            // Thêm class để ẩn nút tải khi chụp ảnh
-            card.classList.add('is-capturing');
-
-            // Thay đổi giao diện nút tạm thời thành trạng thái loading
-            const originalHTML = btnEl.innerHTML;
-            btnEl.disabled = true;
-            btnEl.innerHTML = '<span class="login-spinner" style="width: 12px; height: 12px; border-width: 1.5px; border-top-color: currentColor;"></span>';
-
-            try {
-                // Tạo ảnh chất lượng cao với scale=3 (cực kỳ sắc nét)
-                const canvas = await html2canvas(card, {
-                    scale: 3,
-                    useCORS: true,
-                    backgroundColor: '#ffffff', // Đảm bảo nền trắng
-                    logging: false
-                });
-
-                // Chuyển canvas thành URL ảnh
-                const imgData = canvas.toDataURL('image/png');
-
-                // Tạo phần tử tải ẩn
-                const link = document.createElement('a');
-                link.download = `SIM_VIP_${phoneNum}.png`;
-                link.href = imgData;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            } catch (err) {
-                console.error("Lỗi chụp ảnh card:", err);
-                alert("Không thể tải ảnh card này. Vui lòng thử lại!");
-            } finally {
-                // Khôi phục giao diện ban đầu
-                card.classList.remove('is-capturing');
-                btnEl.disabled = false;
-                btnEl.innerHTML = originalHTML;
-            }
         }
 
         function renderResults() {
@@ -1615,36 +1537,10 @@
             const dataToShow = displayData.slice(0, currentDisplayCount);
 
             dataToShow.forEach(item => {
-                const isFree = !item.monthly || item.monthly == 0 || item.monthly === "0";
-                const price = Number(item.monthly) || 0;
-                const priceText = isFree ? '0 đ/tháng' : price.toLocaleString() + ' đ/tháng';
-                const commitText = (item.commitment && item.commitment > 0) ? `Cam kết ${item.commitment}T` : 'Không cam kết';
-                const hlNum = highlightHTML(item.fNum, item.ai.highlight);
-
                 const card = document.createElement('div');
                 card.className = 'sim-card';
                 card.onclick = () => copyToClipboard(item.fNum);
-
-                card.innerHTML = `
-                    <div class="sim-card-header">
-                        <button class="btn-download-card" onclick="downloadCard('${item.fNum}', this, event)" title="Tải ảnh card để đăng MXH">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-                                <circle cx="12" cy="13" r="4"></circle>
-                            </svg>
-                        </button>
-                        <div class="sim-score">⭐ ${item.ai.score} Điểm</div>
-                    </div>
-                    <div class="sim-number">${hlNum}</div>
-                    <div class="sim-reason">${item.ai.reasonText}</div>
-                    <div class="sim-price-row">
-                        <div class="sim-price-box">
-                            <div class="sim-price">${priceText}</div>
-                            <div class="sim-sub">${isFree ? 'LH nhân viên' : 'Cam kết cước'}</div>
-                        </div>
-                        <div class="sim-commit">${commitText}</div>
-                    </div>
-                `;
+                card.innerHTML = createSimCardHTML(item);
                 grid.appendChild(card);
             });
 
