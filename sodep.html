@@ -1370,22 +1370,34 @@
 
             // 5.5. Số Gánh / Số Đảo (ABBA, ABA, AB CD AB)
             if (!isLap) {
-                const matchGanhCap = numStr.match(/(\d{2})(\d{2})\1$/);
-                if (matchGanhCap && Math.abs(parseInt(matchGanhCap[1]) - parseInt(matchGanhCap[2])) <= 2) { // AB CD AB (Gánh cặp 6 số gần nhau)
-                    score += 30;
-                    categories.push('soganh');
-                    reasons.push('Gánh Cặp');
-                    highlight = highlight || numStr.slice(-6);
-                } else if (/(\d)(\d)\2\1$/.test(numStr) && numStr.slice(-1) !== numStr.slice(-2, -1)) { // ABBA
-                    score += 25;
-                    categories.push('soganh');
-                    reasons.push('Gánh Đảo');
-                    highlight = highlight || numStr.slice(-4);
-                } else if (/(\d)(\d)\1$/.test(numStr) && numStr.slice(-1) !== numStr.slice(-2, -1)) { // ABA
-                    score += 15;
-                    categories.push('soganh');
-                    reasons.push('Gánh');
-                    highlight = highlight || numStr.slice(-3);
+                // Kiểm tra Cặp Tiến trước Gánh để không bị override sai
+                const _ct6 = numStr.slice(-6);
+                const _ct4 = numStr.slice(-4);
+                const _p1_6 = parseInt(_ct6.slice(0, 2)), _p2_6 = parseInt(_ct6.slice(2, 4)), _p3_6 = parseInt(_ct6.slice(4, 6));
+                const _d1_6 = _p2_6 - _p1_6, _d2_6 = _p3_6 - _p2_6;
+                const _p1_4 = parseInt(_ct4.slice(0, 2)), _p2_4 = parseInt(_ct4.slice(2, 4));
+                const _d_4 = _p2_4 - _p1_4;
+                const isCaptienHere = (_d1_6 > 0 && _d1_6 <= 20 && _d1_6 === _d2_6) ||
+                    (_d_4 > 0 && _d_4 <= 20 && _p1_4 >= 10);
+
+                if (!isCaptienHere) {
+                    const matchGanhCap = numStr.match(/(\d{2})(\d{2})\1$/);
+                    if (matchGanhCap && Math.abs(parseInt(matchGanhCap[1]) - parseInt(matchGanhCap[2])) <= 2) { // AB CD AB (Gánh cặp 6 số gần nhau)
+                        score += 30;
+                        categories.push('soganh');
+                        reasons.push('Gánh Cặp');
+                        highlight = highlight || numStr.slice(-6);
+                    } else if (/(\d)(\d)\2\1$/.test(numStr) && numStr.slice(-1) !== numStr.slice(-2, -1)) { // ABBA
+                        score += 25;
+                        categories.push('soganh');
+                        reasons.push('Gánh Đảo');
+                        highlight = highlight || numStr.slice(-4);
+                    } else if (/(\d)(\d)\1$/.test(numStr) && numStr.slice(-1) !== numStr.slice(-2, -1)) { // ABA
+                        score += 15;
+                        categories.push('soganh');
+                        reasons.push('Gánh');
+                        highlight = highlight || numStr.slice(-3);
+                    }
                 }
             }
 
@@ -1460,18 +1472,55 @@
                 highlight = highlight || numStr.slice(-3);
             }
 
-            // 10.5. Cặp Tiến (ví dụ 1415, 1315, 31415 ở đuôi)
-            const last4Digits = numStr.slice(-4);
-            if (last4Digits.length === 4) {
-                const d1 = parseInt(last4Digits[0]);
-                const d2 = parseInt(last4Digits[1]);
-                const d3 = parseInt(last4Digits[2]);
-                const d4 = parseInt(last4Digits[3]);
-                if (d1 === d3 && d4 > d2) {
-                    score += 15;
-                    categories.push('captien');
-                    reasons.push('Cặp Tiến');
-                    highlight = highlight || last4Digits;
+            // 10.5. Cặp Tiến nâng cao (phát hiện 2-3 cặp 2 số tiến đều)
+            {
+                // Helper: kiểm tra 2 cặp số cuối có tạo thành cặp tiến không
+                const checkPairTien = (str) => {
+                    if (str.length < 4) return null;
+                    const last4 = str.slice(-4);
+                    const p1 = parseInt(last4.slice(0, 2));
+                    const p2 = parseInt(last4.slice(2, 4));
+                    const diff = p2 - p1;
+                    if (diff > 0 && diff <= 20 && diff % 1 === 0) return { pairs: [p1, p2], diff, len: 4 };
+                    return null;
+                };
+
+                // Kiểm tra 3 cặp đuôi 6 số (mạnh hơn)
+                const last6 = numStr.slice(-6);
+                let captienFound = false;
+                if (last6.length === 6) {
+                    const p1 = parseInt(last6.slice(0, 2));
+                    const p2 = parseInt(last6.slice(2, 4));
+                    const p3 = parseInt(last6.slice(4, 6));
+                    const diff1 = p2 - p1;
+                    const diff2 = p3 - p2;
+                    if (diff1 > 0 && diff1 <= 20 && diff1 === diff2) {
+                        if (!highlight) {
+                            score += 30;
+                            categories.push('captien');
+                            reasons.push('Cặp Tiến 3 Bậc');
+                            highlight = last6;
+                            captienFound = true;
+                        }
+                    }
+                }
+
+                // Kiểm tra 2 cặp đuôi 4 số (thông thường)
+                if (!captienFound) {
+                    const last4 = numStr.slice(-4);
+                    const p1 = parseInt(last4.slice(0, 2));
+                    const p2 = parseInt(last4.slice(2, 4));
+                    const diff = p2 - p1;
+                    // Cặp tiến hợp lệ: diff dương và đẹp (1-20), không phải sảnh tiến đơn
+                    // Tránh nhầm với Sảnh Tiến đơn chữ số (ví dụ 12 không phải cặp tiến mà là sảnh)
+                    if (diff > 0 && diff <= 20 && p1 >= 10) {
+                        if (!highlight) {
+                            score += 15;
+                            categories.push('captien');
+                            reasons.push('Cặp Tiến');
+                            highlight = last4;
+                        }
+                    }
                 }
             }
 
