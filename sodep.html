@@ -1389,21 +1389,6 @@
                 }
             }
 
-            // 5.7. Cặp Tiến (ví dụ 1415, 1315, 31415 ở đuôi)
-            const last4Digits = numStr.slice(-4);
-            if (last4Digits.length === 4) {
-                const d1 = parseInt(last4Digits[0]);
-                const d2 = parseInt(last4Digits[1]);
-                const d3 = parseInt(last4Digits[2]);
-                const d4 = parseInt(last4Digits[3]);
-                if (d1 === d3 && d4 > d2) {
-                    score += 15;
-                    categories.push('captien');
-                    reasons.push('Cặp Tiến');
-                    highlight = highlight || last4Digits;
-                }
-            }
-
             // 6. Đuôi Đẹp phong thủy (79: thần tài lớn, 39: thần tài nhỏ, 38: ông địa)
             if (/(79|39)$/.test(numStr)) {
                 score += 20;
@@ -1473,6 +1458,21 @@
                 categories.push('sotien');
                 reasons.push('Sảnh Tiến Chẵn');
                 highlight = highlight || numStr.slice(-3);
+            }
+
+            // 10.5. Cặp Tiến (ví dụ 1415, 1315, 31415 ở đuôi)
+            const last4Digits = numStr.slice(-4);
+            if (last4Digits.length === 4) {
+                const d1 = parseInt(last4Digits[0]);
+                const d2 = parseInt(last4Digits[1]);
+                const d3 = parseInt(last4Digits[2]);
+                const d4 = parseInt(last4Digits[3]);
+                if (d1 === d3 && d4 > d2) {
+                    score += 15;
+                    categories.push('captien');
+                    reasons.push('Cặp Tiến');
+                    highlight = highlight || last4Digits;
+                }
             }
 
             // 11. Đầu Đuôi Tương Phùng
