@@ -849,7 +849,7 @@
 
         #jpgExportArea .p-num {
             color: #dc2626;
-            font-size: 28px;
+            font-size: 29px;
             font-weight: 800;
             margin-bottom: 12px;
             letter-spacing: 1px;
@@ -868,12 +868,12 @@
             color: #059669;
             padding: 4px 8px;
             border-radius: 12px;
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 700;
         }
 
         #jpgExportArea .p-info {
-            font-size: 16px;
+            font-size: 17px;
             color: #475569;
             font-weight: 600;
             margin-top: auto;
@@ -886,7 +886,7 @@
 
         #jpgExportArea .print-header h2 {
             color: #1e3a8a;
-            font-size: 36px;
+            font-size: 37px;
             font-weight: 900;
             margin: 0 0 12px 0;
             text-transform: uppercase;
@@ -894,7 +894,7 @@
 
         #jpgExportArea .print-header p {
             color: #64748b;
-            font-size: 18px;
+            font-size: 19px;
             margin: 0;
         }
 
@@ -909,7 +909,7 @@
             color: white;
             padding: 16px 45px;
             border-radius: 50px;
-            font-size: 26px;
+            font-size: 27px;
             font-weight: 800;
             box-shadow: 0 10px 25px -5px rgba(220, 38, 38, 0.4);
             display: inline-block;
@@ -919,10 +919,11 @@
         }
 
         #jpgExportArea .print-footer span {
-            color: #fef08a; /* Vàng nhạt nổi bật */
-            font-size: 32px;
+            color: #fef08a;
+            /* Vàng nhạt nổi bật */
+            font-size: 33px;
             margin-left: 12px;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
         }
     </style>
 </head>
@@ -1065,15 +1066,18 @@
     <div id="printOptionsModal" class="modal-overlay" style="display: none;">
         <div class="modal-content">
             <h3>🖼️ Xem trước & Xuất Ảnh Báo Giá</h3>
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; text-align: left;">
+            <div
+                style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; text-align: left;">
                 <div style="display: flex; flex-direction: column; gap: 12px;">
-                    <label style="display: flex; align-items: center; cursor: pointer; font-weight: 600; font-size: 15px; color: #333;">
+                    <label
+                        style="display: flex; align-items: center; cursor: pointer; font-weight: 600; font-size: 15px; color: #333;">
                         <input type="checkbox" id="printShowTag"
                             style="width: 20px; height: 20px; margin-right: 10px; cursor: pointer;" checked
                             onchange="renderPreview()">
                         Kèm theo Tag ý nghĩa số
                     </label>
-                    <label style="display: flex; align-items: center; cursor: pointer; font-weight: 600; font-size: 15px; color: #333;">
+                    <label
+                        style="display: flex; align-items: center; cursor: pointer; font-weight: 600; font-size: 15px; color: #333;">
                         <input type="checkbox" id="printShowContact"
                             style="width: 20px; height: 20px; margin-right: 10px; cursor: pointer;" checked
                             onchange="renderPreview()">
@@ -1327,12 +1331,12 @@
             if (/(0123|1234|2345|3456|4567|5678|6789)$/.test(numStr)) {
                 score += 35;
                 categories.push('sotien');
-                reasons.push('Tiến Lên Đẹp');
+                reasons.push('Sảnh Tiến Lớn');
                 highlight = highlight || numStr.slice(-4);
             } else if (/(012|123|234|345|456|567|678|789)$/.test(numStr)) {
                 score += 15;
                 categories.push('sotien');
-                reasons.push('Số Tiến');
+                reasons.push('Sảnh Tiến');
                 highlight = highlight || numStr.slice(-3);
             }
 
@@ -1454,11 +1458,21 @@
                 categories.push('sotien');
                 reasons.push('Tiến Lẻ Đều');
                 highlight = highlight || numStr.slice(-4);
+            } else if (/(135|357|579)$/.test(numStr)) {
+                score += 15;
+                categories.push('sotien');
+                reasons.push('Sảnh Tiến Lẻ');
+                highlight = highlight || numStr.slice(-3);
             } else if (/(2468|0246|4680)$/.test(numStr)) {
                 score += 20;
                 categories.push('sotien');
                 reasons.push('Tiến Chẵn Đều');
                 highlight = highlight || numStr.slice(-4);
+            } else if (/(024|246|468|680)$/.test(numStr)) {
+                score += 15;
+                categories.push('sotien');
+                reasons.push('Sảnh Tiến Chẵn');
+                highlight = highlight || numStr.slice(-3);
             }
 
             // 11. Đầu Đuôi Tương Phùng
@@ -1928,7 +1942,7 @@
             let limit = showTag ? 36 : 48;
             // Nếu có thêm Footer liên hệ, giảm đi 1 dòng (4 số) để bù trừ không gian, tránh tràn trang A4
             if (showContact) limit -= 4;
-            
+
             const selectedForPrint = currentExportData.slice(0, limit);
 
             let html = `
