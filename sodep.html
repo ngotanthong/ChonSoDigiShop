@@ -1381,22 +1381,33 @@
                     (_d_4 > 0 && _d_4 <= 20 && _p1_4 >= 10);
 
                 if (!isCaptienHere) {
-                    const matchGanhCap = numStr.match(/(\d{2})(\d{2})\1$/);
-                    if (matchGanhCap && Math.abs(parseInt(matchGanhCap[1]) - parseInt(matchGanhCap[2])) <= 2) { // AB CD AB (Gánh cặp 6 số gần nhau)
-                        score += 30;
-                        categories.push('soganh');
-                        reasons.push('Gánh Cặp');
-                        highlight = highlight || numStr.slice(-6);
-                    } else if (/(\d)(\d)\2\1$/.test(numStr) && numStr.slice(-1) !== numStr.slice(-2, -1)) { // ABBA
+                    // Kiểm tra Gánh Kép: 6 số cuối gồm 2 cụm ABA liền nhau (VD: 323262)
+                    const last6g = numStr.slice(-6);
+                    const g1 = last6g.slice(0, 3), g2 = last6g.slice(3, 6);
+                    const isABA = (s) => s.length === 3 && s[0] === s[2] && s[0] !== s[1];
+                    if (isABA(g1) && isABA(g2)) {
                         score += 25;
                         categories.push('soganh');
-                        reasons.push('Gánh Đảo');
-                        highlight = highlight || numStr.slice(-4);
-                    } else if (/(\d)(\d)\1$/.test(numStr) && numStr.slice(-1) !== numStr.slice(-2, -1)) { // ABA
-                        score += 15;
-                        categories.push('soganh');
-                        reasons.push('Gánh');
-                        highlight = highlight || numStr.slice(-3);
+                        reasons.push('Gánh Kép');
+                        highlight = highlight || last6g;
+                    } else {
+                        const matchGanhCap = numStr.match(/(\d{2})(\d{2})\1$/);
+                        if (matchGanhCap && Math.abs(parseInt(matchGanhCap[1]) - parseInt(matchGanhCap[2])) <= 2) { // AB CD AB (Gánh cặp 6 số gần nhau)
+                            score += 30;
+                            categories.push('soganh');
+                            reasons.push('Gánh Cặp');
+                            highlight = highlight || numStr.slice(-6);
+                        } else if (/(\d)(\d)\2\1$/.test(numStr) && numStr.slice(-1) !== numStr.slice(-2, -1)) { // ABBA
+                            score += 25;
+                            categories.push('soganh');
+                            reasons.push('Gánh Đảo');
+                            highlight = highlight || numStr.slice(-4);
+                        } else if (/(\d)(\d)\1$/.test(numStr) && numStr.slice(-1) !== numStr.slice(-2, -1)) { // ABA - hạ điểm
+                            score += 8;
+                            categories.push('soganh');
+                            reasons.push('Gánh');
+                            highlight = highlight || numStr.slice(-3);
+                        }
                     }
                 }
             }
@@ -1809,10 +1820,16 @@
                 const isSanh = /(012|123|234|345|456|567|678|789|135|357|579|024|246|468|987|876|765|654|543|432|321|210|975|753|531|864|642|420)/.test(matchStr);
                 const isGanh3 = matchStr.length === 3 && matchStr[0] === matchStr[2] && matchStr[0] !== matchStr[1]; // ABA
                 const isGanh4 = matchStr.length === 4 && matchStr[0] === matchStr[3] && matchStr[1] === matchStr[2] && matchStr[0] !== matchStr[1]; // ABBA
+                const isGanhKep = matchStr.length === 6 && matchStr[0] === matchStr[2] && matchStr[0] !== matchStr[1] && matchStr[3] === matchStr[5] && matchStr[3] !== matchStr[4]; // ABA+ABA
+                const isCaptien3Bac = matchStr.length === 6 && (() => { const p1=parseInt(matchStr.slice(0,2)),p2=parseInt(matchStr.slice(2,4)),p3=parseInt(matchStr.slice(4,6)); return (p2-p1)>0&&(p2-p1)<=20&&(p2-p1)===(p3-p2); })();
                 if (matchStr.length === 3 && isSanh) {
                     dotIndexes = [3, 5, 7]; // Sảnh 3 số cuối: nhịp 3-2-2-3
                 } else if (matchStr.length === 5 && isSanh) {
                     dotIndexes = [3, 5]; // Sảnh 5 số cuối
+                } else if (isCaptien3Bac) {
+                    dotIndexes = [4, 6, 8]; // Cặp Tiến 3 Bậc: nhịp 4-2-2-2 (VD: 0912 50 60 70)
+                } else if (isGanhKep) {
+                    dotIndexes = [4, 7]; // Gánh Kép: nhịp 4-3-3 (VD: 0812 323 262)
                 } else if (isGanh3 || isGanh4) {
                     dotIndexes = [4, 7]; // Gánh ABA/ABBA: nhịp 4-3-3 (VD: 0911 056 070)
                 } else {
