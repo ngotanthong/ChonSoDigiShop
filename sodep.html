@@ -1911,9 +1911,6 @@
                 return;
             }
 
-            // Xáo trộn dữ liệu đang hiển thị (ở bộ lọc hiện tại) để ra danh sách ngẫu nhiên hấp dẫn
-            let topData = [...displayData].sort((a, b) => b.ai.score - a.ai.score).slice(0, 200);
-
             function shuffle(array) {
                 let currentIndex = array.length, randomIndex;
                 while (currentIndex > 0) {
@@ -1923,7 +1920,70 @@
                 }
                 return array;
             }
-            topData = shuffle(topData);
+
+            let topData = [];
+            
+            // Nếu ở tab "Tất cả", lấy ngẫu nhiên đa dạng loại số (categories)
+            if (currentCategory === 'all') {
+                const groups = {};
+                displayData.forEach(item => {
+                    const mainReason = item.ai.reasonsArr[0] || 'Khác';
+                    if (!groups[mainReason]) groups[mainReason] = [];
+                    groups[mainReason].push(item);
+                });
+
+                // Ưu tiên điểm cao trong mỗi nhóm
+                for (let key in groups) {
+                    groups[key].sort((a, b) => b.ai.score - a.ai.score);
+                }
+
+                // Rút luân phiên mỗi nhóm để có sự đa dạng
+                let keys = Object.keys(groups);
+                let pool = [];
+                let i = 0;
+                let added = true;
+                while (added && pool.length < 150) {
+                    added = false;
+                    for (let key of keys) {
+                        if (groups[key].length > i) {
+                            pool.push(groups[key][i]);
+                            added = true;
+                        }
+                    }
+                    i++;
+                }
+                topData = shuffle(pool);
+            } else {
+                // Nếu ở 1 filter cụ thể, lấy đa dạng giá tiền
+                const priceGroups = {};
+                displayData.forEach(item => {
+                    const price = Number(item.monthly) || 0;
+                    if (!priceGroups[price]) priceGroups[price] = [];
+                    priceGroups[price].push(item);
+                });
+
+                // Ưu tiên điểm cao trong mỗi mức giá
+                for (let key in priceGroups) {
+                    priceGroups[key].sort((a, b) => b.ai.score - a.ai.score);
+                }
+
+                let keys = Object.keys(priceGroups);
+                let pool = [];
+                let i = 0;
+                let added = true;
+                while (added && pool.length < 150) {
+                    added = false;
+                    for (let key of keys) {
+                        if (priceGroups[key].length > i) {
+                            pool.push(priceGroups[key][i]);
+                            added = true;
+                        }
+                    }
+                    i++;
+                }
+                topData = shuffle(pool);
+            }
+
             currentExportData = topData; // Lưu toàn bộ danh sách đã trộn để dùng khi render
 
             document.getElementById('printOptionsModal').style.display = 'flex';
