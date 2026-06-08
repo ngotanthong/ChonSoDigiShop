@@ -1463,12 +1463,12 @@
                 categories.push('sotien');
                 reasons.push('Sảnh Tiến Lẻ');
                 highlight = highlight || numStr.slice(-3);
-            } else if (/(2468|0246|4680)$/.test(numStr)) {
+            } else if (/(2468|0246)$/.test(numStr)) {
                 score += 20;
                 categories.push('sotien');
                 reasons.push('Tiến Chẵn Đều');
                 highlight = highlight || numStr.slice(-4);
-            } else if (/(024|246|468|680)$/.test(numStr)) {
+            } else if (/(024|246|468)$/.test(numStr)) {
                 score += 15;
                 categories.push('sotien');
                 reasons.push('Sảnh Tiến Chẵn');
@@ -1756,6 +1756,14 @@
                 dotIndexes = [4, 6, 8];
             } else if (/(\d{2})\1$/.test(numStr) || /(\d)\1(\d)\2$/.test(numStr) || /(\d)(\d)\2\1$/.test(numStr)) { // Lặp cặp, gánh 4 số (VD: 091 234 68 68)
                 dotIndexes = [3, 6, 8];
+            } else if (matchStr && numStr.endsWith(matchStr)) {
+                if (matchStr.length === 3) {
+                    dotIndexes = [3, 5, 7]; // Tách 3 số cuối (VD: 091 23 45 678)
+                } else if (matchStr.length === 5) {
+                    dotIndexes = [3, 5]; // Tách 5 số cuối (VD: 091 23 45678)
+                } else {
+                    dotIndexes = [3, 6]; // Mặc định 3-3-4 (4 số cuối)
+                }
             } else {
                 dotIndexes = [3, 6]; // Mặc định 3-3-4 (VD: 091 234 5678)
             }
