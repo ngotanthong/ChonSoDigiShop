@@ -1437,7 +1437,7 @@
                 score -= 15;
             } else if (!/4/.test(numStr) && !/7/.test(numStr)) {
                 score += 10;
-                reasons.push('Số Sạch');
+                reasons.push('Không 4, 7');
             }
 
             // 9. Thuật toán "Số Ít Phím" (Dễ nhớ)
@@ -1925,8 +1925,13 @@
             
             // Nếu ở tab "Tất cả", lấy ngẫu nhiên đa dạng loại số (categories)
             if (currentCategory === 'all') {
+                // Lấy 8 số có điểm cao nhất cố định ở đầu danh sách
+                let top8 = [...displayData].sort((a, b) => b.ai.score - a.ai.score).slice(0, 8);
+                let top8Set = new Set(top8.map(item => item.fNum));
+
                 const groups = {};
                 displayData.forEach(item => {
+                    if (top8Set.has(item.fNum)) return; // Bỏ qua các số đã lấy ở top 8
                     const mainReason = item.ai.reasonsArr[0] || 'Khác';
                     if (!groups[mainReason]) groups[mainReason] = [];
                     groups[mainReason].push(item);
@@ -1952,7 +1957,9 @@
                     }
                     i++;
                 }
-                topData = shuffle(pool);
+                
+                // Nối 8 số đầu với danh sách ngẫu nhiên đã xáo trộn
+                topData = top8.concat(shuffle(pool));
             } else {
                 // Nếu ở 1 filter cụ thể, lấy đa dạng giá tiền
                 const priceGroups = {};
