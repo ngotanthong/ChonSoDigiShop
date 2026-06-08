@@ -2101,7 +2101,7 @@
             `;
 
             selectedForPrint.forEach(item => {
-                const formatNum = highlightHTML(item.fNum, '');
+                const formatNum = highlightHTML(item.fNum, item.ai.highlight || '');
                 const price = Number(item.monthly) || 0;
                 const priceText = (price === 0) ? 'Trả trước' : (price / 1000) + 'k/tháng';
                 const commitText = (item.commitment && item.commitment > 0) ? ` - Cam kết: ${item.commitment}T` : '';
