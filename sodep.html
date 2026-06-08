@@ -1564,7 +1564,7 @@
             document.getElementById('btnLoadMore').style.display = 'none';
 
             const tasks = [];
-            const MULTIPLIER = 7; // Lặp lại request 7 lần để gom được nhiều số ngẫu nhiên hơn (VNPT trả về ngẫu nhiên mỗi lần gọi)
+            const MULTIPLIER = 10; // Lặp lại request 10 lần để gom được nhiều số ngẫu nhiên hơn (VNPT trả về ngẫu nhiên mỗi lần gọi)
             for (let i = 0; i < MULTIPLIER; i++) {
                 for (const pref of PREFIXES) {
                     for (const c of COMMITS) {
