@@ -993,8 +993,7 @@
 
             <div class="scan-panel">
                 <h2>Quét Tự Động Toàn Kho</h2>
-                <p>Hệ thống sẽ tự động tìm kiếm các số có cam kết 0 tháng hoặc giá &le; 400k/tháng, sau đó dùng AI chấm
-                    điểm và chọn ra những số đẹp nhất cho bạn.</p>
+                <p>Hệ thống sẽ tự động tìm kiếm các số <strong>trả trước – cam kết 0đ</strong>, sau đó dùng AI chấm điểm và chọn ra những số đẹp nhất cho bạn.</p>
 
                 <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
                     <button class="btn-scan" id="btnScan" onclick="startAutoScan()"
@@ -1115,7 +1114,7 @@
         const BASE_API = 'https://digishop.vnpt.vn/apiprod/v2/simso/num_search';
         const PREFIXES = ['8491', '8494', '8488', '8481', '8482', '8483', '8484', '8485'];
         // Lấy cam kết 0đ và giá rẻ <=400k
-        const COMMITS = ['0', '100000', '150000', '200000', '400000'];
+        const COMMITS = ['0']; // Chỉ lấy SIM trả trước 0đ, không cam kết
 
         let rawData = [];
         let scoredData = [];
@@ -1642,7 +1641,7 @@
                     const { pref, c } = tasks.shift();
                     const url = `${BASE_API}?search=&prefix=${pref}&commit=${c}`;
 
-                    statusTxt.textContent = `Đang quét: ${completedRequests}/${totalRequests} (Phân tích 0${pref.slice(2)} - ${c === '0' ? '0đ' : (c / 1000 + 'k')})`;
+                    statusTxt.textContent = `Đang quét: ${completedRequests}/${totalRequests} (Phân tích đầu số 0${pref.slice(2)} – Trả trước 0đ)`;
 
                     try {
                         const res = await fetch(url);
