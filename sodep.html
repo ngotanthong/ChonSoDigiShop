@@ -2002,14 +2002,16 @@
 
             let topData = [];
             
-            // Nếu ở tab "Tất cả", lấy ngẫu nhiên đa dạng loại số (categories)
+            // Nếu ở tab "Tất cả", lấy ngẫu nhiên đa dạng loại số (categories), loại bỏ số cam kết 0đ
             if (currentCategory === 'all') {
+                // Loại bỏ số cam kết 0đ khỏi bảng in (bảng in chỉ in số có cam kết giá rõ ràng)
+                const paidData = displayData.filter(item => item.monthly && item.monthly != 0 && item.monthly !== "0");
                 // Lấy 8 số có điểm cao nhất cố định ở đầu danh sách
-                let top8 = [...displayData].sort((a, b) => b.ai.score - a.ai.score).slice(0, 8);
+                let top8 = [...paidData].sort((a, b) => b.ai.score - a.ai.score).slice(0, 8);
                 let top8Set = new Set(top8.map(item => item.fNum));
 
                 const groups = {};
-                displayData.forEach(item => {
+                paidData.forEach(item => {
                     if (top8Set.has(item.fNum)) return; // Bỏ qua các số đã lấy ở top 8
                     const mainReason = item.ai.reasonsArr[0] || 'Khác';
                     if (!groups[mainReason]) groups[mainReason] = [];
