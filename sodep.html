@@ -1590,21 +1590,6 @@
                     }
                 }
 
-                // Cặp tiến 3 số (Ví dụ 181 281, 181 282, 123 234)
-                if (!captienFound && last6.length === 6) {
-                    const t1 = parseInt(last6.slice(0, 3));
-                    const t2 = parseInt(last6.slice(3, 6));
-                    const diff = t2 - t1;
-                    if ((diff === 100 || diff === 101 || diff === 111 || diff === 10) && t1 >= 100) {
-                        if (!highlight) {
-                            score += 25;
-                            categories.push('captien');
-                            reasons.push('Cặp Tiến 3 Số');
-                            highlight = last6;
-                            captienFound = true;
-                        }
-                    }
-                }
 
                 // Kiểm tra 2 cặp đuôi 4 số (thông thường)
                 if (!captienFound) {
@@ -1625,12 +1610,17 @@
                 }
             }
 
-            // Tam Cặp Đồng Đầu (VD: 60 63 68, 71 73 79)
-            if (/(\d)\d\1\d\1\d$/.test(numStr)) {
+            // Cặp Đồng Đầu (VD: 60 63 68, 71 73)
+            if (/(\d)\d\1\d\1\d$/.test(numStr) && !/(\d{2})\1\1$/.test(numStr)) {
                 score += 25;
                 categories.push('denho');
-                reasons.push('Tam Cặp Đồng Đầu');
+                reasons.push('3 Cặp Đồng Đầu');
                 highlight = highlight || numStr.slice(-6);
+            } else if (/(\d)\d\1\d$/.test(numStr) && !/(\d{2})\1$/.test(numStr)) {
+                score += 15;
+                categories.push('denho');
+                reasons.push('2 Cặp Đồng Đầu');
+                highlight = highlight || numStr.slice(-4);
             }
 
             // Taxi biến thể (VD: 168 468, 279 179)
@@ -1960,6 +1950,15 @@
                 dotIndexes = [4, 6, 8];
             } else if (/(\d{2})\1$/.test(numStr) || /(\d)\1(\d)\2$/.test(numStr) || /(\d)(\d)\2\1$/.test(numStr)) { // Lặp cặp, gánh 4 số (VD: 091 234 68 68)
                 dotIndexes = [3, 6, 8];
+            } else if (matchStr && /(.)\1{3}/.test(matchStr) && !numStr.endsWith(matchStr)) {
+                // Tứ Quý / Ngũ Quý giữa
+                const idx = numStr.indexOf(matchStr);
+                const len = matchStr.length;
+                if (idx > 0 && idx + len < 10) {
+                    dotIndexes = [idx, idx + len];
+                } else {
+                    dotIndexes = [3, 6];
+                }
             } else if (matchStr && numStr.endsWith(matchStr)) {
                 const isSanh = /(012|123|234|345|456|567|678|789|135|357|579|024|246|468|987|876|765|654|543|432|321|210|975|753|531|864|642|420)/.test(matchStr);
                 const isGanh3 = matchStr.length === 3 && matchStr[0] === matchStr[2] && matchStr[0] !== matchStr[1]; // ABA
