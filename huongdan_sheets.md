@@ -286,7 +286,7 @@ function sendTelegramDirect(txt) {
 function runAutoScanVipSims() {
   const prefixes = ['8491', '8494', '8488', '8481', '8482', '8483', '8484', '8485'];
   const commits = ['0', '100000', '150000', '200000', '400000'];
-  const MULTIPLIER = 7; 
+  const MULTIPLIER = 2; // Giảm xuống 2 để tránh lỗi "Service invoked too many times" (Giới hạn 20.000 request/ngày của Google)
   
   Logger.log("Bắt đầu chiến dịch DeepSearch kho số VNPT...");
   
@@ -298,7 +298,7 @@ function runAutoScanVipSims() {
     if (rawList) notifiedSims = JSON.parse(rawList);
   } catch (e) {}
 
-  const MAX_EXECUTION_TIME = 4.5 * 60 * 1000; // 4.5 phút (bảo vệ khỏi giới hạn 6 phút của Google)
+  const MAX_EXECUTION_TIME = 1.5 * 60 * 1000; // Rút ngắn còn 1.5 phút để tiết kiệm Quota Google
   const startTime = Date.now();
   let loopCount = 0;
   let totalNewVipFound = 0;
