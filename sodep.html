@@ -1614,12 +1614,12 @@
             if (/(\d)\d\1\d\1\d$/.test(numStr) && !/(\d{2})\1\1$/.test(numStr)) {
                 score += 25;
                 categories.push('denho');
-                reasons.push('3 Cặp Đồng Đầu');
+                reasons.push('Số Cặp');
                 highlight = highlight || numStr.slice(-6);
             } else if (/(\d)\d\1\d$/.test(numStr) && !/(\d{2})\1$/.test(numStr)) {
                 score += 15;
                 categories.push('denho');
-                reasons.push('2 Cặp Đồng Đầu');
+                reasons.push('Số Cặp');
                 highlight = highlight || numStr.slice(-4);
             }
 
@@ -1633,14 +1633,7 @@
                 highlight = highlight || numStr.slice(-6);
             }
 
-            // Đuôi Ngày Sinh (DDMMYY)
-            const dobMatch = numStr.match(/(0[1-9]|[12]\d|3[01])(0[1-9]|1[0-2])(7\d|8\d|9\d|0\d|1\d|2[0-4])$/);
-            if (dobMatch) {
-                score += 15;
-                categories.push('denho');
-                reasons.push('Đuôi Ngày Sinh');
-                highlight = highlight || numStr.slice(-6);
-            }
+
 
             // 11. Đầu Đuôi Tương Phùng
             const prefix3 = numStr.slice(0, 3);
