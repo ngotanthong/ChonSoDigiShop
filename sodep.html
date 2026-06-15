@@ -1415,13 +1415,13 @@
             // 5. Số Lặp Cao Cấp (Taxi, Lặp Kép) & Lặp Thường (ABAB)
             let isLap = false;
             if (/(\d{2})\1\1$/.test(numStr)) { // ABABAB (Taxi 3 cặp)
-                score += 45;
+                score += 60;
                 categories.push('solap');
                 reasons.push('Taxi Đẹp');
                 highlight = highlight || numStr.slice(-6);
                 isLap = true;
             } else if (/(\d{3})\1$/.test(numStr)) { // ABCABC (Taxi cụm 3)
-                score += 40;
+                score += 55;
                 categories.push('solap');
                 reasons.push('Taxi Đẹp');
                 highlight = highlight || numStr.slice(-6);
@@ -1626,7 +1626,7 @@
             // Taxi biến thể (VD: 168 468, 279 179)
             const taxiVarMatch = numStr.match(/(\d)(79|39|68|86|38|78)(\d)\2$/);
             if (taxiVarMatch && taxiVarMatch[1] !== taxiVarMatch[3]) {
-                score += 30;
+                score += 45;
                 categories.push('phongthuy');
                 categories.push('solap');
                 reasons.push(`Taxi Đuôi ${taxiVarMatch[2]}`);
