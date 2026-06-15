@@ -1010,6 +1010,14 @@
                     </button>
                 </div>
 
+                <!-- Tuỳ chọn Phong Thuỷ -->
+                <div style="margin-top: 20px; display: flex; justify-content: center;">
+                    <label style="display: flex; align-items: center; cursor: pointer; font-weight: 600; font-size: 15px; color: var(--text-main); background: #f1f5f9; padding: 10px 20px; border-radius: 30px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: all 0.2s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
+                        <input type="checkbox" id="togglePhongThuy" style="width: 18px; height: 18px; margin-right: 10px; accent-color: var(--primary);" onchange="handlePhongThuyToggle()">
+                        Chế độ ưu tiên Phong Thuỷ (Nút 789, Không 4-7, 49-53)
+                    </label>
+                </div>
+
 
 
                 <div class="progress-container" id="progressContainer">
@@ -1297,6 +1305,56 @@
             let categories = [];
             let reasons = [];
             let highlight = ''; // Đoạn được highlight
+
+            const isPhongThuyMode = document.getElementById('togglePhongThuy') && document.getElementById('togglePhongThuy').checked;
+
+            if (isPhongThuyMode) {
+                // Tính điểm thuần Phong Thuỷ
+                
+                // 1. Tổng nút (tổng 10 số)
+                const sum10 = numStr.split('').reduce((acc, val) => acc + parseInt(val), 0);
+                const nut = sum10 % 10;
+                if (nut >= 7) { 
+                    score += (nut === 9) ? 40 : (nut === 8 ? 30 : 20);
+                    reasons.push('Nút ' + nut);
+                    categories.push('phongthuy');
+                } else {
+                    score -= 20; // Nút thấp trừ điểm
+                }
+
+                // 2. Tránh 4, 7
+                if (!/4/.test(numStr) && !/7/.test(numStr)) {
+                    score += 30;
+                    reasons.push('Không 4, 7');
+                    categories.push('phongthuy');
+                } else {
+                    score -= 50; // Có 4 hoặc 7 phạt nặng
+                }
+
+                // 3. Tránh 49, 53
+                if (/49|53/.test(numStr)) {
+                    score -= 100; // Phạt rất nặng
+                }
+
+                // 4. Đuôi Thần Tài, Ông Địa
+                if (/(79|39)$/.test(numStr)) {
+                    score += 20;
+                    reasons.push('Thần Tài');
+                    highlight = numStr.slice(-2);
+                } else if (/(38|78)$/.test(numStr)) {
+                    score += 15;
+                    reasons.push('Ông Địa');
+                    highlight = numStr.slice(-2);
+                }
+
+                return {
+                    score: score,
+                    categories: categories,
+                    reasonsArr: reasons,
+                    reasonText: reasons.join(' + ') || 'Bình thường',
+                    highlight: highlight
+                };
+            }
 
             // 1. Tứ Quý (4 số giống nhau ở cuối)
             if (/(.)\1{3}$/.test(numStr)) {
@@ -1704,6 +1762,9 @@
 
 
         function processAIScores(minScore = 20) {
+            const isPhongThuyMode = document.getElementById('togglePhongThuy') && document.getElementById('togglePhongThuy').checked;
+            if (isPhongThuyMode) minScore = 40; // Yêu cầu điểm cao hơn trong chế độ Phong Thuỷ
+
             scoredData = [];
             // Dùng Map để loại bỏ trùng lặp số
             const uniqueSims = new Map();
@@ -1797,6 +1858,30 @@
         function loadMoreResults() {
             currentDisplayCount += 100;
             renderResults();
+        }
+
+        function handlePhongThuyToggle() {
+            if (rawData && rawData.length > 0) {
+                const statusTxt = document.getElementById('statusText');
+                statusTxt.textContent = 'Đang chấm điểm lại theo tiêu chí Phong Thuỷ...';
+                statusTxt.style.display = 'block';
+                document.getElementById('resultGrid').innerHTML = '';
+                
+                setTimeout(() => {
+                    processAIScores();
+                    
+                    if (scoredData.length > 0) {
+                        const toolbar = document.getElementById('toolbar');
+                        if (toolbar) toolbar.style.display = 'flex';
+                        renderResults();
+                    } else {
+                        document.getElementById('emptyState').style.display = 'block';
+                        document.getElementById('emptyState').querySelector('p').textContent = 'Không tìm thấy số nào đạt tiêu chuẩn phong thuỷ (Nút 7-8-9, không 4-7, không 49-53).';
+                    }
+                    
+                    statusTxt.style.display = 'none';
+                }, 50);
+            }
         }
 
         function highlightHTML(numStr, matchStr) {
