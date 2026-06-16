@@ -1151,6 +1151,10 @@
             });
         }
 
+        function isFreeSim(item) {
+            return (!item.monthly || item.monthly == 0 || item.monthly === "0") && (!item.commitment || item.commitment == 0 || item.commitment === "0");
+        }
+
         let deviceId = localStorage.getItem('simso_device_id');
         if (!deviceId) {
             deviceId = generateUUID();
@@ -1847,7 +1851,7 @@
             const filterTabs = document.getElementById('filterTabs');
             filterTabs.innerHTML = '<button class="tab-btn active" onclick="filterCategory(\'all\', event)">Tất cả</button>';
 
-            const hasFreeSims = scoredData.some(item => !item.monthly || item.monthly == 0 || item.monthly === "0");
+            const hasFreeSims = scoredData.some(item => isFreeSim(item));
             if (hasFreeSims) {
                 const btn = document.createElement('button');
                 btn.className = 'tab-btn';
@@ -2084,7 +2088,7 @@
 
             if (currentCategory !== 'all') {
                 if (currentCategory === 'free') {
-                    displayData = displayData.filter(item => !item.monthly || item.monthly == 0 || item.monthly === "0");
+                    displayData = displayData.filter(item => isFreeSim(item));
                 } else {
                     displayData = displayData.filter(item => item.ai.reasonsArr.includes(currentCategory));
                 }
@@ -2102,7 +2106,7 @@
             const dataToShow = displayData.slice(0, currentDisplayCount);
 
             dataToShow.forEach(item => {
-                const isFree = !item.monthly || item.monthly == 0 || item.monthly === "0";
+                const isFree = isFreeSim(item);
                 const price = Number(item.monthly) || 0;
                 const priceText = isFree ? '0 đ/tháng' : price.toLocaleString() + ' đ/tháng';
                 const commitText = (item.commitment && item.commitment > 0) ? `Cam kết ${item.commitment}T` : 'Không cam kết';
@@ -2168,7 +2172,7 @@
             // Nếu ở tab "Tất cả", lấy ngẫu nhiên đa dạng loại số (categories), loại bỏ số cam kết 0đ
             if (currentCategory === 'all') {
                 // Loại bỏ số cam kết 0đ khỏi bảng in (bảng in chỉ in số có cam kết giá rõ ràng)
-                const paidData = displayData.filter(item => item.monthly && item.monthly != 0 && item.monthly !== "0");
+                const paidData = displayData.filter(item => !isFreeSim(item));
                 // Lấy 8 số có điểm cao nhất cố định ở đầu danh sách
                 let top8 = [...paidData].sort((a, b) => b.ai.score - a.ai.score).slice(0, 8);
                 let top8Set = new Set(top8.map(item => item.fNum));
