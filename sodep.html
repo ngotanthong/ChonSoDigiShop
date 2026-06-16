@@ -2211,7 +2211,8 @@
                     const prefixVNPT = '84' + prefix3.slice(1); // "8491", "8488"
                     const search7 = cleanNum.slice(3); // 7 số cuối
                     
-                    const res = await fetch(`${BASE_API}?search=${search7}&prefix=${prefixVNPT}`);
+                    const commitVal = (item.monthly && Number(item.monthly) > 0) ? Math.floor(Number(item.monthly) / 1000) : 0;
+                    const res = await fetch(`${BASE_API}?search=${search7}&prefix=${prefixVNPT}&commit=${commitVal}`);
                     const data = await res.json();
                     
                     if (data.errorCode === 0 && data.data && data.data.length > 0) {
