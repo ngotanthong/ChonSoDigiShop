@@ -48,15 +48,29 @@ function sendTelegramMessage(text) {
   } catch (e) {}
 }
 
+function getPinnedSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var pSheet = ss.getSheetByName("PinnedSIMs");
+  if (!pSheet) {
+    pSheet = ss.insertSheet("PinnedSIMs");
+    pSheet.appendRow(["User", "Phone", "SIM Data", "Pinned At"]);
+  }
+  return pSheet;
+}
+
 function doGet(e) {
+  // CORS header helper
+  function makeResponse(obj) {
+    return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+  }
+
   var action = e.parameter.action;
   var user = e.parameter.user;
   var deviceId = e.parameter.deviceId;
   var userAgent = e.parameter.userAgent || "";
   
   if (!user) {
-    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Missing user" }))
-                         .setMimeType(ContentService.MimeType.JSON);
+    return makeResponse({ status: "error", message: "Missing user" });
   }
   
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
@@ -146,8 +160,7 @@ function doGet(e) {
       sheet.appendRow([user, deviceId, userAgent, now, "Online", ""]);
       sendTelegramMessage("🆕 <b>TÀI KHOẢN MỚI ĐĂNG NHẬP:</b>\n👤 User: <code>" + user + "</code>\n📱 Trình duyệt: " + userAgent);
     }
-    return ContentService.createTextOutput(JSON.stringify({ status: "ok" }))
-                         .setMimeType(ContentService.MimeType.JSON);
+    return makeResponse({ status: "ok" });
   }
   
   if (action === "logout") {
@@ -158,31 +171,13 @@ function doGet(e) {
         sendTelegramMessage("👋 <b>ĐÃ ĐĂNG XUẤT:</b>\n👤 User: <code>" + user + "</code>");
       }
     }
-    return ContentService.createTextOutput(JSON.stringify({ status: "ok" }))
-                         .setMimeType(ContentService.MimeType.JSON);
-  }
-  
-  function getPinnedSheet() {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var pSheet = ss.getSheetByName("PinnedSIMs");
-    if (!pSheet) {
-      pSheet = ss.insertSheet("PinnedSIMs");
-      pSheet.appendRow(["User", "Phone", "SIM Data", "Pinned At"]);
-    }
-    return pSheet;
+    return makeResponse({ status: "ok" });
   }
 
+  // ---- PINNED SIMs actions ----
   if (action === "pin") {
     var phone = e.parameter.phone;
-    // Xử lý POST hoặc GET data
-    var simData = e.parameter.simData; 
-    if (e.postData && e.postData.contents) {
-        try {
-            var postBody = JSON.parse(e.postData.contents);
-            if (postBody.simData) simData = postBody.simData;
-            if (postBody.phone) phone = postBody.phone;
-        } catch(ex) {}
-    }
+    var simData = e.parameter.simData;
 
     var pinSheet = getPinnedSheet();
     var pData = pinSheet.getDataRange().getValues();
@@ -191,25 +186,18 @@ function doGet(e) {
       if (pData[i][0].toString().toLowerCase() === user.toLowerCase() && pData[i][1] === phone) {
         found = true;
         pinSheet.getRange(i + 1, 3).setValue(simData);
-        pinSheet.getRange(i + 1, 4).setValue(now);
+        pinSheet.getRange(i + 1, 4).setValue(new Date());
         break;
       }
     }
     if (!found) {
-      pinSheet.appendRow([user, phone, simData, now]);
+      pinSheet.appendRow([user, phone, simData, new Date()]);
     }
-    return ContentService.createTextOutput(JSON.stringify({ status: "ok" })).setMimeType(ContentService.MimeType.JSON);
+    return makeResponse({ status: "ok" });
   }
 
   if (action === "unpin") {
     var phone = e.parameter.phone;
-    if (e.postData && e.postData.contents) {
-        try {
-            var postBody = JSON.parse(e.postData.contents);
-            if (postBody.phone) phone = postBody.phone;
-        } catch(ex) {}
-    }
-    
     var pinSheet = getPinnedSheet();
     var pData = pinSheet.getDataRange().getValues();
     for (var i = pData.length - 1; i >= 1; i--) {
@@ -217,7 +205,7 @@ function doGet(e) {
         pinSheet.deleteRow(i + 1);
       }
     }
-    return ContentService.createTextOutput(JSON.stringify({ status: "ok" })).setMimeType(ContentService.MimeType.JSON);
+    return makeResponse({ status: "ok" });
   }
 
   if (action === "get_pinned") {
@@ -225,7 +213,6 @@ function doGet(e) {
     var pData = pinSheet.getDataRange().getValues();
     var results = [];
     var isAdmin = (user.toLowerCase() === "admin");
-    
     for (var i = 1; i < pData.length; i++) {
       var rowUser = pData[i][0].toString();
       if (isAdmin || rowUser.toLowerCase() === user.toLowerCase()) {
@@ -236,13 +223,11 @@ function doGet(e) {
         } catch(ex) {}
       }
     }
-    // Sắp xếp danh sách mới nhất lên đầu
     results.reverse();
-    return ContentService.createTextOutput(JSON.stringify({ status: "ok", data: results })).setMimeType(ContentService.MimeType.JSON);
+    return makeResponse({ status: "ok", data: results });
   }
-  
-  return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Invalid action" }))
-                       .setMimeType(ContentService.MimeType.JSON);
+
+  return makeResponse({ status: "error", message: "Invalid action" });
 }
 
 function doPost(e) {
