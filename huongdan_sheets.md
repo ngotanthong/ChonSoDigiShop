@@ -203,10 +203,11 @@ function doGet(e) {
         var phone = e.parameter.phone;
         var pinSheet = getPinnedSheet();
         var pData = pinSheet.getDataRange().getValues();
+        var isAdmin = (user.toLowerCase() === "admin");
         for (var i = pData.length - 1; i >= 1; i--) {
           var sheetPhone = pData[i][1].toString().trim();
           if (!sheetPhone.startsWith("0")) sheetPhone = "0" + sheetPhone;
-          if (pData[i][0].toString().toLowerCase() === user.toLowerCase() && sheetPhone === phone.trim()) {
+          if ((isAdmin || pData[i][0].toString().toLowerCase() === user.toLowerCase()) && sheetPhone === phone.trim()) {
             pinSheet.deleteRow(i + 1);
           }
         }
