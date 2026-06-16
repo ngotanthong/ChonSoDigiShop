@@ -1097,6 +1097,7 @@
             <button class="btn-login" onclick="handleLogin()">ĐĂNG NHẬP</button>
             <div class="error-msg" id="loginError">Tên đăng nhập hoặc mật khẩu không chính xác!</div>
         </div>
+        <button onclick="promptCustomApi()" style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: none; border: none; color: rgba(255,255,255,0.5); font-size: 12px; cursor: pointer; text-decoration: underline;">⚙️ Đổi link máy chủ (Admin)</button>
     </div>
 
     <div id="appContainer" style="display: none;">
@@ -24584,7 +24585,7 @@
 
         // CẤU HÌNH GOOGLE SHEET API (Ví dụ: 'https://script.google.com/macros/s/XXXXX/exec')
         // Dán đường dẫn Web App của anh vào đây để kích hoạt tính năng khóa thiết bị cố định!
-        const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbykCmHBMRnf3j5cLQfLbPWlu7ut8gUdrc-MTtRldndfHakxMBU0TvE4c1_q1PLUXf-FuQ/exec';
+        let GAS_API_URL = localStorage.getItem('CUSTOM_GAS_API_URL') || 'https://script.google.com/macros/s/AKfycbxqZuqvZ4rV7huFFPVYlKW1KNL7wBik_RkL3v-vX1if1JYqA8wEAVNoC9PDS3RWctLFAw/exec';
 
         // Sinh mã định danh thiết bị duy nhất (UUID)
         function generateUUID() {
@@ -24739,6 +24740,22 @@
         }
 
         // Xử lý sự kiện đăng nhập và khóa thiết bị cố định
+        // Xử lý đổi API thủ công
+        window.promptCustomApi = function() {
+            const currentApi = localStorage.getItem('CUSTOM_GAS_API_URL') || GAS_API_URL;
+            const newApi = prompt("Nhập đường dẫn Google Apps Script mới:\n(Để trống nếu muốn quay về mặc định)", currentApi);
+            if (newApi !== null) {
+                if (newApi.trim() === "") {
+                    localStorage.removeItem('CUSTOM_GAS_API_URL');
+                    alert("Đã khôi phục API về mặc định!");
+                } else {
+                    localStorage.setItem('CUSTOM_GAS_API_URL', newApi.trim());
+                    alert("Đã lưu API mới thành công!");
+                }
+                location.reload();
+            }
+        };
+
         window.handleLogin = async function () {
             const userVal = document.getElementById('username').value.trim().toLowerCase();
             const passVal = document.getElementById('password').value;

@@ -58,7 +58,7 @@ var TELEGRAM_CHAT_ID = "7007784178";
       return pSheet;
     }
 
-    function doGet(e) {
+function simSoDoGet(e) {
       // CORS header helper
       function makeResponse(obj) {
         return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
@@ -249,12 +249,21 @@ var TELEGRAM_CHAT_ID = "7007784178";
       }
     }
 
-    function doPost(e) {
-      return doGet(e);
-    }
 ```
 
-4. Nhấn biểu tượng **Lưu dự án (Save project)** (hình đĩa mềm) hoặc bấm `Cmd + S` / `Ctrl + S`.
+4. **ĐỂ DÙNG CHUNG VỚI CODE CŨ CỦA ANH**, anh hãy tìm đến hàm `doGet(e)` đang có sẵn trong dự án cũ của anh (ví dụ trong file QLEsim.gs) và dán đoạn mã này vào **NGAY TRÊN CÙNG** bên trong hàm đó:
+
+```javascript
+  // --- CHÈN ĐOẠN NÀY VÀO ĐẦU HÀM doGet(e) CŨ CỦA ANH ---
+  if (e.parameter.action && ["login", "logout", "check", "pin", "unpin", "get_pinned"].includes(e.parameter.action)) {
+    return simSoDoGet(e);
+  }
+  // --- KẾT THÚC ĐOẠN CHÈN ---
+```
+
+Như vậy, khi web của em gọi API, nó sẽ nhảy vào hàm `simSoDoGet(e)` của em. Còn khi gọi các chức năng của dự án khác, nó vẫn chạy xuống dưới và thực thi code cũ của anh bình thường!
+
+5. Nhấn biểu tượng **Lưu dự án (Save project)** (hình đĩa mềm) hoặc bấm `Cmd + S` / `Ctrl + S`.
 
 ---
 
