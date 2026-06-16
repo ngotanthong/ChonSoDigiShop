@@ -29,229 +29,229 @@
 var TELEGRAM_BOT_TOKEN = "8985605068:AAHWSdxaHnGgJ9H41YFToGzgSxAJk90vIQs"; 
 var TELEGRAM_CHAT_ID = "7007784178";
 
-function sendTelegramMessage(text) {
-  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID || TELEGRAM_BOT_TOKEN === "ĐIỀN_TOKEN_BOT_VÀO_ĐÂY") return;
-  var url = "https://api.telegram.org/bot" + TELEGRAM_BOT_TOKEN + "/sendMessage";
-  var payload = {
-    "chat_id": TELEGRAM_CHAT_ID,
-    "text": text,
-    "parse_mode": "HTML"
-  };
-  var options = {
-    "method": "post",
-    "contentType": "application/json",
-    "payload": JSON.stringify(payload),
-    "muteHttpExceptions": true
-  };
-  try {
-    UrlFetchApp.fetch(url, options);
-  } catch (e) {}
-}
-
-function getPinnedSheet() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var pSheet = ss.getSheetByName("PinnedSIMs");
-  if (!pSheet) {
-    pSheet = ss.insertSheet("PinnedSIMs");
-    pSheet.appendRow(["User", "Phone", "SIM Data", "Pinned At"]);
-  }
-  return pSheet;
-}
-
-function doGet(e) {
-  // CORS header helper
-  function makeResponse(obj) {
-    return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
-  }
-
-  try {
-    var action = e.parameter.action;
-  var user = e.parameter.user;
-  var deviceId = e.parameter.deviceId;
-  var userAgent = e.parameter.userAgent || "";
-  
-  if (!user) {
-    return makeResponse({ status: "error", message: "Missing user" });
-  }
-  
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  var data = sheet.getDataRange().getValues();
-  
-  // Tìm dòng tương ứng với user
-  var userRowIndex = -1;
-  for (var i = 1; i < data.length; i++) {
-    if (data[i][0].toString().toLowerCase() === user.toLowerCase()) {
-      userRowIndex = i + 1;
-      break;
+    function sendTelegramMessage(text) {
+      if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID || TELEGRAM_BOT_TOKEN === "ĐIỀN_TOKEN_BOT_VÀO_ĐÂY") return;
+      var url = "https://api.telegram.org/bot" + TELEGRAM_BOT_TOKEN + "/sendMessage";
+      var payload = {
+        "chat_id": TELEGRAM_CHAT_ID,
+        "text": text,
+        "parse_mode": "HTML"
+      };
+      var options = {
+        "method": "post",
+        "contentType": "application/json",
+        "payload": JSON.stringify(payload),
+        "muteHttpExceptions": true
+      };
+      try {
+        UrlFetchApp.fetch(url, options);
+      } catch (e) {}
     }
-  }
-  
-  var now = new Date();
-  
-  if (action === "login" || action === "check") {
-    if (userRowIndex !== -1) {
-      var currentActiveDevice = data[userRowIndex - 1][1];
-      var status = data[userRowIndex - 1][4] || "";
-      var expiryVal = data[userRowIndex - 1][5]; // Cột F
+
+    function getPinnedSheet() {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var pSheet = ss.getSheetByName("PinnedSIMs");
+      if (!pSheet) {
+        pSheet = ss.insertSheet("PinnedSIMs");
+        pSheet.appendRow(["User", "Phone", "SIM Data", "Pinned At"]);
+      }
+      return pSheet;
+    }
+
+    function doGet(e) {
+      // CORS header helper
+      function makeResponse(obj) {
+        return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+      }
+
+      try {
+        var action = e.parameter.action;
+      var user = e.parameter.user;
+      var deviceId = e.parameter.deviceId;
+      var userAgent = e.parameter.userAgent || "";
       
-      // 1. Kiểm tra ngày hết hạn thuê bao
-      if (expiryVal) {
-        var expiryDate = new Date(expiryVal);
-        expiryDate.setHours(23, 59, 59, 999); // Đặt giờ hết hạn là cuối ngày
-        
-        if (now.getTime() > expiryDate.getTime()) {
-          // Tự động ghi nhận Hết hạn lên Sheet
-          if (status.toString().toLowerCase() !== "hết hạn") {
-            sheet.getRange(userRowIndex, 5).setValue("Hết hạn");
-            sendTelegramMessage("⛔️ <b>TÀI KHOẢN HẾT HẠN:</b>\n👤 User: <code>" + user + "</code>\n⏰ Đã khóa tự động.");
+      if (!user) {
+        return makeResponse({ status: "error", message: "Missing user" });
+      }
+      
+      var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+      var data = sheet.getDataRange().getValues();
+      
+      // Tìm dòng tương ứng với user
+      var userRowIndex = -1;
+      for (var i = 1; i < data.length; i++) {
+        if (data[i][0].toString().toLowerCase() === user.toLowerCase()) {
+          userRowIndex = i + 1;
+          break;
+        }
+      }
+      
+      var now = new Date();
+      
+      if (action === "login" || action === "check") {
+        if (userRowIndex !== -1) {
+          var currentActiveDevice = data[userRowIndex - 1][1];
+          var status = data[userRowIndex - 1][4] || "";
+          var expiryVal = data[userRowIndex - 1][5]; // Cột F
+          
+          // 1. Kiểm tra ngày hết hạn thuê bao
+          if (expiryVal) {
+            var expiryDate = new Date(expiryVal);
+            expiryDate.setHours(23, 59, 59, 999); // Đặt giờ hết hạn là cuối ngày
+            
+            if (now.getTime() > expiryDate.getTime()) {
+              // Tự động ghi nhận Hết hạn lên Sheet
+              if (status.toString().toLowerCase() !== "hết hạn") {
+                sheet.getRange(userRowIndex, 5).setValue("Hết hạn");
+                sendTelegramMessage("⛔️ <b>TÀI KHOẢN HẾT HẠN:</b>\n👤 User: <code>" + user + "</code>\n⏰ Đã khóa tự động.");
+              }
+              return ContentService.createTextOutput(JSON.stringify({ 
+                status: "expired", 
+                message: "Tài khoản của bạn đã hết hạn sử dụng! Vui lòng liên hệ Admin qua SĐT 0947.050.848 để gia hạn." 
+              })).setMimeType(ContentService.MimeType.JSON);
+            }
           }
-          return ContentService.createTextOutput(JSON.stringify({ 
-            status: "expired", 
-            message: "Tài khoản của bạn đã hết hạn sử dụng! Vui lòng liên hệ Admin qua SĐT 0947.050.848 để gia hạn." 
-          })).setMimeType(ContentService.MimeType.JSON);
-        }
-      }
-      
-      // 2. Kiểm tra tài khoản bị Admin khóa hoặc đã ghi nhận hết hạn
-      if (status.toString().toLowerCase() === "locked" || status.toString().toLowerCase() === "bị khóa" || status.toString().toLowerCase() === "hết hạn") {
-        if (action === "login") {
-            sendTelegramMessage("🚫 <b>TRUY CẬP TÀI KHOẢN BỊ KHÓA:</b>\n👤 User: <code>" + user + "</code>\n📱 Cố gắng đăng nhập từ: " + userAgent);
-        }
-        return ContentService.createTextOutput(JSON.stringify({ 
-          status: "locked", 
-          message: status.toString().toLowerCase() === "hết hạn" ? "Tài khoản của bạn đã hết hạn sử dụng! Vui lòng liên hệ Admin qua SĐT 0947.050.848 để gia hạn." : "Tài khoản của bạn đã bị khóa! Vui lòng liên hệ SĐT 0947.050.848 để được hỗ trợ." 
-        })).setMimeType(ContentService.MimeType.JSON);
-      }
-      
-      if (action === "login") {
-        // Kiểm tra liên kết thiết bị cố định
-        if (currentActiveDevice && currentActiveDevice !== deviceId) {
-          sendTelegramMessage("⚠️ <b>CẢNH BÁO THIẾT BỊ LẠ:</b>\n👤 User: <code>" + user + "</code>\n📱 Đăng nhập từ: " + userAgent + "\n<i>(Đã bị chặn do khác thiết bị gốc)</i>");
-          return ContentService.createTextOutput(JSON.stringify({ 
-            status: "device_mismatch", 
-            message: "Tài khoản này đã được liên kết cố định với một thiết bị khác! Vui lòng liên hệ Admin qua SĐT 0947.050.848 để mở khóa." 
-          })).setMimeType(ContentService.MimeType.JSON);
-        }
-        
-        // Nếu thiết bị chưa liên kết (trống), thực hiện liên kết cố định
-        if (!currentActiveDevice) {
-          sheet.getRange(userRowIndex, 2).setValue(deviceId);
-          sheet.getRange(userRowIndex, 3).setValue(userAgent);
-          sheet.getRange(userRowIndex, 5).setValue("Online");
-          sendTelegramMessage("🔒 <b>ĐÃ KHÓA THIẾT BỊ MỚI:</b>\n👤 User: <code>" + user + "</code>\n📱 Trình duyệt: " + userAgent);
+          
+          // 2. Kiểm tra tài khoản bị Admin khóa hoặc đã ghi nhận hết hạn
+          if (status.toString().toLowerCase() === "locked" || status.toString().toLowerCase() === "bị khóa" || status.toString().toLowerCase() === "hết hạn") {
+            if (action === "login") {
+                sendTelegramMessage("🚫 <b>TRUY CẬP TÀI KHOẢN BỊ KHÓA:</b>\n👤 User: <code>" + user + "</code>\n📱 Cố gắng đăng nhập từ: " + userAgent);
+            }
+            return ContentService.createTextOutput(JSON.stringify({ 
+              status: "locked", 
+              message: status.toString().toLowerCase() === "hết hạn" ? "Tài khoản của bạn đã hết hạn sử dụng! Vui lòng liên hệ Admin qua SĐT 0947.050.848 để gia hạn." : "Tài khoản của bạn đã bị khóa! Vui lòng liên hệ SĐT 0947.050.848 để được hỗ trợ." 
+            })).setMimeType(ContentService.MimeType.JSON);
+          }
+          
+          if (action === "login") {
+            // Kiểm tra liên kết thiết bị cố định
+            if (currentActiveDevice && currentActiveDevice !== deviceId) {
+              sendTelegramMessage("⚠️ <b>CẢNH BÁO THIẾT BỊ LẠ:</b>\n👤 User: <code>" + user + "</code>\n📱 Đăng nhập từ: " + userAgent + "\n<i>(Đã bị chặn do khác thiết bị gốc)</i>");
+              return ContentService.createTextOutput(JSON.stringify({ 
+                status: "device_mismatch", 
+                message: "Tài khoản này đã được liên kết cố định với một thiết bị khác! Vui lòng liên hệ Admin qua SĐT 0947.050.848 để mở khóa." 
+              })).setMimeType(ContentService.MimeType.JSON);
+            }
+            
+            // Nếu thiết bị chưa liên kết (trống), thực hiện liên kết cố định
+            if (!currentActiveDevice) {
+              sheet.getRange(userRowIndex, 2).setValue(deviceId);
+              sheet.getRange(userRowIndex, 3).setValue(userAgent);
+              sheet.getRange(userRowIndex, 5).setValue("Online");
+              sendTelegramMessage("🔒 <b>ĐÃ KHÓA THIẾT BỊ MỚI:</b>\n👤 User: <code>" + user + "</code>\n📱 Trình duyệt: " + userAgent);
+            } else {
+              sheet.getRange(userRowIndex, 5).setValue("Online");
+              sendTelegramMessage("✅ <b>ĐĂNG NHẬP THÀNH CÔNG:</b>\n👤 User: <code>" + user + "</code>");
+            }
+            
+            sheet.getRange(userRowIndex, 4).setValue(now);
+          } else {
+            // check
+            if (currentActiveDevice !== deviceId) {
+              return ContentService.createTextOutput(JSON.stringify({ 
+                status: "logged_out", 
+                message: "Mã thiết bị không khớp với liên kết cố định!" 
+              })).setMimeType(ContentService.MimeType.JSON);
+            }
+            
+            sheet.getRange(userRowIndex, 4).setValue(now);
+          }
         } else {
-          sheet.getRange(userRowIndex, 5).setValue("Online");
-          sendTelegramMessage("✅ <b>ĐĂNG NHẬP THÀNH CÔNG:</b>\n👤 User: <code>" + user + "</code>");
+          // Thêm mới tài khoản và liên kết cố định thiết bị hiện tại
+          sheet.appendRow([user, deviceId, userAgent, now, "Online", ""]);
+          sendTelegramMessage("🆕 <b>TÀI KHOẢN MỚI ĐĂNG NHẬP:</b>\n👤 User: <code>" + user + "</code>\n📱 Trình duyệt: " + userAgent);
         }
-        
-        sheet.getRange(userRowIndex, 4).setValue(now);
-      } else {
-        // check
-        if (currentActiveDevice !== deviceId) {
-          return ContentService.createTextOutput(JSON.stringify({ 
-            status: "logged_out", 
-            message: "Mã thiết bị không khớp với liên kết cố định!" 
-          })).setMimeType(ContentService.MimeType.JSON);
-        }
-        
-        sheet.getRange(userRowIndex, 4).setValue(now);
+        return makeResponse({ status: "ok" });
       }
-    } else {
-      // Thêm mới tài khoản và liên kết cố định thiết bị hiện tại
-      sheet.appendRow([user, deviceId, userAgent, now, "Online", ""]);
-      sendTelegramMessage("🆕 <b>TÀI KHOẢN MỚI ĐĂNG NHẬP:</b>\n👤 User: <code>" + user + "</code>\n📱 Trình duyệt: " + userAgent);
-    }
-    return makeResponse({ status: "ok" });
-  }
-  
-  if (action === "logout") {
-    if (userRowIndex !== -1) {
-      var currentStatus = sheet.getRange(userRowIndex, 5).getValue().toString();
-      if (currentStatus !== "Hết hạn") {
-        sheet.getRange(userRowIndex, 5).setValue("Offline");
-        sendTelegramMessage("👋 <b>ĐÃ ĐĂNG XUẤT:</b>\n👤 User: <code>" + user + "</code>");
-      }
-    }
-    return makeResponse({ status: "ok" });
-  }
-
-  // ---- PINNED SIMs actions ----
-  if (action === "pin") {
-    var phone = e.parameter.phone;
-    var pinSheet = getPinnedSheet();
-    var pData = pinSheet.getDataRange().getValues();
-    var found = false;
-    for (var i = 1; i < pData.length; i++) {
-      if (pData[i][0].toString().toLowerCase() === user.toLowerCase() && pData[i][1] === phone) {
-        found = true;
-        pinSheet.getRange(i + 1, 4).setValue(new Date());
-        break;
-      }
-    }
-    if (!found) {
-      pinSheet.appendRow([user, phone, "", new Date()]);
-      sendTelegramMessage("📌 <b>TEST GHIM SỐ:</b>\n👤 User: <code>" + user + "</code>\n📱 Số: " + phone + "\nĐã lưu thành công vào Sheet!");
-    }
-    return makeResponse({ status: "ok" });
-  }
-
-  if (action === "unpin") {
-    var phone = e.parameter.phone;
-    var pinSheet = getPinnedSheet();
-    var pData = pinSheet.getDataRange().getValues();
-    for (var i = pData.length - 1; i >= 1; i--) {
-      if (pData[i][0].toString().toLowerCase() === user.toLowerCase() && pData[i][1] === phone) {
-        pinSheet.deleteRow(i + 1);
-      }
-    }
-    return makeResponse({ status: "ok" });
-  }
-
-  if (action === "get_pinned") {
-    var pinSheet = getPinnedSheet();
-    var pData = pinSheet.getDataRange().getValues();
-    var results = [];
-    var isAdmin = (user.toLowerCase() === "admin");
-    for (var i = 1; i < pData.length; i++) {
-      var rowUser = pData[i][0].toString();
-      if (isAdmin || rowUser.toLowerCase() === user.toLowerCase()) {
-        try {
-          var simObj = pData[i][2] ? JSON.parse(pData[i][2]) : null;
-          if (!simObj || typeof simObj !== "object") {
-              simObj = {
-                  fNum: pData[i][1].toString(),
-                  so_tb: pData[i][1].toString().replace(/\s/g, ""),
-                  monthly: 0,
-                  commitment: 0,
-                  ai: { score: 0, reasonText: "Đã ghim", highlight: [] }
-              };
+      
+      if (action === "logout") {
+        if (userRowIndex !== -1) {
+          var currentStatus = sheet.getRange(userRowIndex, 5).getValue().toString();
+          if (currentStatus !== "Hết hạn") {
+            sheet.getRange(userRowIndex, 5).setValue("Offline");
+            sendTelegramMessage("👋 <b>ĐÃ ĐĂNG XUẤT:</b>\n👤 User: <code>" + user + "</code>");
           }
-          simObj._pinnedBy = rowUser;
-          results.push(simObj);
-        } catch(ex) {
-          // Fallback an toàn nếu có lỗi
-          results.push({
-              fNum: pData[i][1].toString(),
-              ai: { score: 0, reasonText: "Lỗi dữ liệu", highlight: [] },
-              _pinnedBy: rowUser
-          });
         }
+        return makeResponse({ status: "ok" });
+      }
+
+      // ---- PINNED SIMs actions ----
+      if (action === "pin") {
+        var phone = e.parameter.phone;
+        var pinSheet = getPinnedSheet();
+        var pData = pinSheet.getDataRange().getValues();
+        var found = false;
+        for (var i = 1; i < pData.length; i++) {
+          if (pData[i][0].toString().toLowerCase() === user.toLowerCase() && pData[i][1] === phone) {
+            found = true;
+            pinSheet.getRange(i + 1, 4).setValue(new Date());
+            break;
+          }
+        }
+        if (!found) {
+          pinSheet.appendRow([user, phone, "", new Date()]);
+          sendTelegramMessage("📌 <b>TEST GHIM SỐ:</b>\n👤 User: <code>" + user + "</code>\n📱 Số: " + phone + "\nĐã lưu thành công vào Sheet!");
+        }
+        return makeResponse({ status: "ok" });
+      }
+
+      if (action === "unpin") {
+        var phone = e.parameter.phone;
+        var pinSheet = getPinnedSheet();
+        var pData = pinSheet.getDataRange().getValues();
+        for (var i = pData.length - 1; i >= 1; i--) {
+          if (pData[i][0].toString().toLowerCase() === user.toLowerCase() && pData[i][1] === phone) {
+            pinSheet.deleteRow(i + 1);
+          }
+        }
+        return makeResponse({ status: "ok" });
+      }
+
+      if (action === "get_pinned") {
+        var pinSheet = getPinnedSheet();
+        var pData = pinSheet.getDataRange().getValues();
+        var results = [];
+        var isAdmin = (user.toLowerCase() === "admin");
+        for (var i = 1; i < pData.length; i++) {
+          var rowUser = pData[i][0].toString();
+          if (isAdmin || rowUser.toLowerCase() === user.toLowerCase()) {
+            try {
+              var simObj = pData[i][2] ? JSON.parse(pData[i][2]) : null;
+              if (!simObj || typeof simObj !== "object") {
+                  simObj = {
+                      fNum: pData[i][1].toString(),
+                      so_tb: pData[i][1].toString().replace(/\s/g, ""),
+                      monthly: 0,
+                      commitment: 0,
+                      ai: { score: 0, reasonText: "Đã ghim", highlight: [] }
+                  };
+              }
+              simObj._pinnedBy = rowUser;
+              results.push(simObj);
+            } catch(ex) {
+              // Fallback an toàn nếu có lỗi
+              results.push({
+                  fNum: pData[i][1].toString(),
+                  ai: { score: 0, reasonText: "Lỗi dữ liệu", highlight: [] },
+                  _pinnedBy: rowUser
+              });
+            }
+          }
+        }
+        results.reverse();
+        return makeResponse({ status: "ok", data: results });
+      }
+
+        return makeResponse({ status: "error", message: "Invalid action received: " + String(action) });
+
+      } catch (err) {
+        return makeResponse({ status: "error", message: "Lỗi Server: " + err.message, stack: err.stack });
       }
     }
-    results.reverse();
-    return makeResponse({ status: "ok", data: results });
-  }
 
-    return makeResponse({ status: "error", message: "Invalid action received: " + String(action) });
-
-  } catch (err) {
-    return makeResponse({ status: "error", message: "Lỗi Server: " + err.message, stack: err.stack });
-  }
-}
-
-function doPost(e) {
-  return doGet(e);
-}
+    function doPost(e) {
+      return doGet(e);
+    }
 ```
 
 4. Nhấn biểu tượng **Lưu dự án (Save project)** (hình đĩa mềm) hoặc bấm `Cmd + S` / `Ctrl + S`.
