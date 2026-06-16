@@ -64,7 +64,8 @@ function doGet(e) {
     return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
   }
 
-  var action = e.parameter.action;
+  try {
+    var action = e.parameter.action;
   var user = e.parameter.user;
   var deviceId = e.parameter.deviceId;
   var userAgent = e.parameter.userAgent || "";
@@ -242,6 +243,10 @@ function doGet(e) {
   }
 
   return makeResponse({ status: "error", message: "Invalid action" });
+
+  } catch (err) {
+    return makeResponse({ status: "error", message: "Lỗi Server: " + err.message, stack: err.stack });
+  }
 }
 
 function doPost(e) {

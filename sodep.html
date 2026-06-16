@@ -1335,12 +1335,20 @@
             const action = isPinned ? 'unpin' : 'pin';
             if (!isPinned && simObj) {
                 try {
-                    await fetch(`${GAS_API_URL}?action=pin&user=${encodeURIComponent(user)}&deviceId=${deviceId}&phone=${encodeURIComponent(fNum)}`);
-                } catch(e) { console.error('Lỗi lưu ghim:', e); }
+                    const res = await fetch(`${GAS_API_URL}?action=pin&user=${encodeURIComponent(user)}&deviceId=${deviceId}&phone=${encodeURIComponent(fNum)}`);
+                    const data = await res.json();
+                    if (data.status !== "ok") alert("Lỗi lưu ghim: " + data.message);
+                } catch(e) { 
+                    alert('Lỗi kết nối ghim: ' + e.message); 
+                }
             } else if (isPinned) {
                 try {
-                    await fetch(`${GAS_API_URL}?action=unpin&user=${encodeURIComponent(user)}&deviceId=${deviceId}&phone=${encodeURIComponent(fNum)}`);
-                } catch(e) { console.error('Lỗi bỏ ghim:', e); }
+                    const res = await fetch(`${GAS_API_URL}?action=unpin&user=${encodeURIComponent(user)}&deviceId=${deviceId}&phone=${encodeURIComponent(fNum)}`);
+                    const data = await res.json();
+                    if (data.status !== "ok") alert("Lỗi bỏ ghim: " + data.message);
+                } catch(e) { 
+                    alert('Lỗi kết nối bỏ ghim: ' + e.message); 
+                }
             }
         }
 
