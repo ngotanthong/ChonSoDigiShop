@@ -1335,12 +1335,11 @@
             const action = isPinned ? 'unpin' : 'pin';
             if (!isPinned && simObj) {
                 try {
-                    // Gọi API cực kỳ ngắn gọn, không truyền simData
-                    await fetch(`${GAS_API_URL}?action=pin&user=${encodeURIComponent(user)}&deviceId=${deviceId}&phone=${encodeURIComponent(fNum)}`, { mode: 'no-cors' });
+                    await fetch(`${GAS_API_URL}?action=pin&user=${encodeURIComponent(user)}&deviceId=${deviceId}&phone=${encodeURIComponent(fNum)}`);
                 } catch(e) { console.error('Lỗi lưu ghim:', e); }
             } else if (isPinned) {
                 try {
-                    await fetch(`${GAS_API_URL}?action=unpin&user=${encodeURIComponent(user)}&deviceId=${deviceId}&phone=${encodeURIComponent(fNum)}`, { mode: 'no-cors' });
+                    await fetch(`${GAS_API_URL}?action=unpin&user=${encodeURIComponent(user)}&deviceId=${deviceId}&phone=${encodeURIComponent(fNum)}`);
                 } catch(e) { console.error('Lỗi bỏ ghim:', e); }
             }
         }

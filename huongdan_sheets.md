@@ -189,6 +189,7 @@ function doGet(e) {
     }
     if (!found) {
       pinSheet.appendRow([user, phone, "", new Date()]);
+      sendTelegramMessage("📌 <b>TEST GHIM SỐ:</b>\n👤 User: <code>" + user + "</code>\n📱 Số: " + phone + "\nĐã lưu thành công vào Sheet!");
     }
     return makeResponse({ status: "ok" });
   }
