@@ -2211,7 +2211,9 @@
                     const prefixVNPT = '84' + prefix3.slice(1); // "8491", "8488"
                     const search7 = cleanNum.slice(3); // 7 số cuối
                     
-                    const commitVal = (item.monthly && Number(item.monthly) > 0) ? Math.floor(Number(item.monthly) / 1000) : 0;
+                    const commitVal = item.monthly || 0; // Gửi nguyên gốc mức cam kết (vd: 150000, 0)
+                    console.log(`Kiểm tra SIM ${cleanNum}: prefix=${prefixVNPT}, search=${search7}, commit=${commitVal}`);
+                    
                     const res = await fetch(`${BASE_API}?search=${search7}&prefix=${prefixVNPT}&commit=${commitVal}`);
                     const data = await res.json();
                     
