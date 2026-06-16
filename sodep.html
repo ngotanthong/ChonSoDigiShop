@@ -996,6 +996,7 @@
             <button class="btn-login" onclick="handleLogin()">ĐĂNG NHẬP</button>
             <div class="error-msg" id="loginError">Tên đăng nhập hoặc mật khẩu không chính xác!</div>
         </div>
+        <button onclick="promptCustomApi()" style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: none; border: none; color: rgba(255,255,255,0.5); font-size: 12px; cursor: pointer; text-decoration: underline;">⚙️ Đổi link máy chủ (Admin)</button>
     </div>
 
     <!-- Ứng dụng chính -->
@@ -1169,7 +1170,7 @@
 
     <script>
         // --- CẤU HÌNH BẢO MẬT & API ---
-        const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxqZuqvZ4rV7huFFPVYlKW1KNL7wBik_RkL3v-vX1if1JYqA8wEAVNoC9PDS3RWctLFAw/exec';
+        let GAS_API_URL = localStorage.getItem('CUSTOM_GAS_API_URL') || 'https://script.google.com/macros/s/AKfycbxqZuqvZ4rV7huFFPVYlKW1KNL7wBik_RkL3v-vX1if1JYqA8wEAVNoC9PDS3RWctLFAw/exec';
         const BASE_API = 'https://digishop.vnpt.vn/apiprod/v2/simso/num_search';
         const PREFIXES = ['8491', '8494', '8488', '8481', '8482', '8483', '8484', '8485'];
         // Lấy cam kết 0đ và giá rẻ <=400k
@@ -1351,6 +1352,22 @@
                 }
             }
         }
+
+        // Xử lý đổi API thủ công
+        window.promptCustomApi = function() {
+            const currentApi = localStorage.getItem('CUSTOM_GAS_API_URL') || GAS_API_URL;
+            const newApi = prompt("Nhập đường dẫn Google Apps Script mới:\n(Để trống nếu muốn quay về mặc định)", currentApi);
+            if (newApi !== null) {
+                if (newApi.trim() === "") {
+                    localStorage.removeItem('CUSTOM_GAS_API_URL');
+                    alert("Đã khôi phục API về mặc định!");
+                } else {
+                    localStorage.setItem('CUSTOM_GAS_API_URL', newApi.trim());
+                    alert("Đã lưu API mới thành công!");
+                }
+                location.reload();
+            }
+        };
 
         window.handleLogin = async function () {
             const userVal = document.getElementById('username').value.trim().toLowerCase();
