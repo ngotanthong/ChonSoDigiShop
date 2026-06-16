@@ -1044,6 +1044,16 @@
                         <option value="085">085</option>
                     </select>
 
+                    <label for="filterCommitment" class="sort-label" style="margin-left: 10px;">Cam kết:</label>
+                    <select id="filterCommitment" class="sort-select" onchange="handleCommitmentFilter()">
+                        <option value="all">Tất cả</option>
+                        <option value="0">0đ</option>
+                        <option value="100000">100k</option>
+                        <option value="150000">150k</option>
+                        <option value="200000">200k</option>
+                        <option value="400000">400k</option>
+                    </select>
+
                     <label for="sortBy" class="sort-label" style="margin-left: 10px;">Sắp xếp:</label>
                     <select id="sortBy" class="sort-select" onchange="handleSortChange()">
                         <option value="score-desc">⭐ Điểm AI cao nhất</option>
@@ -1131,6 +1141,7 @@
         let currentDisplayCount = 100;
         let currentSort = 'score-desc';
         let currentPrefix = 'all';
+        let currentCommitment = 'all';
 
         // Sinh mã định danh thiết bị
         function generateUUID() {
@@ -1884,6 +1895,15 @@
             }
         }
 
+        function handleCommitmentFilter() {
+            const commit = document.getElementById('filterCommitment');
+            if (commit) {
+                currentCommitment = commit.value;
+                currentDisplayCount = 100; // Reset pagination
+                renderResults();
+            }
+        }
+
         function filterCategory(cat, event) {
             currentCategory = cat;
             currentDisplayCount = 100; // Reset pagination khi đổi danh mục
@@ -2052,6 +2072,13 @@
                 displayData = displayData.filter(item => {
                     const formatNum = formatNumber(item.fNum);
                     return formatNum.startsWith(currentPrefix);
+                });
+            }
+
+            if (currentCommitment !== 'all') {
+                displayData = displayData.filter(item => {
+                    const monthly = item.monthly ? item.monthly.toString() : "0";
+                    return monthly === currentCommitment;
                 });
             }
 
