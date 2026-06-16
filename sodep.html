@@ -1333,10 +1333,29 @@
             }
             
             const action = isPinned ? 'unpin' : 'pin';
-            const simDataStr = isPinned ? "" : JSON.stringify(simObj);
-            try {
-                fetch(`${GAS_API_URL}?action=${action}&user=${encodeURIComponent(user)}&deviceId=${deviceId}&phone=${encodeURIComponent(fNum)}&simData=${encodeURIComponent(simDataStr)}`);
-            } catch(e) {}
+            if (!isPinned && simObj) {
+                // Chỉ lưu các trường cần thiết để tránh URL quá dài
+                const minimalData = {
+                    fNum: simObj.fNum,
+                    so_tb: simObj.so_tb,
+                    monthly: simObj.monthly,
+                    commitment: simObj.commitment,
+                    ai: {
+                        score: simObj.ai ? simObj.ai.score : 0,
+                        reasonText: simObj.ai ? simObj.ai.reasonText : '',
+                        reasonsArr: simObj.ai ? simObj.ai.reasonsArr : [],
+                        highlight: simObj.ai ? simObj.ai.highlight : []
+                    }
+                };
+                const simDataStr = JSON.stringify(minimalData);
+                try {
+                    await fetch(`${GAS_API_URL}?action=pin&user=${encodeURIComponent(user)}&deviceId=${deviceId}&phone=${encodeURIComponent(fNum)}&simData=${encodeURIComponent(simDataStr)}`);
+                } catch(e) { console.error('Lỗi lưu ghim:', e); }
+            } else if (isPinned) {
+                try {
+                    await fetch(`${GAS_API_URL}?action=unpin&user=${encodeURIComponent(user)}&deviceId=${deviceId}&phone=${encodeURIComponent(fNum)}`);
+                } catch(e) { console.error('Lỗi bỏ ghim:', e); }
+            }
         }
 
         window.handleLogin = async function () {
