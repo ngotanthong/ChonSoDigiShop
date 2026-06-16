@@ -2207,8 +2207,11 @@
                 const item = pinnedItems[i];
                 try {
                     const cleanNum = formatNumber(item.so_tb).replace(/\s+/g, '');
-                    const prefix = cleanNum.slice(0, 3) || '091'; // Fallback
-                    const res = await fetch(`${BASE_API}?search=${cleanNum}&prefix=${prefix}&commit=0`);
+                    const prefix3 = cleanNum.slice(0, 3); // "091", "088"
+                    const prefixVNPT = '84' + prefix3.slice(1); // "8491", "8488"
+                    const search7 = cleanNum.slice(3); // 7 số cuối
+                    
+                    const res = await fetch(`${BASE_API}?search=${search7}&prefix=${prefixVNPT}`);
                     const data = await res.json();
                     
                     if (data.errorCode === 0 && data.data && data.data.length > 0) {
