@@ -162,6 +162,85 @@ function doGet(e) {
                          .setMimeType(ContentService.MimeType.JSON);
   }
   
+  function getPinnedSheet() {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var pSheet = ss.getSheetByName("PinnedSIMs");
+    if (!pSheet) {
+      pSheet = ss.insertSheet("PinnedSIMs");
+      pSheet.appendRow(["User", "Phone", "SIM Data", "Pinned At"]);
+    }
+    return pSheet;
+  }
+
+  if (action === "pin") {
+    var phone = e.parameter.phone;
+    // Xử lý POST hoặc GET data
+    var simData = e.parameter.simData; 
+    if (e.postData && e.postData.contents) {
+        try {
+            var postBody = JSON.parse(e.postData.contents);
+            if (postBody.simData) simData = postBody.simData;
+            if (postBody.phone) phone = postBody.phone;
+        } catch(ex) {}
+    }
+
+    var pinSheet = getPinnedSheet();
+    var pData = pinSheet.getDataRange().getValues();
+    var found = false;
+    for (var i = 1; i < pData.length; i++) {
+      if (pData[i][0].toString().toLowerCase() === user.toLowerCase() && pData[i][1] === phone) {
+        found = true;
+        pinSheet.getRange(i + 1, 3).setValue(simData);
+        pinSheet.getRange(i + 1, 4).setValue(now);
+        break;
+      }
+    }
+    if (!found) {
+      pinSheet.appendRow([user, phone, simData, now]);
+    }
+    return ContentService.createTextOutput(JSON.stringify({ status: "ok" })).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  if (action === "unpin") {
+    var phone = e.parameter.phone;
+    if (e.postData && e.postData.contents) {
+        try {
+            var postBody = JSON.parse(e.postData.contents);
+            if (postBody.phone) phone = postBody.phone;
+        } catch(ex) {}
+    }
+    
+    var pinSheet = getPinnedSheet();
+    var pData = pinSheet.getDataRange().getValues();
+    for (var i = pData.length - 1; i >= 1; i--) {
+      if (pData[i][0].toString().toLowerCase() === user.toLowerCase() && pData[i][1] === phone) {
+        pinSheet.deleteRow(i + 1);
+      }
+    }
+    return ContentService.createTextOutput(JSON.stringify({ status: "ok" })).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  if (action === "get_pinned") {
+    var pinSheet = getPinnedSheet();
+    var pData = pinSheet.getDataRange().getValues();
+    var results = [];
+    var isAdmin = (user.toLowerCase() === "admin");
+    
+    for (var i = 1; i < pData.length; i++) {
+      var rowUser = pData[i][0].toString();
+      if (isAdmin || rowUser.toLowerCase() === user.toLowerCase()) {
+        try {
+          var simObj = JSON.parse(pData[i][2]);
+          simObj._pinnedBy = rowUser;
+          results.push(simObj);
+        } catch(ex) {}
+      }
+    }
+    // Sắp xếp danh sách mới nhất lên đầu
+    results.reverse();
+    return ContentService.createTextOutput(JSON.stringify({ status: "ok", data: results })).setMimeType(ContentService.MimeType.JSON);
+  }
+  
   return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Invalid action" }))
                        .setMimeType(ContentService.MimeType.JSON);
 }

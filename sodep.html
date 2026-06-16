@@ -586,7 +586,7 @@
 
         .sim-card-header {
             display: flex;
-            justify-content: flex-end;
+            justify-content: space-between;
             align-items: center;
             margin-bottom: 8px;
             width: 100%;
@@ -618,8 +618,49 @@
             justify-content: center;
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 2px 8px rgba(139, 92, 246, 0.08);
+        }
+
+        .btn-pin {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            background: #f1f5f9;
+            color: #94a3b8;
+            border: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-pin:hover {
+            background: #e2e8f0;
+            color: #64748b;
+        }
+        .btn-pin.pinned {
+            background: #fef08a;
+            color: #eab308;
+            border-color: #fde047;
+        }
+        .status-badge {
+            position: absolute;
+            top: -10px;
+            left: 10px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: bold;
             z-index: 10;
+        }
+        .status-badge.available {
+            background: #10b981;
+            color: white;
+            border: 1px solid #059669;
+        }
+        .status-badge.sold {
+            background: #ef4444;
+            color: white;
+            border: 1px solid #dc2626;
         }
 
         .btn-download-card:hover {
@@ -1142,6 +1183,7 @@
         let currentSort = 'score-desc';
         let currentPrefix = 'all';
         let currentCommitment = 'all';
+        let pinnedSims = {};
 
         // Sinh mã định danh thiết bị
         function generateUUID() {
@@ -1243,7 +1285,64 @@
             setTimeout(() => {
                 loginScreen.style.display = 'none';
                 appContainer.style.display = 'block';
+                fetchPinnedSims();
             }, 500);
+        }
+
+        async function fetchPinnedSims() {
+            const user = localStorage.getItem('simso_auth_user') || sessionStorage.getItem('simso_auth_user');
+            if (!user || !GAS_API_URL) return;
+            try {
+                const res = await fetch(`${GAS_API_URL}?action=get_pinned&user=${encodeURIComponent(user)}&deviceId=${deviceId}`);
+                const data = await res.json();
+                if (data.status === 'ok') {
+                    pinnedSims = {};
+                    data.data.forEach(item => {
+                        pinnedSims[item.fNum] = item;
+                    });
+                    if (currentCategory === 'pinned') renderResults();
+                }
+            } catch(e) {
+                console.error("Lỗi tải danh sách ghim:", e);
+            }
+        }
+
+        async function togglePin(fNum, btnEl, event) {
+            event.stopPropagation();
+            const user = localStorage.getItem('simso_auth_user') || sessionStorage.getItem('simso_auth_user');
+            if (!user) {
+                alert("Vui lòng đăng nhập để ghim số!");
+                return;
+            }
+
+            const isPinned = !!pinnedSims[fNum];
+            let simObj = displayData.find(s => s.fNum === fNum) || scoredData.find(s => s.fNum === fNum) || pinnedSims[fNum];
+            
+            if (isPinned) {
+                delete pinnedSims[fNum];
+                btnEl.classList.remove('pinned');
+                if (currentCategory === 'pinned') {
+                    const card = btnEl.closest('.sim-card');
+                    if (card) card.style.display = 'none';
+                }
+            } else {
+                if (simObj) {
+                    pinnedSims[fNum] = simObj;
+                    btnEl.classList.add('pinned');
+                }
+            }
+            
+            const action = isPinned ? 'unpin' : 'pin';
+            const payload = {
+                phone: fNum,
+                simData: isPinned ? "" : JSON.stringify(simObj)
+            };
+            try {
+                fetch(`${GAS_API_URL}?action=${action}&user=${encodeURIComponent(user)}&deviceId=${deviceId}`, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+            } catch(e) {}
         }
 
         window.handleLogin = async function () {
@@ -1851,6 +1950,12 @@
             const filterTabs = document.getElementById('filterTabs');
             filterTabs.innerHTML = '<button class="tab-btn active" onclick="filterCategory(\'all\', event)">Tất cả</button>';
 
+            const pinBtn = document.createElement('button');
+            pinBtn.className = 'tab-btn';
+            pinBtn.innerHTML = '📌 Đã ghim';
+            pinBtn.onclick = (e) => filterCategory('pinned', e);
+            filterTabs.appendChild(pinBtn);
+
             const hasFreeSims = scoredData.some(item => isFreeSim(item));
             if (hasFreeSims) {
                 const btn = document.createElement('button');
@@ -2066,9 +2171,48 @@
             }
         }
 
+        async function checkPinnedStatus(event) {
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="login-spinner" style="width: 14px; height: 14px; border-width: 2px;"></span> Đang kiểm tra...';
+            btn.disabled = true;
+
+            const pinnedItems = Object.values(pinnedSims);
+            for (let i = 0; i < pinnedItems.length; i++) {
+                const item = pinnedItems[i];
+                try {
+                    const cleanNum = formatNumber(item.so_tb).replace(/\s+/g, '');
+                    const prefix = cleanNum.slice(0, 3) || '091'; // Fallback
+                    const res = await fetch(`${BASE_API}?search=${cleanNum}&prefix=${prefix}&commit=0`);
+                    const data = await res.json();
+                    
+                    if (data.errorCode === 0 && data.data && data.data.length > 0) {
+                        const found = data.data.some(d => formatNumber(d.so_tb).replace(/\s+/g, '') === cleanNum);
+                        item._status = found ? 'Còn hàng' : 'Đã bán';
+                    } else {
+                        item._status = 'Đã bán';
+                    }
+                } catch(e) {
+                    console.error("Lỗi check tồn kho:", e);
+                }
+            }
+            
+            renderResults(); // Vẽ lại để cập nhật badge
+        }
+
         function renderResults() {
             const grid = document.getElementById('resultGrid');
             grid.innerHTML = '';
+
+            if (currentCategory === 'pinned') {
+                const checkBtn = document.createElement('button');
+                checkBtn.className = 'btn-scan';
+                checkBtn.style.marginBottom = '15px';
+                checkBtn.style.width = 'fit-content';
+                checkBtn.innerHTML = '🔄 Kiểm tra trạng thái tồn kho';
+                checkBtn.onclick = checkPinnedStatus;
+                grid.appendChild(checkBtn);
+            }
 
             displayData = scoredData;
 
@@ -2089,8 +2233,10 @@
             if (currentCategory !== 'all') {
                 if (currentCategory === 'free') {
                     displayData = displayData.filter(item => isFreeSim(item));
+                } else if (currentCategory === 'pinned') {
+                    displayData = Object.values(pinnedSims);
                 } else {
-                    displayData = displayData.filter(item => item.ai.reasonsArr.includes(currentCategory));
+                    displayData = displayData.filter(item => item.ai && item.ai.reasonsArr && item.ai.reasonsArr.includes(currentCategory));
                 }
             }
 
@@ -2116,16 +2262,30 @@
                 card.className = 'sim-card';
                 card.onclick = () => copyToClipboard(item.fNum);
 
+                const isPinned = !!pinnedSims[item.fNum];
+                const pinClass = isPinned ? 'btn-pin pinned' : 'btn-pin';
+                const statusHtml = item._status ? `<div class="status-badge ${item._status === 'Còn hàng' ? 'available' : 'sold'}">${item._status}</div>` : '';
+                const pinnedByHtml = item._pinnedBy ? `<div style="font-size: 11px; color: #8b5cf6; margin-bottom: 5px;">Ghim bởi: ${item._pinnedBy}</div>` : '';
+
                 card.innerHTML = `
+                    ${statusHtml}
                     <div class="sim-card-header">
-                        <button class="btn-download-card" onclick="downloadCard('${item.fNum}', this, event)" title="Tải ảnh card để đăng MXH">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-                                <circle cx="12" cy="13" r="4"></circle>
-                            </svg>
-                        </button>
-                        <div class="sim-score">⭐ ${item.ai.score} Điểm</div>
+                        <div style="display: flex; gap: 4px; align-items: center; justify-content: flex-start;">
+                            <div class="sim-score">⭐ ${item.ai.score} Điểm</div>
+                        </div>
+                        <div style="display: flex; gap: 4px; align-items: center; justify-content: flex-end;">
+                            <button class="${pinClass}" onclick="togglePin('${item.fNum}', this, event)" title="Ghim số">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                            </button>
+                            <button class="btn-download-card" onclick="downloadCard('${item.fNum}', this, event)" title="Tải ảnh card để đăng MXH">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                                    <circle cx="12" cy="13" r="4"></circle>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
+                    ${pinnedByHtml}
                     <div class="sim-number">${hlNum}</div>
                     <div class="sim-reason">${item.ai.reasonText}</div>
                     <div class="sim-price-row">
