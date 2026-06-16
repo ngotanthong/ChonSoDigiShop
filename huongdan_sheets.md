@@ -242,7 +242,7 @@ function doGet(e) {
     return makeResponse({ status: "ok", data: results });
   }
 
-  return makeResponse({ status: "error", message: "Invalid action" });
+    return makeResponse({ status: "error", message: "Invalid action received: " + String(action) });
 
   } catch (err) {
     return makeResponse({ status: "error", message: "Lỗi Server: " + err.message, stack: err.stack });
