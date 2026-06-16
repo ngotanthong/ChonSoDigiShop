@@ -178,18 +178,20 @@ function doGet(e) {
       // ---- PINNED SIMs actions ----
       if (action === "pin") {
         var phone = e.parameter.phone;
+        var simData = e.parameter.simData || ""; // Nhận thêm dữ liệu simData
         var pinSheet = getPinnedSheet();
         var pData = pinSheet.getDataRange().getValues();
         var found = false;
         for (var i = 1; i < pData.length; i++) {
           if (pData[i][0].toString().toLowerCase() === user.toLowerCase() && pData[i][1] === phone) {
             found = true;
+            pinSheet.getRange(i + 1, 3).setValue(simData); // Cập nhật lại data mới nhất
             pinSheet.getRange(i + 1, 4).setValue(new Date());
             break;
           }
         }
         if (!found) {
-          pinSheet.appendRow([user, phone, "", new Date()]);
+          pinSheet.appendRow([user, phone, simData, new Date()]);
           sendTelegramMessage("📌 <b>TEST GHIM SỐ:</b>\n👤 User: <code>" + user + "</code>\n📱 Số: " + phone + "\nĐã lưu thành công vào Sheet!");
         }
         return makeResponse({ status: "ok" });

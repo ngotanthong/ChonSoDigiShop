@@ -1336,7 +1336,8 @@
             const action = isPinned ? 'unpin' : 'pin';
             if (!isPinned && simObj) {
                 try {
-                    const res = await fetch(`${GAS_API_URL}?action=pin&user=${encodeURIComponent(user)}&deviceId=${deviceId}&phone=${encodeURIComponent(fNum)}`);
+                    const simDataStr = encodeURIComponent(JSON.stringify(simObj));
+                    const res = await fetch(`${GAS_API_URL}?action=pin&user=${encodeURIComponent(user)}&deviceId=${deviceId}&phone=${encodeURIComponent(fNum)}&simData=${simDataStr}`);
                     const data = await res.json();
                     if (data.status !== "ok") alert("Lỗi lưu ghim: " + data.message);
                 } catch(e) { 
