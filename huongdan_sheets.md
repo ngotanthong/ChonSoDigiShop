@@ -177,21 +177,18 @@ function doGet(e) {
   // ---- PINNED SIMs actions ----
   if (action === "pin") {
     var phone = e.parameter.phone;
-    var simData = e.parameter.simData;
-
     var pinSheet = getPinnedSheet();
     var pData = pinSheet.getDataRange().getValues();
     var found = false;
     for (var i = 1; i < pData.length; i++) {
       if (pData[i][0].toString().toLowerCase() === user.toLowerCase() && pData[i][1] === phone) {
         found = true;
-        pinSheet.getRange(i + 1, 3).setValue(simData);
         pinSheet.getRange(i + 1, 4).setValue(new Date());
         break;
       }
     }
     if (!found) {
-      pinSheet.appendRow([user, phone, simData, new Date()]);
+      pinSheet.appendRow([user, phone, "", new Date()]);
     }
     return makeResponse({ status: "ok" });
   }
@@ -217,10 +214,26 @@ function doGet(e) {
       var rowUser = pData[i][0].toString();
       if (isAdmin || rowUser.toLowerCase() === user.toLowerCase()) {
         try {
-          var simObj = JSON.parse(pData[i][2]);
+          var simObj = pData[i][2] ? JSON.parse(pData[i][2]) : null;
+          if (!simObj || typeof simObj !== "object") {
+              simObj = {
+                  fNum: pData[i][1].toString(),
+                  so_tb: pData[i][1].toString().replace(/\s/g, ""),
+                  monthly: 0,
+                  commitment: 0,
+                  ai: { score: 0, reasonText: "Đã ghim", highlight: [] }
+              };
+          }
           simObj._pinnedBy = rowUser;
           results.push(simObj);
-        } catch(ex) {}
+        } catch(ex) {
+          // Fallback an toàn nếu có lỗi
+          results.push({
+              fNum: pData[i][1].toString(),
+              ai: { score: 0, reasonText: "Lỗi dữ liệu", highlight: [] },
+              _pinnedBy: rowUser
+          });
+        }
       }
     }
     results.reverse();
