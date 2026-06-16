@@ -1333,16 +1333,9 @@
             }
             
             const action = isPinned ? 'unpin' : 'pin';
-            const payload = {
-                phone: fNum,
-                simData: isPinned ? "" : JSON.stringify(simObj)
-            };
+            const simDataStr = isPinned ? "" : JSON.stringify(simObj);
             try {
-                fetch(`${GAS_API_URL}?action=${action}&user=${encodeURIComponent(user)}&deviceId=${deviceId}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify(payload)
-                });
+                fetch(`${GAS_API_URL}?action=${action}&user=${encodeURIComponent(user)}&deviceId=${deviceId}&phone=${encodeURIComponent(fNum)}&simData=${encodeURIComponent(simDataStr)}`);
             } catch(e) {}
         }
 
