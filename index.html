@@ -436,6 +436,29 @@
             transition: width 0.3s;
         }
 
+        .btn-pin {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            background: #f1f5f9;
+            color: #94a3b8;
+            border: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-pin:hover {
+            background: #e2e8f0;
+            color: #64748b;
+        }
+        .btn-pin.pinned {
+            background: #fef08a;
+            color: #eab308;
+            border-color: #fde047;
+        }
+
         /* --- MOBILE & UX OPTIMIZATIONS --- */
 
         /* Toast notification for copy feedback */
@@ -24468,7 +24491,7 @@
                 });
             }
 
-            const rawTags = data.map(item => item.kieuso_name.replace(/^\d{3} /, ''));
+            const rawTags = data.map(item => (item.kieuso_name || '').replace(/^\d{3} /, ''));
             const uniqueTags = [...new Set(rawTags)].sort();
 
             const btnAll = document.createElement('button');
@@ -24477,7 +24500,14 @@
             btnAll.onclick = () => { priorityTag = null; applySort(); renderTags(data); };
             tagCloud.appendChild(btnAll);
 
+            const btnPinned = document.createElement('button');
+            btnPinned.className = `filter-tag ${priorityTag === 'pinned' ? 'active' : ''}`;
+            btnPinned.innerHTML = '📌 Số Đã Ghim';
+            btnPinned.onclick = () => { priorityTag = 'pinned'; applySort(); renderTags(data); };
+            tagCloud.appendChild(btnPinned);
+
             uniqueTags.forEach(tag => {
+                if (!tag) return; // Bỏ qua nếu tag rỗng (số từ nguồn khác)
                 const btn = document.createElement('button');
                 btn.className = `filter-tag ${priorityTag === tag ? 'active' : ''}`;
                 btn.textContent = tag;
@@ -24511,12 +24541,14 @@
             }
 
             data.forEach(item => {
-                const rawTagName = item.kieuso_name.replace(/^\d{3} /, '');
+                const itemSoTb = item.so_tb || item.fNum;
+                const itemKieuSo = item.kieuso_name || '';
+                const rawTagName = itemKieuSo.replace(/^\d{3} /, '');
                 const tagName = escapeHTML(rawTagName);
                 const card = document.createElement('div');
 
                 const isFree = !item.monthly || item.monthly == 0 || item.monthly === "0";
-                const price = Number(item.monthly) || 0;
+                const price = Number(item.monthly) || Number(item.price) || 0;
 
                 let tier = '';
                 if (isFree) tier = 'free';
@@ -24529,14 +24561,22 @@
                 const cardClass = `sim-card ${tier}-card`;
                 card.className = `${cardClass} ${priorityTag === rawTagName ? 'highlight-card' : ''}`;
 
-                const monthlyVal = isFree ? Number(item.price).toLocaleString() + ' đ' : price.toLocaleString() + ' đ';
+                const monthlyVal = isFree ? Number(item.price || 0).toLocaleString() + ' đ' : price.toLocaleString() + ' đ';
                 const monthlySub = isFree ? 'LH nhân viên' : '(cước cam kết/ tháng)';
                 const commitTime = (item.commitment && item.commitment > 0) ? `<span>${item.commitment}</span> tháng` : 'Không có';
+
+                const isPinned = !!pinnedSims[itemSoTb];
+                const pinClass = isPinned ? 'btn-pin pinned' : 'btn-pin';
 
                 card.innerHTML = `
                 <div class="sim-tag" title="${tagName}">${tagName}</div>
                 <div class="sim-info">
-                    <div class="sim-number">${highlight(fmt(item.so_tb), searchVal)}</div>
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
+                        <div class="sim-number" style="margin-bottom: 0;">${highlight(fmt(itemSoTb), searchVal)}</div>
+                        <button class="${pinClass}" onclick="togglePin('${itemSoTb}', this, event)" title="Ghim số">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                        </button>
+                    </div>
                     <div class="sim-time">Thời gian cam kết: ${commitTime}</div>
                 </div>
                 <div class="sim-badge ${tier}">
@@ -24569,9 +24609,13 @@
             }
 
             if (priorityTag !== null) {
-                const matches = sorted.filter(item => item.kieuso_name.replace(/^\d{3} /, '') === priorityTag);
-                const others = sorted.filter(item => item.kieuso_name.replace(/^\d{3} /, '') !== priorityTag);
-                sorted = [...matches, ...others];
+                if (priorityTag === 'pinned') {
+                    sorted = Object.values(pinnedSims);
+                } else {
+                    const matches = sorted.filter(item => (item.kieuso_name || '').replace(/^\d{3} /, '') === priorityTag);
+                    const others = sorted.filter(item => (item.kieuso_name || '').replace(/^\d{3} /, '') !== priorityTag);
+                    sorted = [...matches, ...others];
+                }
             }
             renderCards(sorted);
         }
@@ -24601,6 +24645,82 @@
             deviceId = generateUUID();
             localStorage.setItem('simso_device_id', deviceId);
         }
+
+        // --- GHIM SỐ ---
+        let pinnedSims = {};
+
+        async function fetchPinnedSims() {
+            const user = localStorage.getItem('simso_auth_user') || sessionStorage.getItem('simso_auth_user');
+            if (!user || !GAS_API_URL) return;
+            try {
+                const res = await fetch(`${GAS_API_URL}?action=get_pinned&user=${encodeURIComponent(user)}&deviceId=${deviceId}`);
+                const data = await res.json();
+                if (data.status === 'ok') {
+                    pinnedSims = {};
+                    data.data.forEach(item => {
+                        const num = item.fNum || item.so_tb;
+                        if(num) {
+                            pinnedSims[num] = item;
+                        }
+                    });
+                    if (priorityTag === 'pinned') {
+                        applySort();
+                        renderTags(currentData);
+                    }
+                }
+            } catch(e) {
+                console.error("Lỗi tải danh sách ghim:", e);
+            }
+        }
+
+        async function togglePin(fNum, btnEl, event) {
+            event.stopPropagation();
+            const user = localStorage.getItem('simso_auth_user') || sessionStorage.getItem('simso_auth_user');
+            if (!user) {
+                alert("Vui lòng đăng nhập để ghim số!");
+                return;
+            }
+
+            const isPinned = !!pinnedSims[fNum];
+            let simObj = currentData.find(s => s.so_tb === fNum) || pinnedSims[fNum];
+            
+            if (isPinned) {
+                delete pinnedSims[fNum];
+                btnEl.classList.remove('pinned');
+                if (priorityTag === 'pinned') {
+                    const card = btnEl.closest('.sim-card');
+                    if (card) card.style.display = 'none';
+                }
+            } else {
+                if (simObj) {
+                    pinnedSims[fNum] = simObj;
+                    btnEl.classList.add('pinned');
+                }
+            }
+            
+            if (!isPinned && simObj) {
+                try {
+                    const objToSave = { ...simObj, fNum: fNum };
+                    const simDataStr = encodeURIComponent(JSON.stringify(objToSave));
+                    const res = await fetch(`${GAS_API_URL}?action=pin&user=${encodeURIComponent(user)}&deviceId=${deviceId}&phone=${encodeURIComponent(fNum)}&simData=${simDataStr}`);
+                    const data = await res.json();
+                    if (data.status !== "ok") alert("Lỗi lưu ghim: " + data.message);
+                } catch(e) { 
+                    alert('Lỗi kết nối ghim: ' + e.message); 
+                }
+            } else if (isPinned) {
+                try {
+                    const res = await fetch(`${GAS_API_URL}?action=unpin&user=${encodeURIComponent(user)}&deviceId=${deviceId}&phone=${encodeURIComponent(fNum)}`);
+                    const data = await res.json();
+                    if (data.status !== "ok") alert("Lỗi bỏ ghim: " + data.message);
+                } catch(e) { 
+                    alert('Lỗi kết nối bỏ ghim: ' + e.message); 
+                }
+            }
+        }
+
+        // Tải danh sách ghim khi vừa vào
+        fetchPinnedSims();
 
         // Hàm băm chuỗi sử dụng Web Crypto API bảo mật và native
         async function sha256(message) {
