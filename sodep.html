@@ -2287,7 +2287,7 @@
                 const price = Number(item.monthly) || 0;
                 const priceText = isFree ? '0 đ/tháng' : price.toLocaleString() + ' đ/tháng';
                 const commitText = (item.commitment && item.commitment > 0) ? `Cam kết ${item.commitment}T` : 'Không cam kết';
-                const hlNum = highlightHTML(item.fNum, item.ai.highlight);
+                const hlNum = highlightHTML(item.fNum, item.ai ? item.ai.highlight : '');
 
                 const card = document.createElement('div');
                 card.className = 'sim-card';
@@ -2298,11 +2298,14 @@
                 const statusHtml = item._status ? `<div class="status-badge ${item._status === 'Còn hàng' ? 'available' : 'sold'}">${item._status}</div>` : '';
                 const pinnedByHtml = item._pinnedBy ? `<div style="font-size: 11px; color: #8b5cf6; margin-bottom: 5px;">Ghim bởi: ${item._pinnedBy}</div>` : '';
 
+                const scoreHtml = item.ai && item.ai.score ? `<div class="sim-score">⭐ ${item.ai.score} Điểm</div>` : '';
+                const reasonHtml = item.ai && item.ai.reasonText ? `<div class="sim-reason">${item.ai.reasonText}</div>` : (item.kieuso_name ? `<div class="sim-reason">${item.kieuso_name}</div>` : `<div class="sim-reason">Được ghim từ Kho Thường</div>`);
+
                 card.innerHTML = `
                     ${statusHtml}
                     <div class="sim-card-header">
                         <div style="display: flex; gap: 4px; align-items: center; justify-content: flex-start;">
-                            <div class="sim-score">⭐ ${item.ai.score} Điểm</div>
+                            ${scoreHtml}
                         </div>
                         <div style="display: flex; gap: 4px; align-items: center; justify-content: flex-end;">
                             <button class="${pinClass}" onclick="togglePin('${item.fNum}', this, event)" title="Ghim số">
@@ -2318,7 +2321,7 @@
                     </div>
                     ${pinnedByHtml}
                     <div class="sim-number">${hlNum}</div>
-                    <div class="sim-reason">${item.ai.reasonText}</div>
+                    ${reasonHtml}
                     <div class="sim-price-row">
                         <div class="sim-price-box">
                             <div class="sim-price">${priceText}</div>
@@ -2365,13 +2368,13 @@
                 // Loại bỏ số cam kết 0đ khỏi bảng in (bảng in chỉ in số có cam kết giá rõ ràng)
                 const paidData = displayData.filter(item => !isFreeSim(item));
                 // Lấy 8 số có điểm cao nhất cố định ở đầu danh sách
-                let top8 = [...paidData].sort((a, b) => b.ai.score - a.ai.score).slice(0, 8);
+                let top8 = [...paidData].sort((a, b) => (b.ai ? b.ai.score : 0) - (a.ai ? a.ai.score : 0)).slice(0, 8);
                 let top8Set = new Set(top8.map(item => item.fNum));
 
                 const groups = {};
                 paidData.forEach(item => {
                     if (top8Set.has(item.fNum)) return; // Bỏ qua các số đã lấy ở top 8
-                    const mainReason = item.ai.reasonsArr[0] || 'Khác';
+                    const mainReason = (item.ai && item.ai.reasonsArr) ? (item.ai.reasonsArr[0] || 'Khác') : (item.kieuso_name || 'Khác');
                     if (!groups[mainReason]) groups[mainReason] = [];
                     groups[mainReason].push(item);
                 });
@@ -2461,16 +2464,18 @@
             `;
 
             selectedForPrint.forEach(item => {
-                const formatNum = highlightHTML(item.fNum, item.ai.highlight || '');
+                const formatNum = highlightHTML(item.fNum, item.ai ? item.ai.highlight : '');
                 const price = Number(item.monthly) || 0;
                 const priceText = (price === 0) ? 'Trả trước' : (price / 1000) + 'k/tháng';
                 const commitText = (item.commitment && item.commitment > 0) ? ` - Cam kết: ${item.commitment}T` : '';
 
                 let tagsHtml = '';
-                if (showTag && item.ai.reasonText) {
+                if (showTag && item.ai && item.ai.reasonText) {
                     const parts = item.ai.reasonText.split('+');
                     const spans = parts.map(t => `<span class="p-tag">${t.trim()}</span>`).join('');
                     tagsHtml = `<div class="p-tags-container">${spans}</div>`;
+                } else if (showTag && item.kieuso_name) {
+                    tagsHtml = `<div class="p-tags-container"><span class="p-tag">${item.kieuso_name}</span></div>`;
                 }
 
                 html += `
