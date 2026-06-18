@@ -728,6 +728,10 @@
             color: #ef4444;
         }
 
+        .price-mobile {
+            display: none;
+        }
+
         .sim-sub {
             font-size: 11px;
             color: var(--text-sub);
@@ -892,6 +896,18 @@
             .grid {
                 grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
                 gap: 10px;
+            }
+
+            .sim-price {
+                font-size: 13px;
+            }
+
+            .price-desktop {
+                display: none;
+            }
+
+            .price-mobile {
+                display: inline;
             }
         }
 
@@ -2010,7 +2026,9 @@
             dataToShow.forEach(item => {
                 const isFree = isFreeSim(item);
                 const price = Number(item.monthly) || 0;
-                const priceText = isFree ? '0 đ/tháng' : price.toLocaleString() + ' đ/tháng';
+                const priceText = isFree 
+                    ? '<span class="price-desktop">0 đ/tháng</span><span class="price-mobile">0đ/tháng</span>' 
+                    : `<span class="price-desktop">${price.toLocaleString()} đ/tháng</span><span class="price-mobile">${price / 1000}k/tháng</span>`;
                 const commitText = (item.commitment && item.commitment > 0) ? `Cam kết ${item.commitment}T` : 'Không cam kết';
                 const hlNum = highlightHTML(item.fNum, item.ai ? item.ai.highlight : '');
 
