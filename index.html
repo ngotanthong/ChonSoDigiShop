@@ -28,11 +28,18 @@
             background: var(--bg);
             padding: 2rem 1rem;
             color: #1a1a1a;
+            overflow-x: hidden;
+        }
+
+        html {
+            overflow-x: hidden;
         }
 
         .container {
             max-width: 1240px;
             margin: 0 auto;
+            width: 100%;
+            overflow-x: hidden;
         }
 
         header {
@@ -149,6 +156,8 @@
             justify-content: space-between;
             align-items: flex-start;
             gap: 20px;
+            max-width: 100%;
+            overflow: hidden;
         }
 
         .tag-cloud {
@@ -156,6 +165,18 @@
             flex-wrap: wrap;
             gap: 8px;
             flex: 1;
+            min-width: 0;
+        }
+
+        #tagCloud {
+            max-height: 200px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+        }
+
+        #filterContainer {
+            max-width: 100%;
+            overflow: hidden;
         }
 
         .filter-tag {
@@ -616,15 +637,32 @@
                 padding: 1rem;
                 border-radius: 12px;
                 margin-bottom: 1rem;
+                flex-direction: column;
             }
 
             .tag-cloud {
                 gap: 6px;
+                overflow-x: auto;
+                flex-wrap: nowrap;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+                padding-bottom: 4px;
+            }
+
+            .tag-cloud::-webkit-scrollbar {
+                display: none;
+            }
+
+            #tagCloud {
+                max-height: none;
+                overflow-y: visible;
             }
 
             .filter-tag {
                 padding: 6px 12px;
                 font-size: 11px;
+                white-space: nowrap;
+                flex-shrink: 0;
             }
 
             .btn-copy {
@@ -632,6 +670,18 @@
                 font-size: 11px;
                 width: 48%;
                 justify-content: center;
+            }
+
+            .sim-card {
+                padding-left: 20px;
+            }
+
+            .sim-number {
+                font-size: 22px;
+            }
+
+            .sim-badge {
+                min-width: 120px;
             }
         }
 
@@ -663,29 +713,30 @@
                 font-size: 12px;
             }
 
-            /* Responsive SIM Cards to prevent text overflow */
             .sim-card {
-                padding-left: 20px;
+                padding-left: 15px;
                 border-radius: 20px;
                 min-height: 85px;
             }
 
             .sim-tag {
-                left: 20px;
+                left: 15px;
                 font-size: 9px;
                 padding: 0 10px;
                 height: 20px;
                 top: -10px;
-                max-width: 80%;
+                max-width: 70%;
             }
 
             .sim-info {
                 padding: 12px 0;
+                min-width: 0;
+                flex: 1;
             }
 
             .sim-number {
-                font-size: 21px;
-                letter-spacing: 0.2px;
+                font-size: 19px;
+                letter-spacing: 0;
             }
 
             .sim-time {
@@ -693,19 +744,25 @@
             }
 
             .sim-badge {
-                min-width: 110px;
-                padding: 8px 12px;
+                min-width: 95px;
+                padding: 8px 10px;
                 border-radius: 16px;
                 margin: 5px;
                 height: calc(100% - 10px);
             }
 
             .sim-badge-price {
-                font-size: 15px;
+                font-size: 14px;
             }
 
             .sim-badge-sub {
-                font-size: 9px;
+                font-size: 8px;
+            }
+
+            .btn-pin {
+                width: 24px;
+                height: 24px;
+                border-radius: 6px;
             }
         }
 
@@ -24504,7 +24561,13 @@
             const btnPinned = document.createElement('button');
             btnPinned.className = `filter-tag ${priorityTag === 'pinned' ? 'active' : ''}`;
             btnPinned.innerHTML = '📌 Số Đã Ghim';
-            btnPinned.onclick = () => { priorityTag = 'pinned'; applySort(); renderTags(data); };
+            btnPinned.onclick = () => {
+                priorityTag = 'pinned';
+                applySort();
+                renderTags(data);
+                // Tự động kiểm tra tồn kho khi click vào tab ghim
+                autoCheckPinnedStatus();
+            };
             tagCloud.appendChild(btnPinned);
 
             uniqueTags.forEach(tag => {
@@ -24614,7 +24677,8 @@
 
             if (priorityTag !== null) {
                 if (priorityTag === 'pinned') {
-                    sorted = Object.values(pinnedSims);
+                    // Lọc bỏ số đã bán (_sold === true) khỏi danh sách ghim
+                    sorted = Object.values(pinnedSims).filter(item => !item._sold);
                 } else {
                     const matches = sorted.filter(item => (item.kieuso_name || '').replace(/^\d{3} /, '') === priorityTag);
                     const others = sorted.filter(item => (item.kieuso_name || '').replace(/^\d{3} /, '') !== priorityTag);
@@ -24676,6 +24740,69 @@
                 }
             } catch(e) {
                 console.error("Lỗi tải danh sách ghim:", e);
+            }
+        }
+
+        async function autoCheckPinnedStatus() {
+            const pinnedItems = Object.values(pinnedSims);
+            if (pinnedItems.length === 0) return;
+
+            // Hiển thị loading trên container
+            const container = document.getElementById('results');
+            const loadingDiv = document.createElement('div');
+            loadingDiv.id = 'pinnedCheckLoading';
+            loadingDiv.style.cssText = 'grid-column: 1 / -1; text-align: center; padding: 20px; color: #64748b; font-weight: 600; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 10px;';
+            loadingDiv.innerHTML = '<span style="display:inline-block;width:18px;height:18px;border:3px solid rgba(0,0,0,0.1);border-top:3px solid #005baa;border-radius:50%;animation:spin 0.8s linear infinite;"></span> Đang kiểm tra tồn kho...';
+            container.prepend(loadingDiv);
+
+            const soldNums = [];
+            for (let i = 0; i < pinnedItems.length; i++) {
+                const item = pinnedItems[i];
+                try {
+                    const cleanNum = fmt(item.so_tb || item.fNum).replace(/\s+/g, '');
+                    const prefix3 = cleanNum.slice(0, 3);
+                    const prefixVNPT = '84' + prefix3.slice(1);
+                    const search7 = cleanNum.slice(3);
+                    const commitVal = item.monthly || 0;
+                    
+                    const res = await fetch(`${BASE}?search=${search7}&prefix=${prefixVNPT}&commit=${commitVal}`);
+                    const data = await res.json();
+                    
+                    if (data.errorCode === 0 && data.data && data.data.length > 0) {
+                        const found = data.data.some(d => fmt(d.so_tb).replace(/\s+/g, '') === cleanNum);
+                        if (!found) soldNums.push(cleanNum);
+                    } else {
+                        soldNums.push(cleanNum);
+                    }
+                } catch(e) {
+                    console.error("Lỗi check tồn kho:", e);
+                }
+            }
+
+            // Đánh dấu số đã bán
+            soldNums.forEach(num => {
+                if (pinnedSims[num]) {
+                    pinnedSims[num]._sold = true;
+                }
+            });
+            
+            // Xoá loading và vẽ lại (ẩn số đã bán)
+            const loadingEl = document.getElementById('pinnedCheckLoading');
+            if (loadingEl) loadingEl.remove();
+            applySort();
+
+            // Hiển thị toast nếu có số đã bán
+            if (soldNums.length > 0) {
+                const existingToast = document.querySelector('.copy-toast');
+                if (existingToast) existingToast.remove();
+                const toast = document.createElement('div');
+                toast.className = 'copy-toast';
+                toast.textContent = `${soldNums.length} số đã bán, đã ẩn khỏi danh sách`;
+                document.body.appendChild(toast);
+                setTimeout(() => {
+                    toast.classList.add('fade-out');
+                    setTimeout(() => toast.remove(), 300);
+                }, 3000);
             }
         }
 

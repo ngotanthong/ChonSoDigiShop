@@ -491,6 +491,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            flex-wrap: wrap;
         }
 
         .sort-label {
@@ -813,6 +814,70 @@
 
             .sim-number {
                 font-size: 20px;
+            }
+
+            /* Toolbar tối ưu cho mobile */
+            .toolbar {
+                padding: 12px;
+                gap: 12px;
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filter-tabs {
+                overflow-x: auto;
+                flex-wrap: nowrap;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+                padding-bottom: 4px;
+            }
+
+            .filter-tabs::-webkit-scrollbar {
+                display: none;
+            }
+
+            .tab-btn {
+                white-space: nowrap;
+                flex-shrink: 0;
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+
+            .sort-container {
+                display: grid;
+                grid-template-columns: auto 1fr;
+                gap: 6px 8px;
+                width: 100%;
+            }
+
+            .sort-label {
+                font-size: 12px;
+                display: flex;
+                align-items: center;
+                margin-left: 0 !important;
+            }
+
+            .sort-select {
+                padding: 6px 10px;
+                font-size: 12px;
+                width: 100%;
+            }
+
+            .scan-panel h2 {
+                font-size: 16px;
+            }
+
+            .scan-panel p {
+                font-size: 12px;
+            }
+
+            .container {
+                padding: 12px;
+            }
+
+            .grid {
+                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+                gap: 10px;
             }
         }
 
@@ -1664,6 +1729,10 @@
                 if (firstBtn) firstBtn.classList.add('active');
             }
             renderResults();
+            // Tự động kiểm tra tồn kho khi chuyển sang tab "Đã ghim"
+            if (cat === 'pinned') {
+                autoCheckPinnedStatus();
+            }
         }
 
         function loadMoreResults() {
@@ -1822,54 +1891,69 @@
             }
         }
 
-        async function checkPinnedStatus(event) {
-            const btn = event.target;
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<span class="login-spinner" style="width: 14px; height: 14px; border-width: 2px;"></span> Đang kiểm tra...';
-            btn.disabled = true;
-
+        async function autoCheckPinnedStatus() {
             const pinnedItems = Object.values(pinnedSims);
+            if (pinnedItems.length === 0) return;
+
+            // Hiển thị loading indicator trên grid
+            const grid = document.getElementById('resultGrid');
+            const loadingDiv = document.createElement('div');
+            loadingDiv.id = 'pinnedCheckLoading';
+            loadingDiv.style.cssText = 'grid-column: 1 / -1; text-align: center; padding: 20px; color: var(--text-sub); font-weight: 600; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 10px;';
+            loadingDiv.innerHTML = '<span class="login-spinner" style="width: 18px; height: 18px; border-width: 2px;"></span> Đang kiểm tra tồn kho...';
+            grid.prepend(loadingDiv);
+
+            const soldNums = [];
             for (let i = 0; i < pinnedItems.length; i++) {
                 const item = pinnedItems[i];
                 try {
-                    const cleanNum = formatNumber(item.so_tb).replace(/\s+/g, '');
-                    const prefix3 = cleanNum.slice(0, 3); // "091", "088"
-                    const prefixVNPT = '84' + prefix3.slice(1); // "8491", "8488"
-                    const search7 = cleanNum.slice(3); // 7 số cuối
-                    
-                    const commitVal = item.monthly || 0; // Gửi nguyên gốc mức cam kết (vd: 150000, 0)
-                    console.log(`Kiểm tra SIM ${cleanNum}: prefix=${prefixVNPT}, search=${search7}, commit=${commitVal}`);
+                    const cleanNum = formatNumber(item.so_tb || item.fNum).replace(/\s+/g, '');
+                    const prefix3 = cleanNum.slice(0, 3);
+                    const prefixVNPT = '84' + prefix3.slice(1);
+                    const search7 = cleanNum.slice(3);
+                    const commitVal = item.monthly || 0;
                     
                     const res = await fetch(`${BASE_API}?search=${search7}&prefix=${prefixVNPT}&commit=${commitVal}`);
                     const data = await res.json();
                     
                     if (data.errorCode === 0 && data.data && data.data.length > 0) {
                         const found = data.data.some(d => formatNumber(d.so_tb).replace(/\s+/g, '') === cleanNum);
-                        item._status = found ? 'Còn hàng' : 'Đã bán';
+                        if (!found) soldNums.push(cleanNum);
                     } else {
-                        item._status = 'Đã bán';
+                        soldNums.push(cleanNum);
                     }
                 } catch(e) {
                     console.error("Lỗi check tồn kho:", e);
                 }
             }
+
+            // Xoá các số đã bán khỏi danh sách ghim hiển thị
+            soldNums.forEach(num => {
+                if (pinnedSims[num]) {
+                    pinnedSims[num]._sold = true;
+                }
+            });
             
-            renderResults(); // Vẽ lại để cập nhật badge
+            // Xoá loading và vẽ lại kết quả (ẩn số đã bán)
+            const loadingEl = document.getElementById('pinnedCheckLoading');
+            if (loadingEl) loadingEl.remove();
+            renderResults();
+
+            // Hiển thị toast nếu có số đã bán
+            if (soldNums.length > 0) {
+                const toast = document.getElementById('toast');
+                toast.querySelector('span').textContent = `${soldNums.length} số đã bán, đã ẩn khỏi danh sách`;
+                toast.classList.add('show');
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => { toast.querySelector('span').textContent = 'Đã sao chép số điện thoại!'; }, 500);
+                }, 3000);
+            }
         }
 
         function renderResults() {
             const grid = document.getElementById('resultGrid');
             grid.innerHTML = '';
-
-            if (currentCategory === 'pinned') {
-                const checkBtn = document.createElement('button');
-                checkBtn.className = 'btn-scan';
-                checkBtn.style.marginBottom = '15px';
-                checkBtn.style.width = 'fit-content';
-                checkBtn.innerHTML = '🔄 Kiểm tra trạng thái tồn kho';
-                checkBtn.onclick = checkPinnedStatus;
-                grid.appendChild(checkBtn);
-            }
 
             displayData = scoredData;
 
@@ -1891,7 +1975,8 @@
                 if (currentCategory === 'free') {
                     displayData = displayData.filter(item => isFreeSim(item));
                 } else if (currentCategory === 'pinned') {
-                    displayData = Object.values(pinnedSims);
+                    // Lọc bỏ số đã bán (_sold === true) khỏi danh sách ghim
+                    displayData = Object.values(pinnedSims).filter(item => !item._sold);
                 } else {
                     displayData = displayData.filter(item => item.ai && item.ai.reasonsArr && item.ai.reasonsArr.includes(currentCategory));
                 }
