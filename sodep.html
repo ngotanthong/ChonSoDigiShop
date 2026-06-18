@@ -2234,10 +2234,12 @@
             const showTag = document.getElementById('printShowTag').checked;
             const showContact = document.getElementById('printShowContact').checked;
 
-            // Mặc định hiển thị 8 dòng (32 số) để căn đều trên dưới
-            let limit = 32;
-            // Nếu có thêm Footer liên hệ, giảm đi 1 dòng còn 7 dòng (28 số) để đủ chỗ cho footer
-            if (showContact) limit = 28;
+            // Tổng dung lượng không gian là 10 dòng
+            let rows = 10;
+            if (showTag) rows -= 1;     // Thẻ có tag cao hơn nên chiếm mất 1 dòng
+            if (showContact) rows -= 1; // Footer liên hệ chiếm 1 dòng
+
+            let limit = rows * 4; // 4 thẻ mỗi dòng
 
             const selectedForPrint = currentExportData.slice(0, limit);
 
