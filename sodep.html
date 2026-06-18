@@ -983,7 +983,7 @@
             background: #ffffff;
             border: 2px solid #000000;
             border-radius: 12px;
-            padding: 16px 10px;
+            padding: 12px 6px;
             text-align: center;
             display: flex;
             flex-direction: column;
@@ -994,10 +994,11 @@
 
         #jpgExportArea .p-num {
             color: #000000;
-            font-size: 32px;
+            font-size: 28px;
             font-weight: 900;
-            margin-bottom: 10px;
-            letter-spacing: 1px;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
         }
 
         #jpgExportArea .p-tags-container {
@@ -1005,27 +1006,58 @@
             flex-wrap: wrap;
             gap: 6px;
             justify-content: center;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
 
         #jpgExportArea .p-tag {
             background: #ffffff;
             border: 1.5px solid #000000;
             color: #000000;
-            padding: 4px 10px;
+            padding: 2px 8px;
             border-radius: 20px;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 800;
         }
 
+        #jpgExportArea .p-info-grid {
+            display: flex;
+            width: 100%;
+            border-top: 1.5px dashed #000000;
+            margin-top: auto;
+            padding-top: 8px;
+        }
+
+        #jpgExportArea .p-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #000000;
+        }
+
+        #jpgExportArea .p-col:first-child {
+            border-right: 1.5px dashed #000000;
+        }
+
+        #jpgExportArea .p-col span {
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        #jpgExportArea .p-col strong {
+            font-size: 16px;
+            font-weight: 900;
+        }
+
         #jpgExportArea .p-info {
-            font-size: 17px;
+            font-size: 16px;
             color: #000000;
             font-weight: 800;
             border-top: 1.5px dashed #000000;
-            padding-top: 10px;
-            width: 90%;
-            box-sizing: border-box;
+            padding-top: 8px;
+            width: 100%;
             margin-top: auto;
         }
 
@@ -2228,9 +2260,7 @@
             selectedForPrint.forEach(item => {
                 const formatNum = highlightHTML(item.fNum, item.ai ? item.ai.highlight : '');
                 const price = Number(item.monthly) || 0;
-                const priceText = (price === 0) ? 'Trả trước' : (price / 1000) + 'k/tháng';
-                const commitText = (item.commitment && item.commitment > 0) ? ` - Cam kết: ${item.commitment}T` : '';
-
+                
                 let tagsHtml = '';
                 if (showTag && item.ai && item.ai.reasonText) {
                     const parts = item.ai.reasonText.split('+');
@@ -2240,11 +2270,24 @@
                     tagsHtml = `<div class="p-tags-container"><span class="p-tag">${item.kieuso_name}</span></div>`;
                 }
 
+                let infoHtml = '';
+                if (price === 0) {
+                    infoHtml = `<div class="p-info">Trả trước</div>`;
+                } else {
+                    const commitVal = (item.commitment && item.commitment > 0) ? `${item.commitment}T` : 'Không';
+                    infoHtml = `
+                        <div class="p-info-grid">
+                            <div class="p-col"><span>Gói cước</span><strong>${price / 1000}k</strong></div>
+                            <div class="p-col"><span>Cam kết</span><strong>${commitVal}</strong></div>
+                        </div>
+                    `;
+                }
+
                 html += `
                     <div class="print-item">
                         <div class="p-num">${formatNum}</div>
                         ${tagsHtml}
-                        <div class="p-info">${priceText}${commitText}</div>
+                        ${infoHtml}
                     </div>
                 `;
             });
