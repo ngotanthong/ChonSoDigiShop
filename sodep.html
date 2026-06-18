@@ -1801,7 +1801,7 @@
             }
 
             let dotIndexes = [];
-            if (/(\d{3})\1$/.test(numStr)) { // Taxi 3 cụm ABC ABC (VD: 0912 789 789)
+            if (/(\d{3})\1$/.test(numStr) || /(\d)(79|39|68|86|38|78)(\d)\2$/.test(numStr)) { // Taxi 3 cụm ABC ABC hoặc Taxi biến thể (VD: 0812 078 778)
                 dotIndexes = [4, 7]; // Chia nhịp 4-3-3
             } else if (/(.)\1{4}$/.test(numStr)) { // Ngũ quý (VD: 091 23 88888)
                 dotIndexes = [3, 5];
