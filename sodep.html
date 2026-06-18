@@ -1710,8 +1710,8 @@
                 dotIndexes = [4, 7];
             } else if (/(\d{2})\1\1$/.test(numStr) || /(\d{2})\d{2}\1$/.test(numStr)) { // AB AB AB hoặc AB CD AB (VD: 0912 68 68 68)
                 dotIndexes = [4, 6, 8];
-            } else if (/(\d{2})\1$/.test(numStr) || /(\d)\1(\d)\2$/.test(numStr) || /(\d)(\d)\2\1$/.test(numStr)) { // Lặp cặp, gánh 4 số (VD: 091 234 68 68)
-                dotIndexes = [3, 6, 8];
+            } else if (/(\d{2})\1$/.test(numStr) || /(\d)\1(\d)\2$/.test(numStr) || /(\d)(\d)\2\1$/.test(numStr)) { // Lặp cặp, gánh 4 số (VD: 0912 34 6868)
+                dotIndexes = [4, 6];
             } else if (matchStr && /(.)\1{3}/.test(matchStr) && !numStr.endsWith(matchStr)) {
                 // Tứ Quý / Ngũ Quý giữa
                 const idx = numStr.indexOf(matchStr);
