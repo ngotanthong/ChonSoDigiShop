@@ -2317,11 +2317,11 @@
                 exportClone.style.left = '0';
                 document.body.appendChild(exportClone);
 
-                const canvas = await html2canvas(exportClone, { scale: 1.2, useCORS: true, backgroundColor: "#ffffff" });
+                const canvas = await html2canvas(exportClone, { scale: 1, useCORS: true, backgroundColor: "#ffffff" });
 
                 document.body.removeChild(exportClone); // Xoá bản sao sau khi chụp xong
 
-                const imgData = canvas.toDataURL('image/jpeg', 0.85);
+                const imgData = canvas.toDataURL('image/jpeg', 0.6);
                 const link = document.createElement('a');
                 link.download = `Bang_So_VIP_${new Date().toISOString().slice(0, 10)}.jpg`;
                 link.href = imgData;
