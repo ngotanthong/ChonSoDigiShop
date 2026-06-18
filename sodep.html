@@ -9,6 +9,7 @@
     <link rel="icon" type="image/x-icon" href="https://vnpt.com.vn/favicon.ico">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="accounts.js"></script>
+    <script src="ai-scoring.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
@@ -1438,26 +1439,8 @@
         function formatNumber(num) {
             return num.startsWith('84') ? '0' + num.slice(2) : num;
         }
-
-        function analyzeSIM(numStr, monthlyFee = 0) {
-            let score = 0;
-            let categories = [];
-            let reasons = [];
-            let highlight = ''; // Đoạn được highlight
-
-            const isPhongThuyMode = document.getElementById('togglePhongThuy') && document.getElementById('togglePhongThuy').checked;
-
-            if (isPhongThuyMode) {
-                // Tính điểm thuần Phong Thuỷ
-                
-                // 1. Tổng nút (tổng 10 số)
-                const sum10 = numStr.split('').reduce((acc, val) => acc + parseInt(val), 0);
-                const nut = sum10 % 10;
-                if (nut >= 7) { 
-                    score += (nut === 9) ? 40 : (nut === 8 ? 30 : 20);
-                    reasons.push('Nút ' + nut);
-                    categories.push('phongthuy');
-                } else {
+        // analyzeSIM function moved to ai-scoring.js
+ else {
                     score -= 20; // Nút thấp trừ điểm
                 }
 

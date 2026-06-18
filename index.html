@@ -7,6 +7,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="accounts.js"></script>
+    <script src="ai-scoring.js"></script>
     <title>Tấn Thông xin chào! &amp; Chào mừng bạn đến với tool chọn số DigiShop</title>
     <style>
         :root {
@@ -24701,6 +24702,11 @@
             if (!isPinned && simObj) {
                 try {
                     const objToSave = { ...simObj, fNum: fNum };
+                    if (typeof analyzeSIM === 'function' && !objToSave.ai) {
+                        const fmtNum = fNum.startsWith('84') ? '0' + fNum.slice(2) : fNum;
+                        const monthlyFee = Number(simObj.monthly) || Number(simObj.price) || 0;
+                        objToSave.ai = analyzeSIM(fmtNum, monthlyFee);
+                    }
                     const simDataStr = encodeURIComponent(JSON.stringify(objToSave));
                     const res = await fetch(`${GAS_API_URL}?action=pin&user=${encodeURIComponent(user)}&deviceId=${deviceId}&phone=${encodeURIComponent(fNum)}&simData=${simDataStr}`);
                     const data = await res.json();
