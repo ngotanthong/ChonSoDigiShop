@@ -974,7 +974,7 @@
         #jpgExportArea .print-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 24px;
+            gap: 16px;
             flex: 1;
             align-content: space-evenly;
         }
@@ -1039,15 +1039,8 @@
             border-right: 1.5px dashed #000000;
         }
 
-        #jpgExportArea .p-col span {
-            font-size: 11px;
-            text-transform: uppercase;
-            font-weight: 700;
-            margin-bottom: 2px;
-        }
-
         #jpgExportArea .p-col strong {
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 900;
         }
 
@@ -2241,9 +2234,9 @@
             const showTag = document.getElementById('printShowTag').checked;
             const showContact = document.getElementById('printShowContact').checked;
 
-            // Động thái thay đổi số lượng: có tag thì lấy 36 số (9 dòng), không tag thì lấy 48 số (12 dòng)
-            let limit = showTag ? 36 : 48;
-            // Nếu có thêm Footer liên hệ, giảm đi 1 dòng (4 số) để bù trừ không gian, tránh tràn trang A4
+            // Có tag thì 32 số (8 dòng), không tag thì 44 số (11 dòng)
+            let limit = showTag ? 32 : 44;
+            // Nếu có thêm Footer liên hệ, giảm đi 1 dòng (4 số) để bù trừ không gian, tránh tràn ảnh làm mất footer
             if (showContact) limit -= 4;
 
             const selectedForPrint = currentExportData.slice(0, limit);
@@ -2263,7 +2256,7 @@
                 
                 let tagsHtml = '';
                 if (showTag && item.ai && item.ai.reasonText) {
-                    const parts = item.ai.reasonText.split('+');
+                    const parts = item.ai.reasonText.split('+').slice(0, 2);
                     const spans = parts.map(t => `<span class="p-tag">${t.trim()}</span>`).join('');
                     tagsHtml = `<div class="p-tags-container">${spans}</div>`;
                 } else if (showTag && item.kieuso_name) {
@@ -2277,8 +2270,8 @@
                     const commitVal = (item.commitment && item.commitment > 0) ? `${item.commitment}T` : 'Không';
                     infoHtml = `
                         <div class="p-info-grid">
-                            <div class="p-col"><span>Gói cước</span><strong>${price / 1000}k</strong></div>
-                            <div class="p-col"><span>Cam kết</span><strong>${commitVal}</strong></div>
+                            <div class="p-col"><strong>${price / 1000}k</strong></div>
+                            <div class="p-col"><strong>${commitVal}</strong></div>
                         </div>
                     `;
                 }
