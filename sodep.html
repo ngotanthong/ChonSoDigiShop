@@ -2311,17 +2311,28 @@
             try {
                 // Tạo một bản sao để chụp ảnh (ẩn khỏi màn hình nhưng vẫn render được)
                 const exportClone = jpgArea.cloneNode(true);
+                exportClone.style.transform = 'scale(1)';
                 exportClone.style.zoom = '1'; // Phóng to 100% để nét
                 exportClone.style.position = 'absolute';
                 exportClone.style.top = '-9999px';
                 exportClone.style.left = '0';
+                exportClone.style.width = '1080px';
+                exportClone.style.height = '1440px';
+                exportClone.style.overflow = 'hidden';
                 document.body.appendChild(exportClone);
 
-                const canvas = await html2canvas(exportClone, { scale: 1, useCORS: true, backgroundColor: "#ffffff" });
+                const canvas = await html2canvas(exportClone, { 
+                    scale: 1, 
+                    useCORS: true, 
+                    backgroundColor: "#ffffff",
+                    width: 1080,
+                    height: 1440,
+                    logging: false
+                });
 
                 document.body.removeChild(exportClone); // Xoá bản sao sau khi chụp xong
 
-                const imgData = canvas.toDataURL('image/jpeg', 0.6);
+                const imgData = canvas.toDataURL('image/jpeg', 0.8);
                 const link = document.createElement('a');
                 link.download = `Bang_So_VIP_${new Date().toISOString().slice(0, 10)}.jpg`;
                 link.href = imgData;
