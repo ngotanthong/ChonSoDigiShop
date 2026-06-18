@@ -226,6 +226,8 @@
             grid-template-columns: repeat(3, 1fr);
             gap: 25px;
             padding-top: 15px;
+            max-width: 100%;
+            overflow: hidden;
         }
 
         @media (max-width: 1100px) {
@@ -252,6 +254,9 @@
             position: relative;
             padding-left: 30px;
             min-height: 100px;
+            min-width: 0;
+            overflow: hidden;
+            max-width: 100%;
         }
 
         .sim-card:hover {
@@ -264,6 +269,9 @@
             flex-direction: column;
             gap: 4px;
             padding: 15px 0;
+            min-width: 0;
+            flex: 1;
+            overflow: hidden;
         }
 
         .sim-number {
@@ -271,6 +279,8 @@
             font-weight: 900;
             color: #0098ff;
             letter-spacing: 0.5px;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .sim-number .hi {

@@ -39,6 +39,7 @@
             background-color: var(--bg);
             color: var(--text-main);
             line-height: 1.5;
+            overflow-x: hidden;
         }
 
         /* --- Màn hình Đăng nhập (Kính mờ) --- */
@@ -318,6 +319,8 @@
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
+            width: 100%;
+            overflow-x: hidden;
         }
 
         .header-wrapper {
@@ -478,6 +481,8 @@
             border-radius: var(--radius);
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
             border: 1px solid var(--border);
+            max-width: 100%;
+            overflow: hidden;
         }
 
         .filter-tabs {
@@ -485,6 +490,13 @@
             flex-wrap: wrap;
             gap: 8px;
             justify-content: flex-start;
+            max-width: 100%;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        .filter-tabs::-webkit-scrollbar {
+            display: none;
         }
 
         .sort-container {
@@ -535,6 +547,8 @@
             color: var(--text-sub);
             cursor: pointer;
             transition: all 0.2s;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
 
         .tab-btn:hover {
@@ -2009,7 +2023,7 @@
                 const statusHtml = item._status ? `<div class="status-badge ${item._status === 'Còn hàng' ? 'available' : 'sold'}">${item._status}</div>` : '';
                 const pinnedByHtml = item._pinnedBy ? `<div style="font-size: 11px; color: #8b5cf6; margin-bottom: 5px;">Ghim bởi: ${item._pinnedBy}</div>` : '';
 
-                const scoreHtml = item.ai && item.ai.score ? `<div class="sim-score">⭐ ${item.ai.score} Điểm</div>` : '';
+                const scoreHtml = item.ai && item.ai.score ? `<div class="sim-score">⭐ ${item.ai.score}</div>` : '';
                 const reasonHtml = item.ai && item.ai.reasonText ? `<div class="sim-reason">${item.ai.reasonText}</div>` : (item.kieuso_name ? `<div class="sim-reason">${item.kieuso_name}</div>` : `<div class="sim-reason">Được ghim từ Kho Thường</div>`);
 
                 card.innerHTML = `
