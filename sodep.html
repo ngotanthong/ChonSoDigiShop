@@ -1019,38 +1019,6 @@
             font-weight: 800;
         }
 
-        #jpgExportArea .p-info-grid {
-            display: flex;
-            width: 100%;
-            border-top: 1.5px dashed #000000;
-            margin-top: auto;
-            padding-top: 8px;
-        }
-
-        #jpgExportArea .p-col {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            color: #000000;
-        }
-
-        #jpgExportArea .p-col:first-child {
-            border-right: 1.5px dashed #000000;
-        }
-
-        #jpgExportArea .p-col span {
-            font-size: 11px;
-            text-transform: uppercase;
-            font-weight: 700;
-            margin-bottom: 2px;
-        }
-
-        #jpgExportArea .p-col strong {
-            font-size: 16px;
-            font-weight: 900;
-        }
-
         #jpgExportArea .p-info {
             font-size: 16px;
             color: #000000;
@@ -2274,13 +2242,8 @@
                 if (price === 0) {
                     infoHtml = `<div class="p-info">Trả trước</div>`;
                 } else {
-                    const commitVal = (item.commitment && item.commitment > 0) ? `${item.commitment}T` : 'Không';
-                    infoHtml = `
-                        <div class="p-info-grid">
-                            <div class="p-col"><span>Gói cước</span><strong>${price / 1000}k</strong></div>
-                            <div class="p-col"><span>Cam kết</span><strong>${commitVal}</strong></div>
-                        </div>
-                    `;
+                    const commitVal = (item.commitment && item.commitment > 0) ? ` - ${item.commitment} tháng` : '';
+                    infoHtml = `<div class="p-info">${price / 1000}k${commitVal}</div>`;
                 }
 
                 html += `
