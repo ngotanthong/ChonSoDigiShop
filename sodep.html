@@ -1300,7 +1300,12 @@
                 if (data.status === 'ok') {
                     pinnedSims = {};
                     data.data.forEach(item => {
-                        pinnedSims[item.fNum] = item;
+                        let num = item.fNum || item.so_tb;
+                        if(num) {
+                            if (num.startsWith('84')) num = '0' + num.slice(2);
+                            item.fNum = num;
+                            pinnedSims[num] = item;
+                        }
                     });
                     if (currentCategory === 'pinned') renderResults();
                 }

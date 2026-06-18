@@ -24543,6 +24543,9 @@
 
             data.forEach(item => {
                 const itemSoTb = item.so_tb || item.fNum;
+                let normalizedNum = itemSoTb;
+                if (normalizedNum && normalizedNum.startsWith('84')) normalizedNum = '0' + normalizedNum.slice(2);
+
                 const itemKieuSo = item.kieuso_name || '';
                 const rawTagName = itemKieuSo.replace(/^\d{3} /, '');
                 const tagName = escapeHTML(rawTagName);
@@ -24566,7 +24569,7 @@
                 const monthlySub = isFree ? 'LH nhân viên' : '(cước cam kết/ tháng)';
                 const commitTime = (item.commitment && item.commitment > 0) ? `<span>${item.commitment}</span> tháng` : 'Không có';
 
-                const isPinned = !!pinnedSims[itemSoTb];
+                const isPinned = !!pinnedSims[normalizedNum];
                 const pinClass = isPinned ? 'btn-pin pinned' : 'btn-pin';
 
                 card.innerHTML = `
@@ -24574,7 +24577,7 @@
                 <div class="sim-info">
                     <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
                         <div class="sim-number" style="margin-bottom: 0;">${highlight(fmt(itemSoTb), searchVal)}</div>
-                        <button class="${pinClass}" onclick="togglePin('${itemSoTb}', this, event)" title="Ghim số">
+                        <button class="${pinClass}" onclick="togglePin('${normalizedNum}', this, event, '${itemSoTb}')" title="Ghim số">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
                         </button>
                     </div>
@@ -24659,8 +24662,10 @@
                 if (data.status === 'ok') {
                     pinnedSims = {};
                     data.data.forEach(item => {
-                        const num = item.fNum || item.so_tb;
+                        let num = item.fNum || item.so_tb;
                         if(num) {
+                            if (num.startsWith('84')) num = '0' + num.slice(2);
+                            item.fNum = num; // normalize property too
                             pinnedSims[num] = item;
                         }
                     });
@@ -24674,7 +24679,7 @@
             }
         }
 
-        async function togglePin(fNum, btnEl, event) {
+        async function togglePin(fNum, btnEl, event, originalNum) {
             event.stopPropagation();
             const user = localStorage.getItem('simso_auth_user') || sessionStorage.getItem('simso_auth_user');
             if (!user) {
@@ -24683,7 +24688,7 @@
             }
 
             const isPinned = !!pinnedSims[fNum];
-            let simObj = currentData.find(s => s.so_tb === fNum) || pinnedSims[fNum];
+            let simObj = currentData.find(s => s.so_tb === (originalNum || fNum)) || pinnedSims[fNum];
             
             if (isPinned) {
                 delete pinnedSims[fNum];
@@ -24703,9 +24708,8 @@
                 try {
                     const objToSave = { ...simObj, fNum: fNum };
                     if (typeof analyzeSIM === 'function' && !objToSave.ai) {
-                        const fmtNum = fNum.startsWith('84') ? '0' + fNum.slice(2) : fNum;
                         const monthlyFee = Number(simObj.monthly) || Number(simObj.price) || 0;
-                        objToSave.ai = analyzeSIM(fmtNum, monthlyFee);
+                        objToSave.ai = analyzeSIM(fNum, monthlyFee);
                     }
                     const simDataStr = encodeURIComponent(JSON.stringify(objToSave));
                     const res = await fetch(`${GAS_API_URL}?action=pin&user=${encodeURIComponent(user)}&deviceId=${deviceId}&phone=${encodeURIComponent(fNum)}&simData=${simDataStr}`);
