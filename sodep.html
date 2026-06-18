@@ -1805,6 +1805,17 @@
                 dotIndexes = [3, 5];
             } else if (/(.)\1{3}$/.test(numStr)) { // Tứ quý (VD: 091 234 8888)
                 dotIndexes = [3, 6];
+            } else if (/(.)\1{3}/.test(numStr)) { // Tứ quý / Ngũ quý giữa
+                const matchTq = (matchStr && /(.)\1{3}/.test(matchStr)) ? matchStr : numStr.match(/(.)\1{3,}/)[0];
+                const idx = numStr.indexOf(matchTq);
+                const len = matchTq.length;
+                if (idx > 0 && idx + len < 10) {
+                    dotIndexes = [idx, idx + len];
+                } else if (idx === 0) {
+                    dotIndexes = [len, len + 3];
+                } else {
+                    dotIndexes = [3, 6];
+                }
             } else if (/(\d{3})\1$/.test(numStr)) { // Taxi 3 cụm ABC ABC (VD: 0912 789 789)
                 dotIndexes = [4, 7];
             } else if (/(\d{2})\1\1$/.test(numStr) || /(\d{2})\d{2}\1$/.test(numStr)) { // AB AB AB hoặc AB CD AB (VD: 0912 68 68 68)
@@ -1822,15 +1833,6 @@
                 })() // Cặp Tiến (VD: 6878, 1223)
             ) { // Tất cả các thể loại Số Cặp 4 số ở đuôi
                 dotIndexes = [4, 6]; // Chia nhịp 4-2-4 (VD: 0912 34 6868)
-            } else if (matchStr && /(.)\1{3}/.test(matchStr) && !numStr.endsWith(matchStr)) {
-                // Tứ Quý / Ngũ Quý giữa
-                const idx = numStr.indexOf(matchStr);
-                const len = matchStr.length;
-                if (idx > 0 && idx + len < 10) {
-                    dotIndexes = [idx, idx + len];
-                } else {
-                    dotIndexes = [3, 6];
-                }
             } else if (matchStr && numStr.endsWith(matchStr)) {
                 const isSanh = /(012|123|234|345|456|567|678|789|135|357|579|024|246|468|987|876|765|654|543|432|321|210|975|753|531|864|642|420)/.test(matchStr);
                 const isGanh3 = matchStr.length === 3 && matchStr[0] === matchStr[2] && matchStr[0] !== matchStr[1]; // ABA
