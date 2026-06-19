@@ -25513,7 +25513,14 @@
             `;
 
             selectedForPrint.forEach(item => {
-                const formatNum = item.fNum;
+                let normalizedNum = item.so_tb || item.fNum || "";
+                if (normalizedNum && normalizedNum.startsWith('84')) normalizedNum = '0' + normalizedNum.slice(2);
+                
+                // Định dạng số điện thoại đẹp hơn trên bảng in (VD: 081.476.8332)
+                let formatNum = normalizedNum;
+                if (formatNum.length === 10) {
+                    formatNum = formatNum.replace(/(\d{3})(\d{3})(\d{4})/, '$1.$2.$3');
+                }
                 const isFree = !item.monthly || item.monthly == 0 || item.monthly === "0";
                 const price = Number(item.monthly) || 0;
                 let displayPrice = Number(item.price || 0);
