@@ -1866,7 +1866,12 @@
                 /(\d{2})\1$/.test(numStr) || // Lặp cặp ABAB
                 /(\d)\1(\d)\2$/.test(numStr) || // Lặp kép AABB
                 /(\d)(\d)\2\1$/.test(numStr) || // Gánh đảo 4 số ABBA
-                /(\d)\d\1\d$/.test(numStr) || // Số Cặp (Đồng đầu AB AC)
+                (() => {
+                    const m3 = numStr.match(/(\d)(\d)\1(\d)\1(\d)$/);
+                    if (m3 && parseInt(m3[2]) <= parseInt(m3[3]) && parseInt(m3[3]) <= parseInt(m3[4])) return true;
+                    const m2 = numStr.match(/(\d)(\d)\1(\d)$/);
+                    return m2 && parseInt(m2[2]) <= parseInt(m2[3]);
+                })() || // Số Cặp (Đồng đầu AB AC tiến hoặc bằng)
                 (() => {
                     const l4 = numStr.slice(-4);
                     const p1 = parseInt(l4.slice(0, 2)), p2 = parseInt(l4.slice(2, 4));

@@ -309,17 +309,28 @@
                 }
             }
 
-            // Cặp Đồng Đầu (VD: 60 63 68, 71 73)
-            if (/(\d)\d\1\d\1\d$/.test(numStr) && !/(\d{2})\1\1$/.test(numStr)) {
-                score += 25;
-                categories.push('denho');
-                reasons.push('Số Cặp');
-                highlight = highlight || numStr.slice(-6);
-            } else if (/(\d)\d\1\d$/.test(numStr) && !/(\d{2})\1$/.test(numStr)) {
-                score += 15;
-                categories.push('denho');
-                reasons.push('Số Cặp');
-                highlight = highlight || numStr.slice(-4);
+            // Cặp Đồng Đầu Tiến hoặc Bằng (VD: 60 63 68, 71 73)
+            const matchCap3 = numStr.match(/(\d)(\d)\1(\d)\1(\d)$/);
+            let isCap3 = false;
+            if (matchCap3 && !/(\d{2})\1\1$/.test(numStr)) {
+                if (parseInt(matchCap3[2]) <= parseInt(matchCap3[3]) && parseInt(matchCap3[3]) <= parseInt(matchCap3[4])) {
+                    score += 25;
+                    categories.push('denho');
+                    reasons.push('Số Cặp');
+                    highlight = highlight || numStr.slice(-6);
+                    isCap3 = true;
+                }
+            }
+            if (!isCap3) {
+                const matchCap2 = numStr.match(/(\d)(\d)\1(\d)$/);
+                if (matchCap2 && !/(\d{2})\1$/.test(numStr)) {
+                    if (parseInt(matchCap2[2]) <= parseInt(matchCap2[3])) {
+                        score += 15;
+                        categories.push('denho');
+                        reasons.push('Số Cặp');
+                        highlight = highlight || numStr.slice(-4);
+                    }
+                }
             }
 
             // Taxi biến thể (VD: 168 468, 279 179)
