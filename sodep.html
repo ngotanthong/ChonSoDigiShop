@@ -1190,11 +1190,16 @@
                     </button>
                 </div>
 
-                <!-- Tuỳ chọn Phong Thuỷ -->
-                <div style="margin-top: 20px; display: flex; justify-content: center;">
+                <!-- Tuỳ chọn Phong Thuỷ & Tự động quét -->
+                <div style="margin-top: 20px; display: flex; justify-content: center; flex-wrap: wrap; gap: 15px;">
                     <label style="display: flex; align-items: center; cursor: pointer; font-weight: 600; font-size: 15px; color: var(--text-main); background: #f1f5f9; padding: 10px 20px; border-radius: 30px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: all 0.2s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
                         <input type="checkbox" id="togglePhongThuy" style="width: 18px; height: 18px; margin-right: 10px; accent-color: var(--primary);" onchange="handlePhongThuyToggle()">
-                        Chế độ ưu tiên Phong Thuỷ (Nút 789, Không 4-7, 49-53)
+                        Chế độ ưu tiên Phong Thuỷ
+                    </label>
+
+                    <label style="display: flex; align-items: center; cursor: pointer; font-weight: 600; font-size: 15px; color: var(--text-main); background: #f1f5f9; padding: 10px 20px; border-radius: 30px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: all 0.2s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
+                        <input type="checkbox" id="toggleAutoReload" style="width: 18px; height: 18px; margin-right: 10px; accent-color: var(--primary);" onchange="handleAutoReloadToggle()">
+                        Tự động quét số ngầm (mỗi 10 phút)
                     </label>
                 </div>
 
@@ -1585,6 +1590,97 @@
         // analyzeSIM function moved to ai-scoring.js
 
         // --- AUTO SCAN ENGINE ---
+        let autoReloadInterval = null;
+
+        function handleAutoReloadToggle() {
+            const isChecked = document.getElementById('toggleAutoReload').checked;
+            if (isChecked) {
+                // Chạy mỗi 10 phút (600.000 ms)
+                autoReloadInterval = setInterval(silentAutoScan, 600000);
+                
+                const toast = document.getElementById('toast');
+                if (toast) {
+                    toast.querySelector('span').textContent = 'Đã bật tự động lấy số mới ngầm (10 phút/lần)';
+                    toast.classList.add('show');
+                    setTimeout(() => toast.classList.remove('show'), 3000);
+                }
+            } else {
+                if (autoReloadInterval) clearInterval(autoReloadInterval);
+                autoReloadInterval = null;
+                
+                const toast = document.getElementById('toast');
+                if (toast) {
+                    toast.querySelector('span').textContent = 'Đã tắt tự động lấy số mới ngầm';
+                    toast.classList.add('show');
+                    setTimeout(() => toast.classList.remove('show'), 3000);
+                }
+            }
+        }
+
+        async function silentAutoScan() {
+            const tasks = [];
+            const MULTIPLIER = 1; // Chỉ 1 vòng để lấy ngẫu nhiên một ít số mới (nhanh và nhẹ)
+            for (let i = 0; i < MULTIPLIER; i++) {
+                for (const pref of PREFIXES) {
+                    for (const c of COMMITS) {
+                        tasks.push({ pref, c });
+                    }
+                }
+            }
+
+            const CONCURRENCY = 10;
+            let newDataCount = 0;
+
+            async function worker() {
+                while (tasks.length > 0) {
+                    const { pref, c } = tasks.shift();
+                    const url = `${BASE_API}?search=&prefix=${pref}&commit=${c}`;
+                    try {
+                        const res = await fetch(url);
+                        const json = await res.json();
+                        if (json.errorCode === 0 && json.data && json.data.length > 0) {
+                            // Lọc các số chưa có trong kho
+                            const existingPhones = new Set(rawData.map(d => String(d.so_tb || d.fNum)));
+                            const freshData = json.data.filter(d => !existingPhones.has(String(d.so_tb || d.fNum)));
+                            
+                            if (freshData.length > 0) {
+                                rawData = rawData.concat(freshData);
+                                newDataCount += freshData.length;
+                            }
+                        }
+                    } catch (e) {
+                        console.error("Silent fetch error:", url);
+                    }
+                }
+            }
+
+            try {
+                const workers = [];
+                for (let i = 0; i < CONCURRENCY; i++) workers.push(worker());
+                await Promise.all(workers);
+
+                if (newDataCount > 0) {
+                    processAIScores();
+                    
+                    const toolbar = document.getElementById('toolbar');
+                    if (toolbar && scoredData.length > 0) {
+                        toolbar.style.display = 'flex';
+                        document.getElementById('emptyState').style.display = 'none';
+                        renderResults();
+                    }
+                    
+                    const toast = document.getElementById('toast');
+                    if (toast) {
+                        toast.querySelector('span').textContent = `Tự động quét ngầm hoàn tất: Thêm ${newDataCount} số mới!`;
+                        toast.classList.add('show');
+                        setTimeout(() => toast.classList.remove('show'), 4000);
+                    }
+                }
+            } catch (err) {
+                console.error("Lỗi silent auto scan", err);
+            }
+        }
+
         async function startAutoScan() {
             const btnScan = document.getElementById('btnScan');
             const progCont = document.getElementById('progressContainer');
