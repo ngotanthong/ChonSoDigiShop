@@ -25513,7 +25513,7 @@
             `;
 
             selectedForPrint.forEach(item => {
-                let normalizedNum = item.so_tb || item.fNum || "";
+                let normalizedNum = String(item.so_tb || item.fNum || "");
                 if (normalizedNum && normalizedNum.startsWith('84')) normalizedNum = '0' + normalizedNum.slice(2);
                 
                 // Định dạng số điện thoại đẹp hơn trên bảng in (VD: 081.476.8332)
@@ -25528,7 +25528,7 @@
                 
                 let tagsHtml = '';
                 if (showTag && item.kieuso_name) {
-                    tagsHtml = `<div class="p-tags-container"><span class="p-tag">${item.kieuso_name.split('(')[0].trim()}</span></div>`;
+                    tagsHtml = `<div class="p-tags-container"><span class="p-tag">${String(item.kieuso_name).split('(')[0].trim()}</span></div>`;
                 }
 
                 let infoHtml = '';
