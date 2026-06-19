@@ -1204,6 +1204,10 @@
                 </div>
 
 
+                <div id="lastUpdateContainer" style="margin-top: 15px; font-size: 13px; color: var(--text-sub); display: none; text-align: center;">
+                    ⏳ Cập nhật lần cuối: <span id="lastUpdatedTime" style="font-weight: 600; color: var(--primary);">--:--</span>
+                </div>
+
 
                 <div class="progress-container" id="progressContainer">
                     <div class="progress-bar" id="progressBar"></div>
@@ -1592,6 +1596,16 @@
         // --- AUTO SCAN ENGINE ---
         let autoReloadInterval = null;
 
+        function updateLastFetchTime() {
+            const timeSpan = document.getElementById('lastUpdatedTime');
+            const container = document.getElementById('lastUpdateContainer');
+            if (timeSpan && container) {
+                const now = new Date();
+                timeSpan.textContent = now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                container.style.display = 'block';
+            }
+        }
+
         function handleAutoReloadToggle() {
             const isChecked = document.getElementById('toggleAutoReload').checked;
             if (isChecked) {
@@ -1676,6 +1690,7 @@
                         setTimeout(() => toast.classList.remove('show'), 4000);
                     }
                 }
+                updateLastFetchTime();
             } catch (err) {
                 console.error("Lỗi silent auto scan", err);
             }
@@ -1779,6 +1794,8 @@
                     progCont.style.display = 'none';
                     statusTxt.style.display = 'none';
                 }, 3000);
+
+                updateLastFetchTime();
 
             } catch (err) {
                 statusTxt.textContent = 'Có lỗi xảy ra khi quét API.';
