@@ -25606,7 +25606,7 @@
 
                 const imgData = canvas.toDataURL('image/jpeg', 0.8);
                 const link = document.createElement('a');
-                link.download = \`Bang_So_\${new Date().toISOString().slice(0, 10)}.jpg\`;
+                link.download = 'Bang_So_' + new Date().toISOString().slice(0, 10) + '.jpg';
                 link.href = imgData;
                 link.click();
 
