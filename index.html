@@ -1157,7 +1157,201 @@
                 justify-content: center;
             }
         }
+        /* --- MODAL & JPG EXPORT STYLES --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.75);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            width: 95%;
+            max-width: 900px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            max-height: 90vh;
+        }
+
+        .modal-content h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #1e293b;
+            font-size: 22px;
+        }
+
+        .preview-wrapper {
+            flex: 1;
+            overflow: auto;
+            background: #e2e8f0;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        #jpgExportArea {
+            width: 1080px;
+            height: 1440px;
+            background: #ffffff;
+            padding: 50px 60px;
+            font-family: 'Inter', Arial, sans-serif;
+            color: #000000;
+            margin: 0 auto;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        #jpgExportArea .print-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            flex: 1;
+            align-content: space-evenly;
+        }
+
+        #jpgExportArea .print-item {
+            background: #ffffff;
+            border: 2px solid #000000;
+            border-radius: 12px;
+            padding: 8px 4px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        #jpgExportArea .p-num {
+            color: #000000;
+            font-size: 28px;
+            font-weight: 900;
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        #jpgExportArea .p-tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+            margin-bottom: 8px;
+        }
+
+        #jpgExportArea .p-tag {
+            background: #ffffff;
+            border: 1.5px solid #000000;
+            color: #000000;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        #jpgExportArea .p-info-grid {
+            display: flex;
+            width: 100%;
+            border-top: 1.5px dashed #000000;
+            margin-top: auto;
+            padding-top: 6px;
+        }
+
+        #jpgExportArea .p-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #000000;
+        }
+
+        #jpgExportArea .p-col:first-child {
+            border-right: 1.5px dashed #000000;
+        }
+
+        #jpgExportArea .p-col strong {
+            font-size: 18px;
+            font-weight: 900;
+        }
+
+        #jpgExportArea .p-info {
+            font-size: 16px;
+            color: #000000;
+            font-weight: 800;
+            border-top: 1.5px dashed #000000;
+            padding-top: 8px;
+            width: 100%;
+            margin-top: auto;
+        }
+
+        #jpgExportArea .print-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        #jpgExportArea .print-header h2 {
+            color: #000000;
+            font-size: 48px;
+            font-weight: 900;
+            margin: 0 0 16px 0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            display: inline-block;
+            border-bottom: 4px solid #000000;
+            padding-bottom: 8px;
+        }
+
+        #jpgExportArea .print-header p {
+            color: #000000;
+            font-size: 22px;
+            font-weight: 700;
+            margin: 0;
+            display: block;
+        }
+
+        #jpgExportArea .print-footer-container {
+            text-align: center;
+            margin-top: 30px;
+            margin-bottom: 10px;
+        }
+
+        #jpgExportArea .print-footer {
+            background: #ffffff;
+            color: #000000;
+            padding: 18px 50px;
+            border-radius: 50px;
+            font-size: 30px;
+            font-weight: 900;
+            display: inline-block;
+            letter-spacing: 2px;
+            border: 4px solid #000000;
+            text-transform: uppercase;
+        }
+
+        #jpgExportArea .print-footer span {
+            color: #000000;
+            font-size: 36px;
+            margin-left: 12px;
+            font-weight: 900;
+        }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 
 <body>
@@ -1295,6 +1489,15 @@
                             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                         </svg>
                         SAO CHÉP DANH SÁCH
+                    </button>
+                    <button class="btn-copy" style="background: #10b981;" onclick="generatePrintList()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                            <rect x="6" y="14" width="12" height="8"></rect>
+                        </svg>
+                        TẠO BẢN IN
                     </button>
                 </div>
                 <div id="filterContainer" style="display: flex; flex-direction: column; gap: 12px;">
@@ -24590,6 +24793,7 @@
         }
 
         function renderCards(data) {
+            window.currentDisplayData = data;
             const container = document.getElementById('results');
             const searchVal = document.getElementById('search').value.trim();
             container.innerHTML = '';
@@ -25217,6 +25421,204 @@
         });
     </script>
 
+    <!-- Hộp thoại Xem trước và Xuất ảnh JPG -->
+    <div id="printOptionsModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <h3>🖼️ Xem trước & Xuất Ảnh Báo Giá</h3>
+            <div
+                style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; text-align: left;">
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <label
+                        style="display: flex; align-items: center; cursor: pointer; font-weight: 600; font-size: 15px; color: #333;">
+                        <input type="checkbox" id="printShowTag"
+                            style="width: 20px; height: 20px; margin-right: 10px; cursor: pointer;" checked
+                            onchange="renderPreview()">
+                        Kèm theo Tag ý nghĩa số
+                    </label>
+                    <label
+                        style="display: flex; align-items: center; cursor: pointer; font-weight: 600; font-size: 15px; color: #333;">
+                        <input type="checkbox" id="printShowContact"
+                            style="width: 20px; height: 20px; margin-right: 10px; cursor: pointer;" checked
+                            onchange="renderPreview()">
+                        Kèm theo Thông tin Nhân viên (LH)
+                    </label>
+                </div>
+                <span style="font-size: 13px; color: #64748b; margin-top: 5px;">(Vuốt để xem hết bảng)</span>
+            </div>
+
+            <div class="preview-wrapper" id="previewContainer">
+                <!-- Nội dung ảnh sẽ được render vào đây -->
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button class="btn-copy" style="background: #94a3b8; padding: 12px; margin: 0; width: 120px;"
+                    onclick="closePrintModal()">Hủy</button>
+                <button class="btn-copy" style="background: #10b981; padding: 12px; margin: 0; width: 200px;"
+                    onclick="downloadJPG()">📥 TẢI ẢNH JPG</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentExportData = [];
+
+        function generatePrintList() {
+            if (!window.currentDisplayData || window.currentDisplayData.length === 0) {
+                alert("Không có số nào để in! Vui lòng chọn danh mục có số.");
+                return;
+            }
+
+            // Shuffle function
+            function shuffle(array) {
+                let currentIndex = array.length, randomIndex;
+                while (currentIndex > 0) {
+                    randomIndex = Math.floor(Math.random() * currentIndex);
+                    currentIndex--;
+                    [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+                }
+                return array;
+            }
+
+            // Lấy 40 số ngẫu nhiên từ danh sách đang hiển thị
+            let topData = shuffle([...window.currentDisplayData]).slice(0, 40);
+
+            currentExportData = topData;
+
+            document.getElementById('printOptionsModal').style.display = 'flex';
+            renderPreview();
+        }
+
+        function closePrintModal() {
+            document.getElementById('printOptionsModal').style.display = 'none';
+        }
+
+        function renderPreview() {
+            const showTag = document.getElementById('printShowTag').checked;
+            const showContact = document.getElementById('printShowContact').checked;
+
+            let rows = 10;
+            if (showTag) rows -= 1;
+            if (showContact) rows -= 1;
+
+            let limit = rows * 4;
+            const selectedForPrint = currentExportData.slice(0, limit);
+
+            let html = `
+            <div id="jpgExportArea" style="zoom: 0.65; margin: 0 auto;">
+                <div class="print-header">
+                    <h2>DANH SÁCH SIM SỐ</h2>
+                    <p>Ngày cập nhật: ${new Date().toLocaleDateString('vi-VN')}</p>
+                </div>
+                <div class="print-grid">
+            `;
+
+            selectedForPrint.forEach(item => {
+                const formatNum = item.fNum;
+                const isFree = !item.monthly || item.monthly == 0 || item.monthly === "0";
+                const price = Number(item.monthly) || 0;
+                let displayPrice = Number(item.price || 0);
+                if (displayPrice === 33500) displayPrice = 170000;
+                
+                let tagsHtml = '';
+                if (showTag && item.kieuso_name) {
+                    tagsHtml = `<div class="p-tags-container"><span class="p-tag">${item.kieuso_name.split('(')[0].trim()}</span></div>`;
+                }
+
+                let infoHtml = '';
+                if (isFree) {
+                    infoHtml = `
+                        <div class="p-info-grid">
+                            <div class="p-col"><strong>${displayPrice / 1000}k</strong></div>
+                            <div class="p-col"><strong>Không</strong></div>
+                        </div>
+                    `;
+                } else {
+                    const commitVal = (item.commitment && item.commitment > 0) ? `${item.commitment}T` : 'Không';
+                    infoHtml = `
+                        <div class="p-info-grid">
+                            <div class="p-col"><strong>${price / 1000}k</strong></div>
+                            <div class="p-col"><strong>${commitVal}</strong></div>
+                        </div>
+                    `;
+                }
+
+                html += `
+                    <div class="print-item">
+                        <div class="p-num">${formatNum}</div>
+                        ${tagsHtml}
+                        ${infoHtml}
+                    </div>
+                `;
+            });
+
+            html += `</div>`;
+
+            if (showContact) {
+                html += `
+                <div class="print-footer-container">
+                    <div class="print-footer">📞 LIÊN HỆ NGAY: <span>0947.050.848</span></div>
+                </div>`;
+            }
+
+            html += `</div>`;
+            document.getElementById('previewContainer').innerHTML = html;
+        }
+
+        async function downloadJPG() {
+            const jpgArea = document.getElementById('jpgExportArea');
+            if (!jpgArea) return;
+
+            const toast = document.getElementById('toast');
+            if (toast) {
+                toast.querySelector('span').textContent = 'Đang xử lý ảnh, vui lòng chờ...';
+                toast.classList.add('show');
+            }
+
+            try {
+                const exportClone = jpgArea.cloneNode(true);
+                exportClone.style.transform = 'scale(1)';
+                exportClone.style.zoom = '1';
+                exportClone.style.position = 'absolute';
+                exportClone.style.top = '-9999px';
+                exportClone.style.left = '0';
+                exportClone.style.width = '1080px';
+                exportClone.style.height = '1440px';
+                exportClone.style.overflow = 'hidden';
+                document.body.appendChild(exportClone);
+
+                const canvas = await html2canvas(exportClone, { 
+                    scale: 1, 
+                    useCORS: true, 
+                    backgroundColor: "#ffffff",
+                    width: 1080,
+                    height: 1440,
+                    logging: false
+                });
+
+                document.body.removeChild(exportClone);
+
+                const imgData = canvas.toDataURL('image/jpeg', 0.8);
+                const link = document.createElement('a');
+                link.download = \`Bang_So_\${new Date().toISOString().slice(0, 10)}.jpg\`;
+                link.href = imgData;
+                link.click();
+
+                if (toast) {
+                    toast.querySelector('span').textContent = 'Tải ảnh JPG thành công!';
+                }
+            } catch (err) {
+                console.error("Lỗi xuất ảnh:", err);
+                alert("Không thể tạo ảnh, vui lòng thử lại!");
+            } finally {
+                if (toast) {
+                    setTimeout(() => {
+                        toast.classList.remove('show');
+                        setTimeout(() => { toast.querySelector('span').textContent = 'Đã sao chép số điện thoại!'; }, 500);
+                    }, 3000);
+                }
+            }
+        }
+    </script>
 </body>
 
 </html>
