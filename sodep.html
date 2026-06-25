@@ -1632,12 +1632,14 @@
         }
 
         async function silentAutoScan() {
+            const searchPatterns = ["", "*6*", "*8*", "*9*", "*68*", "*86*", "*39*", "*79*", "*33*", "*66*", "*88*", "*99*", "*77*"];
             const tasks = [];
-            const MULTIPLIER = 1; // Chỉ 1 vòng để lấy ngẫu nhiên một ít số mới (nhanh và nhẹ)
+            const MULTIPLIER = 2; // Tăng lên 2 để quét được nhiều kết quả phong phú hơn
             for (let i = 0; i < MULTIPLIER; i++) {
                 for (const pref of PREFIXES) {
                     for (const c of COMMITS) {
-                        tasks.push({ pref, c });
+                        const randomSearch = searchPatterns[Math.floor(Math.random() * searchPatterns.length)];
+                        tasks.push({ pref, c, search: randomSearch });
                     }
                 }
             }
@@ -1647,8 +1649,8 @@
 
             async function worker() {
                 while (tasks.length > 0) {
-                    const { pref, c } = tasks.shift();
-                    const url = `${BASE_API}?search=&prefix=${pref}&commit=${c}`;
+                    const { pref, c, search } = tasks.shift();
+                    const url = `${BASE_API}?search=${encodeURIComponent(search)}&prefix=${pref}&commit=${c}`;
                     try {
                         const res = await fetch(url);
                         const json = await res.json();
@@ -1725,12 +1727,14 @@
             }
             document.getElementById('btnLoadMore').style.display = 'none';
 
+            const searchPatterns = ["", "*6*", "*8*", "*9*", "*68*", "*86*", "*39*", "*79*", "*33*", "*66*", "*88*", "*99*", "*77*", "*55*", "*22*"];
             const tasks = [];
-            const MULTIPLIER = 10; // Lặp lại request 10 lần để gom được nhiều số ngẫu nhiên hơn (VNPT trả về ngẫu nhiên mỗi lần gọi)
+            const MULTIPLIER = 10; // Lặp lại request 10 lần kết hợp các chuỗi search ngẫu nhiên để gom nhiều số phong phú
             for (let i = 0; i < MULTIPLIER; i++) {
                 for (const pref of PREFIXES) {
                     for (const c of COMMITS) {
-                        tasks.push({ pref, c });
+                        const randomSearch = searchPatterns[Math.floor(Math.random() * searchPatterns.length)];
+                        tasks.push({ pref, c, search: randomSearch });
                     }
                 }
             }
@@ -1741,8 +1745,8 @@
 
             async function worker() {
                 while (tasks.length > 0) {
-                    const { pref, c } = tasks.shift();
-                    const url = `${BASE_API}?search=&prefix=${pref}&commit=${c}`;
+                    const { pref, c, search } = tasks.shift();
+                    const url = `${BASE_API}?search=${encodeURIComponent(search)}&prefix=${pref}&commit=${c}`;
 
                     statusTxt.textContent = `Đang quét: ${completedRequests}/${totalRequests} (Phân tích 0${pref.slice(2)} - ${c === '0' ? 'Trả trước 0đ' : (c / 1000 + 'k cam kết')})`;  
 
