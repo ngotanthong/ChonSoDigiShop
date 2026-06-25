@@ -1634,7 +1634,7 @@
         async function silentAutoScan() {
             const searchPatterns = ["", "*6*", "*8*", "*9*", "*68*", "*86*", "*39*", "*79*", "*33*", "*66*", "*88*", "*99*", "*77*"];
             const tasks = [];
-            const MULTIPLIER = 2; // Tăng lên 2 để quét được nhiều kết quả phong phú hơn
+            const MULTIPLIER = 3; // Tăng lên 2 để quét được nhiều kết quả phong phú hơn
             for (let i = 0; i < MULTIPLIER; i++) {
                 for (const pref of PREFIXES) {
                     for (const c of COMMITS) {
