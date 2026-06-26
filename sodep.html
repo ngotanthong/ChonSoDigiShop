@@ -649,15 +649,18 @@
             cursor: pointer;
             transition: all 0.3s ease;
         }
+
         .btn-pin:hover {
             background: #e2e8f0;
             color: #64748b;
         }
+
         .btn-pin.pinned {
             background: #fef08a;
             color: #eab308;
             border-color: #fde047;
         }
+
         .status-badge {
             position: absolute;
             top: -10px;
@@ -668,11 +671,13 @@
             font-weight: bold;
             z-index: 10;
         }
+
         .status-badge.available {
             background: #10b981;
             color: white;
             border: 1px solid #059669;
         }
+
         .status-badge.sold {
             background: #ef4444;
             color: white;
@@ -1134,7 +1139,9 @@
             <button class="btn-login" onclick="handleLogin()">ĐĂNG NHẬP</button>
             <div class="error-msg" id="loginError">Tên đăng nhập hoặc mật khẩu không chính xác!</div>
         </div>
-        <button onclick="promptCustomApi()" style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: none; border: none; color: rgba(255,255,255,0.5); font-size: 12px; cursor: pointer; text-decoration: underline;">⚙️ Đổi link máy chủ (Admin)</button>
+        <button onclick="promptCustomApi()"
+            style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: none; border: none; color: rgba(255,255,255,0.5); font-size: 12px; cursor: pointer; text-decoration: underline;">⚙️
+            Đổi link máy chủ (Admin)</button>
     </div>
 
     <!-- Ứng dụng chính -->
@@ -1173,7 +1180,8 @@
 
             <div class="scan-panel">
                 <h2>Quét Tự Động Toàn Kho</h2>
-                <p>Hệ thống sẽ tự động tìm kiếm các số <strong>trả trước 0đ</strong> và các số có <strong>cam kết ≤ 400k/tháng</strong>, sau đó dùng AI chấm điểm và chọn ra những số đẹp nhất cho bạn.</p>
+                <p>Hệ thống sẽ tự động tìm kiếm các số <strong>trả trước 0đ</strong> và các số có <strong>cam kết ≤
+                        400k/tháng</strong>, sau đó dùng AI chấm điểm và chọn ra những số đẹp nhất cho bạn.</p>
 
                 <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
                     <button class="btn-scan" id="btnScan" onclick="startAutoScan()"
@@ -1192,20 +1200,32 @@
 
                 <!-- Tuỳ chọn Phong Thuỷ & Tự động quét -->
                 <div style="margin-top: 20px; display: flex; justify-content: center; flex-wrap: wrap; gap: 15px;">
-                    <label style="display: flex; align-items: center; cursor: pointer; font-weight: 600; font-size: 15px; color: var(--text-main); background: #f1f5f9; padding: 10px 20px; border-radius: 30px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: all 0.2s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
-                        <input type="checkbox" id="togglePhongThuy" style="width: 18px; height: 18px; margin-right: 10px; accent-color: var(--primary);" onchange="handlePhongThuyToggle()">
+                    <label
+                        style="display: flex; align-items: center; cursor: pointer; font-weight: 600; font-size: 15px; color: var(--text-main); background: #f1f5f9; padding: 10px 20px; border-radius: 30px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: all 0.2s;"
+                        onmouseover="this.style.borderColor='var(--primary)'"
+                        onmouseout="this.style.borderColor='var(--border)'">
+                        <input type="checkbox" id="togglePhongThuy"
+                            style="width: 18px; height: 18px; margin-right: 10px; accent-color: var(--primary);"
+                            onchange="handlePhongThuyToggle()">
                         Chế độ ưu tiên Phong Thuỷ
                     </label>
 
-                    <label style="display: flex; align-items: center; cursor: pointer; font-weight: 600; font-size: 15px; color: var(--text-main); background: #f1f5f9; padding: 10px 20px; border-radius: 30px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: all 0.2s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
-                        <input type="checkbox" id="toggleAutoReload" style="width: 18px; height: 18px; margin-right: 10px; accent-color: var(--primary);" onchange="handleAutoReloadToggle()">
+                    <label
+                        style="display: flex; align-items: center; cursor: pointer; font-weight: 600; font-size: 15px; color: var(--text-main); background: #f1f5f9; padding: 10px 20px; border-radius: 30px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: all 0.2s;"
+                        onmouseover="this.style.borderColor='var(--primary)'"
+                        onmouseout="this.style.borderColor='var(--border)'">
+                        <input type="checkbox" id="toggleAutoReload"
+                            style="width: 18px; height: 18px; margin-right: 10px; accent-color: var(--primary);"
+                            onchange="handleAutoReloadToggle()">
                         Tự động quét số ngầm (mỗi 10 phút)
                     </label>
                 </div>
 
 
-                <div id="lastUpdateContainer" style="margin-top: 15px; font-size: 13px; color: var(--text-sub); display: none; text-align: center;">
-                    ⏳ Cập nhật lần cuối: <span id="lastUpdatedTime" style="font-weight: 600; color: var(--primary);">--:--</span>
+                <div id="lastUpdateContainer"
+                    style="margin-top: 15px; font-size: 13px; color: var(--text-sub); display: none; text-align: center;">
+                    ⏳ Cập nhật lần cuối: <span id="lastUpdatedTime"
+                        style="font-weight: 600; color: var(--primary);">--:--</span>
                 </div>
 
 
@@ -1447,7 +1467,7 @@
                     pinnedSims = {};
                     data.data.forEach(item => {
                         let num = item.fNum || item.so_tb;
-                        if(num) {
+                        if (num) {
                             if (num.startsWith('84')) num = '0' + num.slice(2);
                             item.fNum = num;
                             pinnedSims[num] = item;
@@ -1455,7 +1475,7 @@
                     });
                     if (currentCategory === 'pinned') renderResults();
                 }
-            } catch(e) {
+            } catch (e) {
                 console.error("Lỗi tải danh sách ghim:", e);
             }
         }
@@ -1470,7 +1490,7 @@
 
             const isPinned = !!pinnedSims[fNum];
             let simObj = displayData.find(s => s.fNum === fNum) || scoredData.find(s => s.fNum === fNum) || pinnedSims[fNum];
-            
+
             if (isPinned) {
                 delete pinnedSims[fNum];
                 btnEl.classList.remove('pinned');
@@ -1484,7 +1504,7 @@
                     btnEl.classList.add('pinned');
                 }
             }
-            
+
             const action = isPinned ? 'unpin' : 'pin';
             if (!isPinned && simObj) {
                 try {
@@ -1492,22 +1512,22 @@
                     const res = await fetch(`${GAS_API_URL}?action=pin&user=${encodeURIComponent(user)}&deviceId=${deviceId}&phone=${encodeURIComponent(fNum)}&simData=${simDataStr}`);
                     const data = await res.json();
                     if (data.status !== "ok") alert("Lỗi lưu ghim: " + data.message);
-                } catch(e) { 
-                    alert('Lỗi kết nối ghim: ' + e.message); 
+                } catch (e) {
+                    alert('Lỗi kết nối ghim: ' + e.message);
                 }
             } else if (isPinned) {
                 try {
                     const res = await fetch(`${GAS_API_URL}?action=unpin&user=${encodeURIComponent(user)}&deviceId=${deviceId}&phone=${encodeURIComponent(fNum)}`);
                     const data = await res.json();
                     if (data.status !== "ok") alert("Lỗi bỏ ghim: " + data.message);
-                } catch(e) { 
-                    alert('Lỗi kết nối bỏ ghim: ' + e.message); 
+                } catch (e) {
+                    alert('Lỗi kết nối bỏ ghim: ' + e.message);
                 }
             }
         }
 
         // Xử lý đổi API thủ công
-        window.promptCustomApi = function() {
+        window.promptCustomApi = function () {
             const currentApi = localStorage.getItem('CUSTOM_GAS_API_URL') || GAS_API_URL;
             const newApi = prompt("Nhập đường dẫn Google Apps Script mới:\n(Để trống nếu muốn quay về mặc định)", currentApi);
             if (newApi !== null) {
@@ -1611,7 +1631,7 @@
             if (isChecked) {
                 // Chạy mỗi 10 phút (600.000 ms)
                 autoReloadInterval = setInterval(silentAutoScan, 600000);
-                
+
                 const toast = document.getElementById('toast');
                 if (toast) {
                     toast.querySelector('span').textContent = 'Đã bật tự động lấy số mới ngầm (10 phút/lần)';
@@ -1621,7 +1641,7 @@
             } else {
                 if (autoReloadInterval) clearInterval(autoReloadInterval);
                 autoReloadInterval = null;
-                
+
                 const toast = document.getElementById('toast');
                 if (toast) {
                     toast.querySelector('span').textContent = 'Đã tắt tự động lấy số mới ngầm';
@@ -1658,7 +1678,7 @@
                             // Lọc các số chưa có trong kho
                             const existingPhones = new Set(rawData.map(d => String(d.so_tb || d.fNum)));
                             const freshData = json.data.filter(d => !existingPhones.has(String(d.so_tb || d.fNum)));
-                            
+
                             if (freshData.length > 0) {
                                 rawData = rawData.concat(freshData);
                                 newDataCount += freshData.length;
@@ -1677,14 +1697,14 @@
 
                 if (newDataCount > 0) {
                     processAIScores();
-                    
+
                     const toolbar = document.getElementById('toolbar');
                     if (toolbar && scoredData.length > 0) {
                         toolbar.style.display = 'flex';
                         document.getElementById('emptyState').style.display = 'none';
                         renderResults();
                     }
-                    
+
                     const toast = document.getElementById('toast');
                     if (toast) {
                         toast.querySelector('span').textContent = `Tự động quét ngầm hoàn tất: Thêm ${newDataCount} số mới!`;
@@ -1748,7 +1768,7 @@
                     const { pref, c, search } = tasks.shift();
                     const url = `${BASE_API}?search=${encodeURIComponent(search)}&prefix=${pref}&commit=${c}`;
 
-                    statusTxt.textContent = `Đang quét: ${completedRequests}/${totalRequests} (Phân tích 0${pref.slice(2)} - ${c === '0' ? 'Trả trước 0đ' : (c / 1000 + 'k cam kết')})`;  
+                    statusTxt.textContent = `Đang quét: ${completedRequests}/${totalRequests} (Phân tích 0${pref.slice(2)} - ${c === '0' ? 'Trả trước 0đ' : (c / 1000 + 'k cam kết')})`;
 
                     try {
                         const res = await fetch(url);
@@ -1935,10 +1955,10 @@
                 statusTxt.textContent = 'Đang chấm điểm lại theo tiêu chí Phong Thuỷ...';
                 statusTxt.style.display = 'block';
                 document.getElementById('resultGrid').innerHTML = '';
-                
+
                 setTimeout(() => {
                     processAIScores();
-                    
+
                     if (scoredData.length > 0) {
                         const toolbar = document.getElementById('toolbar');
                         if (toolbar) toolbar.style.display = 'flex';
@@ -1947,7 +1967,7 @@
                         document.getElementById('emptyState').style.display = 'block';
                         document.getElementById('emptyState').querySelector('p').textContent = 'Không tìm thấy số nào đạt tiêu chuẩn phong thuỷ (Nút 7-8-9, không 4-7, không 49-53).';
                     }
-                    
+
                     statusTxt.style.display = 'none';
                 }, 50);
             }
@@ -2002,7 +2022,7 @@
                 const isGanh3 = matchStr.length === 3 && matchStr[0] === matchStr[2] && matchStr[0] !== matchStr[1]; // ABA
                 const isGanh4 = matchStr.length === 4 && matchStr[0] === matchStr[3] && matchStr[1] === matchStr[2] && matchStr[0] !== matchStr[1]; // ABBA
                 const isGanhKep = matchStr.length === 6 && matchStr[0] === matchStr[2] && matchStr[0] !== matchStr[1] && matchStr[3] === matchStr[5] && matchStr[3] !== matchStr[4]; // ABA+ABA
-                const isCaptien3Bac = matchStr.length === 6 && (() => { const p1=parseInt(matchStr.slice(0,2)),p2=parseInt(matchStr.slice(2,4)),p3=parseInt(matchStr.slice(4,6)); return (p2-p1)>0&&(p2-p1)<=20&&(p2-p1)===(p3-p2); })();
+                const isCaptien3Bac = matchStr.length === 6 && (() => { const p1 = parseInt(matchStr.slice(0, 2)), p2 = parseInt(matchStr.slice(2, 4)), p3 = parseInt(matchStr.slice(4, 6)); return (p2 - p1) > 0 && (p2 - p1) <= 20 && (p2 - p1) === (p3 - p2); })();
                 if (matchStr.length === 3 && isSanh) {
                     dotIndexes = [3, 5, 7]; // Sảnh 3 số cuối: nhịp 3-2-2-3
                 } else if (matchStr.length === 5 && isSanh) {
@@ -2103,7 +2123,7 @@
             const soldNums = [];
             const tasks = [...pinnedItems];
             const CONCURRENCY = 10;
-            
+
             async function checkWorker() {
                 while (tasks.length > 0) {
                     const item = tasks.shift();
@@ -2113,22 +2133,22 @@
                         const prefixVNPT = '84' + prefix3.slice(1);
                         const search7 = cleanNum.slice(3);
                         const commitVal = item.monthly || 0;
-                        
+
                         const res = await fetch(`${BASE_API}?search=${search7}&prefix=${prefixVNPT}&commit=${commitVal}`);
                         const data = await res.json();
-                        
+
                         if (data.errorCode === 0 && data.data && data.data.length > 0) {
                             const found = data.data.some(d => formatNumber(d.so_tb).replace(/\s+/g, '') === cleanNum);
                             if (!found) soldNums.push(cleanNum);
                         } else {
                             soldNums.push(cleanNum);
                         }
-                    } catch(e) {
+                    } catch (e) {
                         console.error("Lỗi check tồn kho:", e);
                     }
                 }
             }
-            
+
             const workers = [];
             for (let i = 0; i < CONCURRENCY; i++) {
                 workers.push(checkWorker());
@@ -2141,7 +2161,7 @@
                     pinnedSims[num]._sold = true;
                 }
             });
-            
+
             // Xoá loading và vẽ lại kết quả (ẩn số đã bán)
             const loadingEl = document.getElementById('pinnedCheckLoading');
             if (loadingEl) loadingEl.remove();
@@ -2210,8 +2230,8 @@
             dataToShow.forEach(item => {
                 const isFree = isFreeSim(item);
                 const price = Number(item.monthly) || 0;
-                const priceText = isFree 
-                    ? '<span class="price-desktop">0 đ/tháng</span><span class="price-mobile">0đ/tháng</span>' 
+                const priceText = isFree
+                    ? '<span class="price-desktop">0 đ/tháng</span><span class="price-mobile">0đ/tháng</span>'
                     : `<span class="price-desktop">${price.toLocaleString()} đ/tháng</span><span class="price-mobile">${price / 1000}k/tháng</span>`;
                 const commitText = (item.commitment && item.commitment > 0) ? `Cam kết ${item.commitment}T` : 'Không cam kết';
                 const hlNum = highlightHTML(item.fNum, item.ai ? item.ai.highlight : '');
@@ -2289,7 +2309,7 @@
             }
 
             let topData = [];
-            
+
             // Nếu ở tab "Tất cả", lấy ngẫu nhiên đa dạng loại số (categories), loại bỏ số cam kết 0đ
             if (currentCategory === 'all') {
                 // Loại bỏ số cam kết 0đ khỏi bảng in (bảng in chỉ in số có cam kết giá rõ ràng)
@@ -2326,7 +2346,7 @@
                     }
                     i++;
                 }
-                
+
                 // Nối 8 số đầu với danh sách ngẫu nhiên đã xáo trộn
                 topData = top8.concat(shuffle(pool));
             } else {
@@ -2395,7 +2415,7 @@
             selectedForPrint.forEach(item => {
                 const formatNum = highlightHTML(item.fNum, item.ai ? item.ai.highlight : '');
                 const price = Number(item.monthly) || 0;
-                
+
                 let tagsHtml = '';
                 if (showTag && item.ai && item.ai.reasonText) {
                     const parts = item.ai.reasonText.split('+').slice(0, 2);
@@ -2461,9 +2481,9 @@
                 exportClone.style.overflow = 'hidden';
                 document.body.appendChild(exportClone);
 
-                const canvas = await html2canvas(exportClone, { 
-                    scale: 1, 
-                    useCORS: true, 
+                const canvas = await html2canvas(exportClone, {
+                    scale: 1,
+                    useCORS: true,
                     backgroundColor: "#ffffff",
                     width: 1080,
                     height: 1440,
