@@ -1670,9 +1670,11 @@
                         const randomSearch = wildcardDB[Math.floor(Math.random() * wildcardDB.length)];
                         tasks.push({ pref, c, search: randomSearch });
                     }
-                    // Đầu nào đuôi nấy (Strategy 2)
-                    const prefix3 = '0' + pref.slice(2);
-                    tasks.push({ pref, c, search: `*${prefix3}*` });
+                    // Đầu nào đuôi nấy 4 số (Strategy 2)
+                    const basePrefix = '0' + pref.slice(2);
+                    const randomDigit = Math.floor(Math.random() * 10);
+                    const prefix4 = basePrefix + randomDigit;
+                    tasks.push({ pref, c, search: `*${prefix4}*` });
                 }
             }
 
@@ -1788,9 +1790,14 @@
                         rawTasks.push({ pref, c, search: randomSearch });
                     }
                     
-                    // 2. Nhóm Đầu nào Đuôi nấy (VD: Đầu 088 tìm đuôi *088*)
-                    const prefix3 = '0' + pref.slice(2);
-                    rawTasks.push({ pref, c, search: `*${prefix3}*` });
+                    // 2. Nhóm Đầu nào Đuôi nấy 4 số (VD: Đầu 088x tìm đuôi *088x*)
+                    const basePrefix = '0' + pref.slice(2);
+                    const digit1 = Math.floor(Math.random() * 10);
+                    const digit2 = Math.floor(Math.random() * 10);
+                    rawTasks.push({ pref, c, search: `*${basePrefix}${digit1}*` });
+                    if (digit1 !== digit2) {
+                        rawTasks.push({ pref, c, search: `*${basePrefix}${digit2}*` });
+                    }
                     
                     // 3. Nhóm ngẫu nhiên không điều kiện và dễ ra số
                     rawTasks.push({ pref, c, search: "" });
