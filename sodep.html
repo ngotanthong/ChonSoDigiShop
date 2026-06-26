@@ -1652,15 +1652,27 @@
         }
 
         async function silentAutoScan() {
-            const searchPatterns = ["", "*6*", "*8*", "*9*", "*68*", "*86*", "*39*", "*79*", "*33*", "*66*", "*88*", "*99*", "*77*"];
+            const wildcardDB = [
+                "*666*", "*888*", "*999*", "*333*", "*777*", "*555*", "*222*", "*111*", "*444*",
+                "*6666*", "*8888*", "*9999*", "*3333*", "*7777*",
+                "*1234*", "*2345*", "*3456*", "*4567*", "*5678*", "*6789*",
+                "*68*", "*86*", "*39*", "*79*", "*33*", "*66*", "*88*", "*99*", "*77*", "*55*", "*22*",
+                "*6868*", "*8686*", "*7979*", "*3939*", "*3979*", "*8989*", "*6886*", "*7878*", "*8998*",
+                "*0880*", "*0990*", "*0660*", "*0770*", "*1221*", "*1331*", "*1881*", "*1661*", "*1991*",
+                "*4078*", "*0404*", "*1102*", "*1368*", "*8668*", "*8386*", "*8683*", "*168*"
+            ];
             const tasks = [];
-            const MULTIPLIER = 3; // Tăng lên 2 để quét được nhiều kết quả phong phú hơn
-            for (let i = 0; i < MULTIPLIER; i++) {
-                for (const pref of PREFIXES) {
-                    for (const c of COMMITS) {
-                        const randomSearch = searchPatterns[Math.floor(Math.random() * searchPatterns.length)];
+            
+            for (const pref of PREFIXES) {
+                for (const c of COMMITS) {
+                    // Random 3 mẫu từ database
+                    for (let i = 0; i < 3; i++) {
+                        const randomSearch = wildcardDB[Math.floor(Math.random() * wildcardDB.length)];
                         tasks.push({ pref, c, search: randomSearch });
                     }
+                    // Đầu nào đuôi nấy (Strategy 2)
+                    const prefix3 = '0' + pref.slice(2);
+                    tasks.push({ pref, c, search: `*${prefix3}*` });
                 }
             }
 
@@ -1747,17 +1759,48 @@
             }
             document.getElementById('btnLoadMore').style.display = 'none';
 
-            const searchPatterns = ["", "*6*", "*8*", "*9*", "*68*", "*86*", "*39*", "*79*", "*33*", "*66*", "*88*", "*99*", "*77*", "*55*", "*22*"];
-            const tasks = [];
-            const MULTIPLIER = 10; // Lặp lại request 10 lần kết hợp các chuỗi search ngẫu nhiên để gom nhiều số phong phú
-            for (let i = 0; i < MULTIPLIER; i++) {
-                for (const pref of PREFIXES) {
-                    for (const c of COMMITS) {
-                        const randomSearch = searchPatterns[Math.floor(Math.random() * searchPatterns.length)];
-                        tasks.push({ pref, c, search: randomSearch });
+            const wildcardDB = [
+                "*666*", "*888*", "*999*", "*333*", "*777*", "*555*", "*222*", "*111*", "*444*",
+                "*6666*", "*8888*", "*9999*", "*3333*", "*7777*",
+                "*1234*", "*2345*", "*3456*", "*4567*", "*5678*", "*6789*",
+                "*68*", "*86*", "*39*", "*79*", "*33*", "*66*", "*88*", "*99*", "*77*", "*55*", "*22*",
+                "*6868*", "*8686*", "*7979*", "*3939*", "*3979*", "*8989*", "*6886*", "*7878*", "*8998*",
+                "*0880*", "*0990*", "*0660*", "*0770*", "*1221*", "*1331*", "*1881*", "*1661*", "*1991*",
+                "*4078*", "*0404*", "*1102*", "*1368*", "*8668*", "*8386*", "*8683*", "*168*"
+            ];
+
+            function localShuffle(array) {
+                let currentIndex = array.length, randomIndex;
+                while (currentIndex !== 0) {
+                    randomIndex = Math.floor(Math.random() * currentIndex);
+                    currentIndex--;
+                    [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+                }
+                return array;
+            }
+
+            let rawTasks = [];
+            for (const pref of PREFIXES) {
+                for (const c of COMMITS) {
+                    // 1. Nhóm từ Wildcard Database (10 mẫu ngẫu nhiên)
+                    for (let i = 0; i < 10; i++) {
+                        const randomSearch = wildcardDB[Math.floor(Math.random() * wildcardDB.length)];
+                        rawTasks.push({ pref, c, search: randomSearch });
                     }
+                    
+                    // 2. Nhóm Đầu nào Đuôi nấy (VD: Đầu 088 tìm đuôi *088*)
+                    const prefix3 = '0' + pref.slice(2);
+                    rawTasks.push({ pref, c, search: `*${prefix3}*` });
+                    
+                    // 3. Nhóm ngẫu nhiên không điều kiện và dễ ra số
+                    rawTasks.push({ pref, c, search: "" });
+                    rawTasks.push({ pref, c, search: "*68*" });
+                    rawTasks.push({ pref, c, search: "*79*" });
                 }
             }
+            
+            // Xáo trộn toàn bộ các yêu cầu để thanh tiến trình hiện đều các đầu số
+            const tasks = localShuffle(rawTasks);
 
             const totalRequests = tasks.length;
             let completedRequests = 0;
