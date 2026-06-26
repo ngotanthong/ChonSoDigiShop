@@ -2101,28 +2101,39 @@
             grid.prepend(loadingDiv);
 
             const soldNums = [];
-            for (let i = 0; i < pinnedItems.length; i++) {
-                const item = pinnedItems[i];
-                try {
-                    const cleanNum = formatNumber(item.so_tb || item.fNum).replace(/\s+/g, '');
-                    const prefix3 = cleanNum.slice(0, 3);
-                    const prefixVNPT = '84' + prefix3.slice(1);
-                    const search7 = cleanNum.slice(3);
-                    const commitVal = item.monthly || 0;
-                    
-                    const res = await fetch(`${BASE_API}?search=${search7}&prefix=${prefixVNPT}&commit=${commitVal}`);
-                    const data = await res.json();
-                    
-                    if (data.errorCode === 0 && data.data && data.data.length > 0) {
-                        const found = data.data.some(d => formatNumber(d.so_tb).replace(/\s+/g, '') === cleanNum);
-                        if (!found) soldNums.push(cleanNum);
-                    } else {
-                        soldNums.push(cleanNum);
+            const tasks = [...pinnedItems];
+            const CONCURRENCY = 10;
+            
+            async function checkWorker() {
+                while (tasks.length > 0) {
+                    const item = tasks.shift();
+                    try {
+                        const cleanNum = formatNumber(item.so_tb || item.fNum).replace(/\s+/g, '');
+                        const prefix3 = cleanNum.slice(0, 3);
+                        const prefixVNPT = '84' + prefix3.slice(1);
+                        const search7 = cleanNum.slice(3);
+                        const commitVal = item.monthly || 0;
+                        
+                        const res = await fetch(`${BASE_API}?search=${search7}&prefix=${prefixVNPT}&commit=${commitVal}`);
+                        const data = await res.json();
+                        
+                        if (data.errorCode === 0 && data.data && data.data.length > 0) {
+                            const found = data.data.some(d => formatNumber(d.so_tb).replace(/\s+/g, '') === cleanNum);
+                            if (!found) soldNums.push(cleanNum);
+                        } else {
+                            soldNums.push(cleanNum);
+                        }
+                    } catch(e) {
+                        console.error("Lỗi check tồn kho:", e);
                     }
-                } catch(e) {
-                    console.error("Lỗi check tồn kho:", e);
                 }
             }
+            
+            const workers = [];
+            for (let i = 0; i < CONCURRENCY; i++) {
+                workers.push(checkWorker());
+            }
+            await Promise.all(workers);
 
             // Xoá các số đã bán khỏi danh sách ghim hiển thị
             soldNums.forEach(num => {
