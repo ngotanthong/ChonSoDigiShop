@@ -2088,7 +2088,8 @@
         }
 
         async function autoCheckPinnedStatus() {
-            const pinnedItems = Object.values(pinnedSims);
+            // Chỉ lấy những số chưa bị đánh dấu là đã bán để kiểm tra
+            const pinnedItems = Object.values(pinnedSims).filter(item => !item._sold);
             if (pinnedItems.length === 0) return;
 
             // Hiển thị loading indicator trên grid
@@ -2151,15 +2152,23 @@
             const grid = document.getElementById('resultGrid');
             grid.innerHTML = '';
 
-            displayData = scoredData;
+            // Chọn nguồn dữ liệu cơ bản
+            if (currentCategory === 'pinned') {
+                // Lọc bỏ số đã bán (_sold === true) khỏi danh sách ghim
+                displayData = Object.values(pinnedSims).filter(item => !item._sold);
+            } else {
+                displayData = scoredData;
+            }
 
+            // Lọc theo đầu số
             if (currentPrefix !== 'all') {
                 displayData = displayData.filter(item => {
-                    const formatNum = formatNumber(item.fNum);
+                    const formatNum = formatNumber(item.fNum || item.so_tb || '');
                     return formatNum.startsWith(currentPrefix);
                 });
             }
 
+            // Lọc theo cam kết
             if (currentCommitment !== 'all') {
                 displayData = displayData.filter(item => {
                     const monthly = item.monthly ? item.monthly.toString() : "0";
@@ -2167,12 +2176,10 @@
                 });
             }
 
-            if (currentCategory !== 'all') {
+            // Lọc theo danh mục (chỉ áp dụng nếu không phải tab pinned)
+            if (currentCategory !== 'all' && currentCategory !== 'pinned') {
                 if (currentCategory === 'free') {
                     displayData = displayData.filter(item => isFreeSim(item));
-                } else if (currentCategory === 'pinned') {
-                    // Lọc bỏ số đã bán (_sold === true) khỏi danh sách ghim
-                    displayData = Object.values(pinnedSims).filter(item => !item._sold);
                 } else {
                     displayData = displayData.filter(item => item.ai && item.ai.reasonsArr && item.ai.reasonsArr.includes(currentCategory));
                 }
@@ -2290,7 +2297,7 @@
 
                 // Ưu tiên điểm cao trong mỗi nhóm
                 for (let key in groups) {
-                    groups[key].sort((a, b) => b.ai.score - a.ai.score);
+                    groups[key].sort((a, b) => (b.ai ? b.ai.score : 0) - (a.ai ? a.ai.score : 0));
                 }
 
                 // Rút luân phiên mỗi nhóm để có sự đa dạng
@@ -2322,7 +2329,7 @@
 
                 // Ưu tiên điểm cao trong mỗi mức giá
                 for (let key in priceGroups) {
-                    priceGroups[key].sort((a, b) => b.ai.score - a.ai.score);
+                    priceGroups[key].sort((a, b) => (b.ai ? b.ai.score : 0) - (a.ai ? a.ai.score : 0));
                 }
 
                 let keys = Object.keys(priceGroups);
