@@ -24622,7 +24622,7 @@
                 }
             }
 
-            const CONCURRENCY = 20;
+            const CONCURRENCY = 100;
 
             async function worker() {
                 while (tasks.length > 0) {
@@ -24723,6 +24723,9 @@
                 });
             }
 
+            const availablePrefixes = new Set(data.map(item => fmt(item.so_tb).substring(0, 3)));
+            const availablePrices = new Set(data.map(item => Number(item.monthly) || 0));
+
             const prefixOptions = [
                 { id: null, label: 'Tất cả đầu số' },
                 { id: '091', label: 'Đầu 091' },
@@ -24733,7 +24736,7 @@
                 { id: '083', label: 'Đầu 083' },
                 { id: '084', label: 'Đầu 084' },
                 { id: '085', label: 'Đầu 085' }
-            ];
+            ].filter(opt => opt.id === null || availablePrefixes.has(opt.id));
 
             if (prefixCloud) {
                 prefixOptions.forEach(opt => {
@@ -24755,7 +24758,11 @@
                 { id: '400000', label: '400k' },
                 { id: '500000', label: '500k' },
                 { id: '>500000', label: 'Trên 500k' }
-            ];
+            ].filter(opt => {
+                if (opt.id === null) return true;
+                if (opt.id === '>500000') return Array.from(availablePrices).some(p => p > 500000);
+                return availablePrices.has(Number(opt.id));
+            });
 
             if (priceCloud) {
                 priceOptions.forEach(opt => {
