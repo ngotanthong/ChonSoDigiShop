@@ -1504,10 +1504,8 @@
                     <div class="tag-cloud" id="sortCloud"><button class="filter-tag active">Thứ tự mặc
                             định</button><button class="filter-tag ">Cước tăng dần ↑</button><button
                             class="filter-tag ">Cước giảm dần ↓</button></div>
-                    <div class="tag-cloud" id="priceCloud"><button class="filter-tag active">Tất cả mức
-                            giá</button><button class="filter-tag ">0đ</button><button class="filter-tag ">Dưới
-                            200k</button><button class="filter-tag ">200k - 500k</button><button
-                            class="filter-tag ">Trên 500k</button></div>
+                    <div class="tag-cloud" id="prefixCloud"></div>
+                    <div class="tag-cloud" id="priceCloud"></div>
                     <div class="tag-cloud" id="tagCloud"><button class="filter-tag active">Tất cả kiểu
                             số</button><button class="filter-tag ">081x AA.BB.AA A,B bất kỳ</button><button
                             class="filter-tag ">081x AA.xx.AA A &amp; x là số bất kỳ</button><button
@@ -24547,6 +24545,7 @@
         let currentData = [];
         let priorityTag = null;
         let priorityPrice = null;
+        let priorityPrefix = null;
         let sortPrice = null;
         let isFilterVisible = true;
 
@@ -24558,31 +24557,9 @@
 
         // --- HÀM COPY TOÀN BỘ SỐ ---
         function copyAllNumbers() {
-            if (currentData.length === 0) return;
+            if (!window.currentDisplayData || window.currentDisplayData.length === 0) return;
 
-            let dataToCopy = [...currentData];
-            if (priorityPrice !== null) {
-                dataToCopy = dataToCopy.filter(item => {
-                    const price = Number(item.monthly) || 0;
-                    if (priorityPrice === '0') return price === 0;
-                    if (priorityPrice === '<200') return price > 0 && price < 200000;
-                    if (priorityPrice === '200-500') return price >= 200000 && price <= 500000;
-                    if (priorityPrice === '>500') return price > 500000;
-                    return true;
-                });
-            }
-
-            if (sortPrice === 'asc') {
-                dataToCopy.sort((a, b) => (Number(a.monthly) || 0) - (Number(b.monthly) || 0));
-            } else if (sortPrice === 'desc') {
-                dataToCopy.sort((a, b) => (Number(b.monthly) || 0) - (Number(a.monthly) || 0));
-            }
-
-            if (priorityTag) {
-                dataToCopy = dataToCopy.filter(item => item.kieuso_name.replace(/^\d{3} /, '') === priorityTag);
-            }
-
-            const textToCopy = dataToCopy.map(item => fmt(item.so_tb)).join('\n');
+            const textToCopy = window.currentDisplayData.map(item => fmt(item.so_tb)).join('\n');
 
             navigator.clipboard.writeText(textToCopy).then(() => {
                 const btn = document.getElementById('btnCopyAll');
@@ -24626,6 +24603,7 @@
             currentData = [];
             priorityTag = null;
             priorityPrice = null;
+            priorityPrefix = null;
             sortPrice = null;
             renderTags(currentData);
             applySort();
@@ -24718,10 +24696,12 @@
             const tagArea = document.getElementById('tagArea');
             const tagCloud = document.getElementById('tagCloud');
             const priceCloud = document.getElementById('priceCloud');
+            const prefixCloud = document.getElementById('prefixCloud');
             const sortCloud = document.getElementById('sortCloud');
 
             tagCloud.innerHTML = '';
             if (priceCloud) priceCloud.innerHTML = '';
+            if (prefixCloud) prefixCloud.innerHTML = '';
             if (sortCloud) sortCloud.innerHTML = '';
 
             if (!data || data.length === 0) { tagArea.style.display = 'none'; return; }
@@ -24743,12 +24723,38 @@
                 });
             }
 
+            const prefixOptions = [
+                { id: null, label: 'Tất cả đầu số' },
+                { id: '091', label: 'Đầu 091' },
+                { id: '094', label: 'Đầu 094' },
+                { id: '088', label: 'Đầu 088' },
+                { id: '081', label: 'Đầu 081' },
+                { id: '082', label: 'Đầu 082' },
+                { id: '083', label: 'Đầu 083' },
+                { id: '084', label: 'Đầu 084' },
+                { id: '085', label: 'Đầu 085' }
+            ];
+
+            if (prefixCloud) {
+                prefixOptions.forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = `filter-tag ${priorityPrefix === opt.id ? 'active' : ''}`;
+                    btn.textContent = opt.label;
+                    btn.onclick = () => { priorityPrefix = opt.id; applySort(); renderTags(data); };
+                    prefixCloud.appendChild(btn);
+                });
+            }
+
             const priceOptions = [
-                { id: null, label: 'Tất cả mức giá' },
+                { id: null, label: 'Tất cả cam kết' },
                 { id: '0', label: '0đ' },
-                { id: '<200', label: 'Dưới 200k' },
-                { id: '200-500', label: '200k - 500k' },
-                { id: '>500', label: 'Trên 500k' }
+                { id: '100000', label: '100k' },
+                { id: '150000', label: '150k' },
+                { id: '200000', label: '200k' },
+                { id: '300000', label: '300k' },
+                { id: '400000', label: '400k' },
+                { id: '500000', label: '500k' },
+                { id: '>500000', label: 'Trên 500k' }
             ];
 
             if (priceCloud) {
@@ -24873,14 +24879,19 @@
         function applySort() {
             let sorted = [...currentData];
 
+            if (priorityPrefix !== null) {
+                sorted = sorted.filter(item => {
+                    const formatNum = fmt(item.so_tb);
+                    return formatNum.startsWith(priorityPrefix);
+                });
+            }
+
             if (priorityPrice !== null) {
                 sorted = sorted.filter(item => {
                     const price = Number(item.monthly) || 0;
                     if (priorityPrice === '0') return price === 0;
-                    if (priorityPrice === '<200') return price > 0 && price < 200000;
-                    if (priorityPrice === '200-500') return price >= 200000 && price <= 500000;
-                    if (priorityPrice === '>500') return price > 500000;
-                    return true;
+                    if (priorityPrice === '>500000') return price > 500000;
+                    return price === Number(priorityPrice);
                 });
             }
 
