@@ -24907,10 +24907,21 @@
                 });
             }
 
-            if (sortPrice === 'asc') {
-                sorted.sort((a, b) => (Number(a.monthly) || 0) - (Number(b.monthly) || 0));
-            } else if (sortPrice === 'desc') {
-                sorted.sort((a, b) => (Number(b.monthly) || 0) - (Number(a.monthly) || 0));
+            if (sortPrice === 'asc' || sortPrice === 'desc') {
+                const getSortVal = (item) => {
+                    const isFree = !item.monthly || Number(item.monthly) === 0;
+                    if (isFree) {
+                        let p = Number(item.price || 0);
+                        if (p === 33500) return 170000;
+                        return p;
+                    }
+                    return Number(item.monthly);
+                };
+                if (sortPrice === 'asc') {
+                    sorted.sort((a, b) => getSortVal(a) - getSortVal(b));
+                } else if (sortPrice === 'desc') {
+                    sorted.sort((a, b) => getSortVal(b) - getSortVal(a));
+                }
             }
 
             if (priorityTag !== null && priorityTag !== 'pinned') {
