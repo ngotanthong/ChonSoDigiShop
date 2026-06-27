@@ -24884,11 +24884,16 @@
         }
 
         function applySort() {
-            let sorted = [...currentData];
+            let sorted;
+            if (priorityTag === 'pinned') {
+                sorted = Object.values(pinnedSims).filter(item => !item._sold);
+            } else {
+                sorted = [...currentData];
+            }
 
             if (priorityPrefix !== null) {
                 sorted = sorted.filter(item => {
-                    const formatNum = fmt(item.so_tb);
+                    const formatNum = fmt(item.so_tb || item.fNum || '');
                     return formatNum.startsWith(priorityPrefix);
                 });
             }
@@ -24908,15 +24913,10 @@
                 sorted.sort((a, b) => (Number(b.monthly) || 0) - (Number(a.monthly) || 0));
             }
 
-            if (priorityTag !== null) {
-                if (priorityTag === 'pinned') {
-                    // Lọc bỏ số đã bán (_sold === true) khỏi danh sách ghim
-                    sorted = Object.values(pinnedSims).filter(item => !item._sold);
-                } else {
-                    const matches = sorted.filter(item => (item.kieuso_name || '').replace(/^\d{3} /, '') === priorityTag);
-                    const others = sorted.filter(item => (item.kieuso_name || '').replace(/^\d{3} /, '') !== priorityTag);
-                    sorted = [...matches, ...others];
-                }
+            if (priorityTag !== null && priorityTag !== 'pinned') {
+                const matches = sorted.filter(item => (item.kieuso_name || '').replace(/^\d{3} /, '') === priorityTag);
+                const others = sorted.filter(item => (item.kieuso_name || '').replace(/^\d{3} /, '') !== priorityTag);
+                sorted = [...matches, ...others];
             }
             renderCards(sorted);
         }
@@ -24977,7 +24977,7 @@
         }
 
         async function autoCheckPinnedStatus() {
-            const pinnedItems = Object.values(pinnedSims);
+            const pinnedItems = Object.values(pinnedSims).filter(item => !item._sold);
             if (pinnedItems.length === 0) return;
 
             // Hiển thị loading trên container
@@ -24989,28 +24989,39 @@
             container.prepend(loadingDiv);
 
             const soldNums = [];
-            for (let i = 0; i < pinnedItems.length; i++) {
-                const item = pinnedItems[i];
-                try {
-                    const cleanNum = fmt(item.so_tb || item.fNum).replace(/\s+/g, '');
-                    const prefix3 = cleanNum.slice(0, 3);
-                    const prefixVNPT = '84' + prefix3.slice(1);
-                    const search7 = cleanNum.slice(3);
-                    const commitVal = item.monthly || 0;
-                    
-                    const res = await fetch(`${BASE}?search=${search7}&prefix=${prefixVNPT}&commit=${commitVal}`);
-                    const data = await res.json();
-                    
-                    if (data.errorCode === 0 && data.data && data.data.length > 0) {
-                        const found = data.data.some(d => fmt(d.so_tb).replace(/\s+/g, '') === cleanNum);
-                        if (!found) soldNums.push(cleanNum);
-                    } else {
-                        soldNums.push(cleanNum);
+            const checkTasks = [...pinnedItems];
+            const MAX_CONCURRENT = 10;
+            
+            async function checker() {
+                while (checkTasks.length > 0) {
+                    const item = checkTasks.shift();
+                    try {
+                        const cleanNum = fmt(item.so_tb || item.fNum).replace(/\s+/g, '');
+                        const prefix3 = cleanNum.slice(0, 3);
+                        const prefixVNPT = '84' + prefix3.slice(1);
+                        const search7 = cleanNum.slice(3);
+                        const commitVal = item.monthly || 0;
+                        
+                        const res = await fetch(`${BASE}?search=${search7}&prefix=${prefixVNPT}&commit=${commitVal}`);
+                        const data = await res.json();
+                        
+                        if (data.errorCode === 0 && data.data && data.data.length > 0) {
+                            const found = data.data.some(d => fmt(d.so_tb).replace(/\s+/g, '') === cleanNum);
+                            if (!found) soldNums.push(cleanNum);
+                        } else {
+                            soldNums.push(cleanNum);
+                        }
+                    } catch(e) {
+                        console.error("Lỗi check tồn kho:", e);
                     }
-                } catch(e) {
-                    console.error("Lỗi check tồn kho:", e);
                 }
             }
+
+            const workers = [];
+            for (let i = 0; i < MAX_CONCURRENT; i++) {
+                workers.push(checker());
+            }
+            await Promise.all(workers);
 
             // Đánh dấu số đã bán
             soldNums.forEach(num => {
