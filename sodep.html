@@ -2524,12 +2524,14 @@
 
             const midSet = new Set(midPool.map(x => x.fNum));
 
-            // 3) 2 dòng cuối: random từ số còn lại
+            // 3) Dòng cuối: random từ số còn lại để lấp đầy bảng in (đảm bảo đủ số lượng)
             const randPool = remaining.filter(x => !midSet.has(x.fNum));
             const shuffled = [...randPool].sort(() => Math.random() - 0.5);
-            const lastRows2 = shuffled.slice(0, 8);
+            
+            const neededForLastRows = Math.max(0, limit - top4.length - midPool.length);
+            const lastRows = shuffled.slice(0, neededForLastRows);
 
-            const selectedForPrint = [...top4, ...midPool, ...lastRows2].slice(0, limit);
+            const selectedForPrint = [...top4, ...midPool, ...lastRows].slice(0, limit);
 
             // --- Render HTML ---
             const renderItem = (item) => {
