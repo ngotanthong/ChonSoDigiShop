@@ -961,10 +961,10 @@
         }
 
         #jpgExportArea {
-            width: 1080px;
-            height: 1440px;
+            width: 1240px;
+            height: 1754px;
             background: #ffffff;
-            padding: 50px 60px;
+            padding: 40px 50px;
             font-family: 'Inter', Arial, sans-serif;
             color: #000000;
             margin: 0 auto;
@@ -2497,13 +2497,16 @@
             const showTag = document.getElementById('printShowTag').checked;
             const showContact = document.getElementById('printShowContact').checked;
 
-            // Header + footer nhỏ hơn -> chứa thêm được 2 dòng so với trước
+            // Tính số dòng theo từng tổ hợp tuỳ chọn:
+            // Khung A4 1240x1754px, nội dung thực = 1754 - padding 80px = 1674px
+            // Header chiếm ~70px, footer~60px, mỗi dòng có tag~115px, không tag~95px
+            // Base (có header, không footer, có tag): 12 dòng
             let rows = 12;
-            if (showTag) rows -= 1;
-            if (showContact) rows -= 1;
+            if (!showTag) rows += 1;     // Không tag → mỗi card nhỏ hơn, chứa thêm 1 dòng
+            if (showContact) rows -= 1;  // Footer liên hệ chiếm thêm chỗ
             const limit = rows * 4;
 
-            // --- Xây dựng bố cục mới ---
+            // --- Xây dựng bố cục ---
             const allData = currentExportData;
             if (!allData || allData.length === 0) return;
 
@@ -2520,14 +2523,12 @@
                 if (!catMap[cat]) catMap[cat] = [];
                 catMap[cat].push(item);
             });
-            // Sắp điểm cao nhất trong mỗi nhóm
             for (let k in catMap) catMap[k].sort((a, b) => (b.ai ? b.ai.score : 0) - (a.ai ? a.ai.score : 0));
 
-            // Số dòng giữa = tổng dòng - 1 (đầu) - 2 (cuối)
+            // Dòng giữa = tổng dòng - 1 (đầu) - 2 (cuối)
             const midRows = Math.max(0, rows - 3);
-            const midSlots = midRows * 4; // 4 thẻ mỗi dòng
+            const midSlots = midRows * 4;
 
-            // Lấy luân phiên: mỗi vòng lấy số điểm cao nhất còn lại của từng nhóm
             const catKeys = Object.keys(catMap);
             const midPool = [];
             const catIndexes = {};
@@ -2547,11 +2548,9 @@
                 if (!added) break;
             }
 
-            // Sắp xếp midPool thành từng dòng 4 thẻ - mỗi dòng là số điểm cao nhất của 4 nhóm khác nhau
-            // (đã xen kẽ nhóm rồi nên giữ nguyên thứ tự)
             const midSet = new Set(midPool.map(x => x.fNum));
 
-            // 3) 2 dòng cuối: random từ những số còn lại chưa chọn
+            // 3) 2 dòng cuối: random từ số còn lại
             const randPool = remaining.filter(x => !midSet.has(x.fNum));
             const shuffled = [...randPool].sort(() => Math.random() - 0.5);
             const lastRows2 = shuffled.slice(0, 8);
@@ -2584,7 +2583,7 @@
             };
 
             let html = `
-            <div id="jpgExportArea" style="zoom: 0.65; margin: 0 auto;">
+            <div id="jpgExportArea" style="zoom: 0.57; margin: 0 auto;">
                 <div class="print-header">
                     <h2>DANH SÁCH SIM SỐ</h2>
                     <p>Ngày cập nhật: ${new Date().toLocaleDateString('vi-VN')}</p>
@@ -2616,15 +2615,14 @@
             toast.classList.add('show');
 
             try {
-                // Tạo một bản sao để chụp ảnh (ẩn khỏi màn hình nhưng vẫn render được)
                 const exportClone = jpgArea.cloneNode(true);
                 exportClone.style.transform = 'scale(1)';
-                exportClone.style.zoom = '1'; // Phóng to 100% để nét
+                exportClone.style.zoom = '1';
                 exportClone.style.position = 'absolute';
                 exportClone.style.top = '-9999px';
                 exportClone.style.left = '0';
-                exportClone.style.width = '1080px';
-                exportClone.style.height = '1440px';
+                exportClone.style.width = '1240px';
+                exportClone.style.height = '1754px';
                 exportClone.style.overflow = 'hidden';
                 document.body.appendChild(exportClone);
 
@@ -2632,8 +2630,8 @@
                     scale: 1,
                     useCORS: true,
                     backgroundColor: "#ffffff",
-                    width: 1080,
-                    height: 1440,
+                    width: 1240,
+                    height: 1754,
                     logging: false
                 });
 
