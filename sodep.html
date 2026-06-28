@@ -2527,25 +2527,40 @@
 
             // Dòng giữa = tổng dòng - 1 (đầu) - 2 (cuối)
             const midRows = Math.max(0, rows - 3);
-            const midSlots = midRows * 4;
 
-            const catKeys = Object.keys(catMap);
+            // Mỗi dòng giữa = 4 số cùng loại tag, luân phiên từng loại
+            // Sắp xếp categories theo điểm cao nhất của nhóm đó (nhóm xịn lên trước)
+            const catKeys = Object.keys(catMap).sort((a, b) => {
+                const scoreA = catMap[a][0] && catMap[a][0].ai ? catMap[a][0].ai.score : 0;
+                const scoreB = catMap[b][0] && catMap[b][0].ai ? catMap[b][0].ai.score : 0;
+                return scoreB - scoreA;
+            });
+
             const midPool = [];
-            const catIndexes = {};
-            catKeys.forEach(k => catIndexes[k] = 0);
+            const catUsed = {};
+            catKeys.forEach(k => catUsed[k] = 0);
 
-            while (midPool.length < midSlots) {
-                let added = false;
-                for (let k of catKeys) {
-                    if (midPool.length >= midSlots) break;
-                    const idx = catIndexes[k];
-                    if (idx < catMap[k].length) {
-                        midPool.push(catMap[k][idx]);
-                        catIndexes[k]++;
-                        added = true;
+            let catIdx = 0;
+            for (let row = 0; row < midRows; row++) {
+                // Tìm category tiếp theo còn đủ ít nhất 1 số
+                let found = false;
+                let attempts = 0;
+                while (attempts < catKeys.length) {
+                    const cat = catKeys[catIdx % catKeys.length];
+                    const startIdx = catUsed[cat];
+                    if (startIdx < catMap[cat].length) {
+                        // Lấy tối đa 4 số từ category này cho 1 dòng
+                        const rowItems = catMap[cat].slice(startIdx, startIdx + 4);
+                        midPool.push(...rowItems);
+                        catUsed[cat] += rowItems.length;
+                        catIdx++;
+                        found = true;
+                        break;
                     }
+                    catIdx++;
+                    attempts++;
                 }
-                if (!added) break;
+                if (!found) break;
             }
 
             const midSet = new Set(midPool.map(x => x.fNum));
