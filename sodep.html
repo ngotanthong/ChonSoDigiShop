@@ -1631,38 +1631,20 @@
         function handleAutoReloadToggle() {
             const isChecked = document.getElementById('toggleAutoReload').checked;
             if (isChecked) {
-                // Tạo Web Worker inline để timer không bị trình duyệt đóng băng khi ẩn tab
-                if (bgWorker) bgWorker.terminate();
-                const workerCode = `
-                    let timerId = null;
-                    self.onmessage = function(e) {
-                        if (e.data === 'start') {
-                            if (timerId) clearInterval(timerId);
-                            self.postMessage('tick'); // Chạy ngay lần đầu tiên
-                            timerId = setInterval(() => self.postMessage('tick'), 600000);
-                        } else if (e.data === 'stop') {
-                            if (timerId) clearInterval(timerId);
-                            timerId = null;
-                        }
-                    };
-                `;
-                const blob = new Blob([workerCode], { type: 'application/javascript' });
-                bgWorker = new Worker(URL.createObjectURL(blob));
-                bgWorker.onmessage = function(e) {
-                    if (e.data === 'tick') {
-                        silentAutoScan();
-                    }
-                };
-                bgWorker.postMessage('start');
+                // Trình duyệt có thể giới hạn setTimeout khi ẩn tab,
+                // nhưng với file:// ta không dùng Web Worker (gây lỗi SecurityError)
+                autoReloadInterval = setInterval(silentAutoScan, 600000); // 10 phút
+                
+                // Chạy ngay lần đầu
+                silentAutoScan();
 
                 const toast = document.getElementById('toast');
                 if (toast) {
-                    toast.querySelector('span').textContent = 'Đã bật tự động quét ngầm (10 phút/lần, chạy cả khi ẩn tab)';
+                    toast.querySelector('span').textContent = 'Đã bật tự động lấy số mới ngầm (10 phút/lần)';
                     toast.classList.add('show');
                     setTimeout(() => toast.classList.remove('show'), 3000);
                 }
             } else {
-                if (bgWorker) { bgWorker.postMessage('stop'); bgWorker.terminate(); bgWorker = null; }
                 if (autoReloadInterval) clearInterval(autoReloadInterval);
                 autoReloadInterval = null;
 
@@ -1866,62 +1848,32 @@
             // Xáo trộn toàn bộ các yêu cầu để thanh tiến trình hiện đều các đầu số
             const tasks = localShuffle(rawTasks);
 
-            // Thay vì dùng worker async thường (bị nghẽn khi ẩn tab), dùng Web Worker thực thụ
-            const workerCode = `
-                self.onmessage = async function(e) {
-                    const { tasks, baseUrl, concurrency } = e.data;
-                    let completedRequests = 0;
-                    const totalRequests = tasks.length;
+            const totalRequests = tasks.length;
+            let completedRequests = 0;
+            const CONCURRENCY = 15; // Gọi song song 15 request
 
-                    async function fetchWorker() {
-                        while (tasks.length > 0) {
-                            const { pref, c, search } = tasks.shift();
-                            const url = \`\${baseUrl}?search=\${encodeURIComponent(search)}&prefix=\${pref}&commit=\${c}\`;
-                            
-                            let freshData = [];
-                            try {
-                                const res = await fetch(url);
-                                const json = await res.json();
-                                if (json.errorCode === 0 && json.data) {
-                                    freshData = json.data;
-                                }
-                            } catch (e) {}
-                            
-                            completedRequests++;
-                            self.postMessage({ 
-                                type: 'progress', 
-                                data: freshData, 
-                                completedRequests, 
-                                totalRequests, 
-                                pref, 
-                                c 
-                            });
-                        }
-                    }
+            async function fetchWorker() {
+                while (tasks.length > 0) {
+                    const { pref, c, search } = tasks.shift();
+                    const url = `${BASE_API}?search=${encodeURIComponent(search)}&prefix=${pref}&commit=${c}`;
 
-                    const workers = [];
-                    for (let i = 0; i < concurrency; i++) workers.push(fetchWorker());
-                    await Promise.all(workers);
-                    
-                    self.postMessage({ type: 'done' });
-                };
-            `;
-            
-            const blob = new Blob([workerCode], { type: 'application/javascript' });
-            const fetchEngine = new Worker(URL.createObjectURL(blob));
-
-            fetchEngine.onmessage = function(e) {
-                if (e.data.type === 'progress') {
-                    const { data, completedRequests, totalRequests, pref, c } = e.data;
-                    
-                    if (data && data.length > 0) {
-                        rawData = rawData.concat(data);
-                    }
-                    
                     statusTxt.textContent = `Đang quét: ${completedRequests}/${totalRequests} (Phân tích 0${pref.slice(2)} - ${c === '0' ? 'Trả trước 0đ' : (c / 1000 + 'k cam kết')})`;
+
+                    try {
+                        const res = await fetch(url);
+                        const json = await res.json();
+                        if (json.errorCode === 0 && json.data) {
+                            rawData = rawData.concat(json.data);
+                        }
+                    } catch (e) {
+                        console.error("Fetch error:", url);
+                    }
+
+                    completedRequests++;
                     progBar.style.width = `${(completedRequests / totalRequests) * 100}%`;
 
-                    if (completedRequests === 40 || completedRequests === 100 || completedRequests === 160 || completedRequests === 220) {
+                    // Cập nhật UI theo từng mốc nhỏ
+                    if (completedRequests === 40 || completedRequests === 100 || completedRequests === 160 || completedRequests === 250) {
                         processAIScores();
                         if (scoredData.length > 0) {
                             if (toolbar) toolbar.style.display = 'flex';
@@ -1929,43 +1881,40 @@
                             renderResults();
                         }
                     }
-                } else if (e.data.type === 'done') {
-                    fetchEngine.terminate();
-                    
-                    statusTxt.textContent = 'Đang dùng AI chấm điểm số đẹp...';
-                    processAIScores();
-
-                    if (scoredData.length > 0) {
-                        if (toolbar) toolbar.style.display = 'flex';
-                        renderResults();
-                    } else {
-                        document.getElementById('emptyState').style.display = 'block';
-                        document.getElementById('emptyState').querySelector('p').textContent = 'Không tìm thấy số nào đạt tiêu chuẩn đẹp trong tầm giá này.';
-                    }
-
-                    statusTxt.textContent = `Hoàn tất! Đã tìm thấy ${scoredData.length} số đẹp xuất sắc.`;
-                    setTimeout(() => {
-                        progCont.style.display = 'none';
-                        statusTxt.style.display = 'none';
-                    }, 3000);
-
-                    updateLastFetchTime();
-                    
-                    btnScan.disabled = false;
-                    btnScan.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg> QUÉT LẠI (LÀM MỚI)';
                 }
-            };
+            }
 
-            fetchEngine.onerror = function(err) {
-                console.error("Worker error:", err);
+            try {
+                const workers = [];
+                for (let i = 0; i < CONCURRENCY; i++) workers.push(fetchWorker());
+                await Promise.all(workers);
+
+                statusTxt.textContent = 'Đang dùng AI chấm điểm số đẹp...';
+                processAIScores();
+
+                if (scoredData.length > 0) {
+                    if (toolbar) toolbar.style.display = 'flex';
+                    renderResults();
+                } else {
+                    document.getElementById('emptyState').style.display = 'block';
+                    document.getElementById('emptyState').querySelector('p').textContent = 'Không tìm thấy số nào đạt tiêu chuẩn đẹp trong tầm giá này.';
+                }
+
+                statusTxt.textContent = `Hoàn tất! Đã tìm thấy ${scoredData.length} số đẹp xuất sắc.`;
+                setTimeout(() => {
+                    progCont.style.display = 'none';
+                    statusTxt.style.display = 'none';
+                }, 3000);
+
+                updateLastFetchTime();
+
+            } catch (err) {
+                console.error(err);
                 statusTxt.textContent = 'Có lỗi xảy ra khi quét API.';
+            } finally {
                 btnScan.disabled = false;
                 btnScan.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg> QUÉT LẠI (LÀM MỚI)';
-                fetchEngine.terminate();
-            };
-
-            // Bắt đầu chạy engine
-            fetchEngine.postMessage({ tasks, baseUrl: BASE_API, concurrency: CONCURRENCY });
+            }
         }
 
 
