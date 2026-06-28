@@ -1616,6 +1616,7 @@
 
         // --- AUTO SCAN ENGINE ---
         let autoReloadInterval = null;
+        let bgWorker = null; // Web Worker chạy ngầm không bị browser throttle
 
         function updateLastFetchTime() {
             const timeSpan = document.getElementById('lastUpdatedTime');
@@ -1630,22 +1631,43 @@
         function handleAutoReloadToggle() {
             const isChecked = document.getElementById('toggleAutoReload').checked;
             if (isChecked) {
-                // Chạy mỗi 10 phút (600.000 ms)
-                autoReloadInterval = setInterval(silentAutoScan, 600000);
+                // Tạo Web Worker inline để timer không bị trình duyệt đóng băng khi ẩn tab
+                if (bgWorker) bgWorker.terminate();
+                const workerCode = `
+                    let timerId = null;
+                    self.onmessage = function(e) {
+                        if (e.data === 'start') {
+                            if (timerId) clearInterval(timerId);
+                            timerId = setInterval(() => self.postMessage('tick'), 600000);
+                        } else if (e.data === 'stop') {
+                            if (timerId) clearInterval(timerId);
+                            timerId = null;
+                        }
+                    };
+                `;
+                const blob = new Blob([workerCode], { type: 'application/javascript' });
+                bgWorker = new Worker(URL.createObjectURL(blob));
+                bgWorker.onmessage = function(e) {
+                    if (e.data === 'tick') {
+                        silentAutoScan();
+                    }
+                };
+                bgWorker.postMessage('start');
 
                 const toast = document.getElementById('toast');
                 if (toast) {
-                    toast.querySelector('span').textContent = 'Đã bật tự động lấy số mới ngầm (10 phút/lần)';
+                    toast.querySelector('span').textContent = 'Đã bật tự động quét ngầm (10 phút/lần, chạy cả khi ẩn tab)';
                     toast.classList.add('show');
                     setTimeout(() => toast.classList.remove('show'), 3000);
                 }
             } else {
+                if (bgWorker) { bgWorker.postMessage('stop'); bgWorker.terminate(); bgWorker = null; }
                 if (autoReloadInterval) clearInterval(autoReloadInterval);
                 autoReloadInterval = null;
 
                 const toast = document.getElementById('toast');
                 if (toast) {
-                    toast.querySelector('span').textContent = 'Đã tắt tự động lấy số mới ngầm';
+                    toast.querySelector('span').textContent = 'Đã tắt tự động quét ngầm';
                     toast.classList.add('show');
                     setTimeout(() => toast.classList.remove('show'), 3000);
                 }
