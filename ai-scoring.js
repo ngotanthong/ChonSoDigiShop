@@ -443,11 +443,34 @@
                 }
             }
 
+            // --- Xử lý hiển thị Tag (giới hạn max 4 tag, ưu tiên ẩn tag phụ) ---
+            const lowPriorityTags = ["Nút 7", "Nút 8", "Nút 9", "Rẻ & Đẹp", "Rẻ & Siêu Đẹp", "Dễ Nhớ", "Siêu Dễ Nhớ"];
+            let finalReasons = [...reasons];
+            
+            if (finalReasons.length > 4) {
+                let keepTags = [];
+                let dropTags = [];
+                for (let tag of finalReasons) {
+                    if (lowPriorityTags.includes(tag)) {
+                        dropTags.push(tag);
+                    } else {
+                        keepTags.push(tag);
+                    }
+                }
+                
+                if (keepTags.length >= 4) {
+                    finalReasons = keepTags.slice(0, 4);
+                } else {
+                    const needed = 4 - keepTags.length;
+                    finalReasons = keepTags.concat(dropTags.slice(0, needed));
+                }
+            }
+
             return {
                 score: score,
                 categories: categories,
-                reasonsArr: reasons,
-                reasonText: reasons.join(' + ') || 'Phong Thủy Khá',
+                reasonsArr: finalReasons, // Mảng tag đã được rút gọn
+                reasonText: finalReasons.join(' + ') || 'Phong Thủy Khá',
                 highlight: highlight
             };
         }
