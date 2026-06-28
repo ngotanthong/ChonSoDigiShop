@@ -297,7 +297,11 @@
                 isLapCum = true;
             } else if (matchDongGiua3 && parseInt(matchDongGiua3[4]) >= parseInt(matchDongGiua3[2])) {
                 const diff = parseInt(matchDongGiua3[4]) - parseInt(matchDongGiua3[2]);
-                score += diff > 0 ? 35 : 25;
+                let point = 25; // Đồng Kẹp Bằng
+                if (diff === 1) point = 50; // Tiến liền kề (rất đẹp, VD: 647 657)
+                else if (diff > 1) point = 35; // Tiến bước nhảy xa
+                
+                score += point;
                 reasons.push(diff > 0 ? 'Đồng Kẹp Tiến' : 'Đồng Kẹp Bằng');
                 categories.push('denho', 'solap');
                 highlight = numStr.slice(-6);
