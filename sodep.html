@@ -1638,6 +1638,7 @@
                     self.onmessage = function(e) {
                         if (e.data === 'start') {
                             if (timerId) clearInterval(timerId);
+                            self.postMessage('tick'); // Chạy ngay lần đầu tiên
                             timerId = setInterval(() => self.postMessage('tick'), 600000);
                         } else if (e.data === 'stop') {
                             if (timerId) clearInterval(timerId);
