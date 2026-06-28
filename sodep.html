@@ -2498,11 +2498,10 @@
             const showContact = document.getElementById('printShowContact').checked;
 
             // Tính số dòng theo từng tổ hợp tuỳ chọn:
-            // Khung A4 1240x1754px, nội dung thực = 1754 - padding 80px = 1674px
-            // Header chiếm ~70px, footer~60px, mỗi dòng có tag~115px, không tag~95px
-            // Base (có header, không footer, có tag): 12 dòng
-            let rows = 12;
-            if (!showTag) rows += 1;     // Không tag → mỗi card nhỏ hơn, chứa thêm 1 dòng
+            // Khung A4 1240x1754px, padding 80px, header ~70px, footer ~60px
+            // Mỗi dòng có tag ~130px, không tag ~95px
+            // Có tag: base 10 dòng | Không tag: base 12 dòng
+            let rows = showTag ? 10 : 12;
             if (showContact) rows -= 1;  // Footer liên hệ chiếm thêm chỗ
             const limit = rows * 4;
 
