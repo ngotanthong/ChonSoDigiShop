@@ -2063,7 +2063,24 @@
             }
 
             let dotIndexes = [];
-            if (/^(\d{4})\d{2}\1$/.test(numStr)) { // Đầu đuôi tương phùng 4 số (VD: 0886 12 0886)
+            
+            // Ưu tiên hiển thị cho Lặp Cụm 4 (8 số) và Lặp Cụm (6 số) lên hàng đầu
+            const isLapCum4 = matchStr && matchStr.length === 8 && numStr.endsWith(matchStr) && (
+                /(\d)(\d{3})(\d)\2$/.test(matchStr) || 
+                /(\d{3})(\d)\1(\d)$/.test(matchStr)
+            );
+            
+            const isLapCum = matchStr && matchStr.length === 6 && numStr.endsWith(matchStr) && (
+                /(\d)(\d{2})(\d)\2$/.test(matchStr) || 
+                /(\d{2})(\d)\1(\d)$/.test(matchStr) || 
+                /(\d)(\d)(\d)\1(\d)\3$/.test(matchStr)
+            );
+
+            if (isLapCum4) {
+                dotIndexes = [2, 6]; // Nhịp 2-4-4
+            } else if (isLapCum) {
+                dotIndexes = [4, 7]; // Nhịp 4-3-3
+            } else if (/^(\d{4})\d{2}\1$/.test(numStr)) { // Đầu đuôi tương phùng 4 số (VD: 0886 12 0886)
                 dotIndexes = [4, 6]; // Chia nhịp 4-2-4
             } else if (/(\d{3})\1$/.test(numStr) || /(\d)(79|39|68|86|38|78)(\d)\2$/.test(numStr)) { // Taxi 3 cụm ABC ABC hoặc Taxi biến thể (VD: 0812 078 778)
                 dotIndexes = [4, 7]; // Chia nhịp 4-3-3
@@ -2109,17 +2126,6 @@
                 const isGanhKep = matchStr.length === 6 && matchStr[0] === matchStr[2] && matchStr[0] !== matchStr[1] && matchStr[3] === matchStr[5] && matchStr[3] !== matchStr[4]; // ABA+ABA
                 const isCaptien3Bac = matchStr.length === 6 && (() => { const p1 = parseInt(matchStr.slice(0, 2)), p2 = parseInt(matchStr.slice(2, 4)), p3 = parseInt(matchStr.slice(4, 6)); return (p2 - p1) > 0 && (p2 - p1) <= 20 && (p2 - p1) === (p3 - p2); })();
                 
-                const isLapCum = matchStr.length === 6 && (
-                    /(\d)(\d{2})(\d)\2$/.test(matchStr) || // Đồng đuôi
-                    /(\d{2})(\d)\1(\d)$/.test(matchStr) || // Đồng đầu
-                    /(\d)(\d)(\d)\1(\d)\3$/.test(matchStr) // Đồng kẹp
-                );
-                
-                const isLapCum4 = matchStr.length === 8 && (
-                    /(\d)(\d{3})(\d)\2$/.test(matchStr) || // Đồng đuôi 4 số
-                    /(\d{3})(\d)\1(\d)$/.test(matchStr)    // Đồng đầu 4 số
-                );
-
                 if (matchStr.length === 3 && isSanh) {
                     dotIndexes = [3, 5, 7]; // Sảnh 3 số cuối: nhịp 3-2-2-3
                 } else if (matchStr.length === 5 && isSanh) {
@@ -2128,10 +2134,6 @@
                     dotIndexes = [4, 6, 8]; // Cặp Tiến 3 Bậc: nhịp 4-2-2-2 (VD: 0912 50 60 70)
                 } else if (isGanhKep) {
                     dotIndexes = [4, 7]; // Gánh Kép: nhịp 4-3-3 (VD: 0812 323 262)
-                } else if (isLapCum) {
-                    dotIndexes = [4, 7]; // Lặp Cụm 6 số: nhịp 4-3-3 (VD: 0914 665 667)
-                } else if (isLapCum4) {
-                    dotIndexes = [2, 6]; // Lặp Cụm 8 số: nhịp 2-4-4 (VD: 09 1999 2999)
                 } else if (isGanh3 || isGanh4) {
                     dotIndexes = [4, 7]; // Gánh ABA/ABBA: nhịp 4-3-3 (VD: 0911 056 070)
                 } else {
