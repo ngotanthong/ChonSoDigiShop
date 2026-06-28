@@ -1061,24 +1061,24 @@
 
         #jpgExportArea .print-header {
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 16px;
         }
 
         #jpgExportArea .print-header h2 {
             color: #000000;
-            font-size: 48px;
+            font-size: 32px;
             font-weight: 900;
-            margin: 0 0 16px 0;
+            margin: 0 0 6px 0;
             text-transform: uppercase;
             letter-spacing: 2px;
             display: inline-block;
-            border-bottom: 4px solid #000000;
-            padding-bottom: 8px;
+            border-bottom: 3px solid #000000;
+            padding-bottom: 4px;
         }
 
         #jpgExportArea .print-header p {
             color: #000000;
-            font-size: 22px;
+            font-size: 16px;
             font-weight: 700;
             margin: 0;
             display: block;
@@ -1086,20 +1086,20 @@
 
         #jpgExportArea .print-footer-container {
             text-align: center;
-            margin-top: 30px;
-            margin-bottom: 10px;
+            margin-top: 14px;
+            margin-bottom: 6px;
         }
 
         #jpgExportArea .print-footer {
             background: #ffffff;
             color: #000000;
-            padding: 18px 50px;
+            padding: 10px 32px;
             border-radius: 50px;
-            font-size: 30px;
+            font-size: 22px;
             font-weight: 900;
             display: inline-block;
             letter-spacing: 2px;
-            border: 4px solid #000000;
+            border: 3px solid #000000;
             text-transform: uppercase;
         }
 
@@ -2497,25 +2497,69 @@
             const showTag = document.getElementById('printShowTag').checked;
             const showContact = document.getElementById('printShowContact').checked;
 
-            // Tổng dung lượng không gian là 10 dòng
-            let rows = 10;
-            if (showTag) rows -= 1;     // Thẻ có tag cao hơn nên chiếm mất 1 dòng
-            if (showContact) rows -= 1; // Footer liên hệ chiếm 1 dòng
+            // Header + footer nhỏ hơn -> chứa thêm được 2 dòng so với trước
+            let rows = 12;
+            if (showTag) rows -= 1;
+            if (showContact) rows -= 1;
+            const limit = rows * 4;
 
-            let limit = rows * 4; // 4 thẻ mỗi dòng
+            // --- Xây dựng bố cục mới ---
+            const allData = currentExportData;
+            if (!allData || allData.length === 0) return;
 
-            const selectedForPrint = currentExportData.slice(0, limit);
+            // 1) Dòng đầu: Top 4 điểm AI cao nhất
+            const sorted = [...allData].sort((a, b) => (b.ai ? b.ai.score : 0) - (a.ai ? a.ai.score : 0));
+            const top4 = sorted.slice(0, 4);
+            const top4Set = new Set(top4.map(x => x.fNum));
 
-            let html = `
-            <div id="jpgExportArea" style="zoom: 0.65; margin: 0 auto;">
-                <div class="print-header">
-                    <h2>DANH SÁCH SIM SỐ</h2>
-                    <p>Ngày cập nhật: ${new Date().toLocaleDateString('vi-VN')}</p>
-                </div>
-                <div class="print-grid">
-            `;
+            // 2) Phần còn lại gom nhóm theo tag đầu tiên
+            const remaining = allData.filter(x => !top4Set.has(x.fNum));
+            const catMap = {};
+            remaining.forEach(item => {
+                const cat = (item.ai && item.ai.reasonsArr && item.ai.reasonsArr[0]) ? item.ai.reasonsArr[0] : (item.kieuso_name || 'Khác');
+                if (!catMap[cat]) catMap[cat] = [];
+                catMap[cat].push(item);
+            });
+            // Sắp điểm cao nhất trong mỗi nhóm
+            for (let k in catMap) catMap[k].sort((a, b) => (b.ai ? b.ai.score : 0) - (a.ai ? a.ai.score : 0));
 
-            selectedForPrint.forEach(item => {
+            // Số dòng giữa = tổng dòng - 1 (đầu) - 2 (cuối)
+            const midRows = Math.max(0, rows - 3);
+            const midSlots = midRows * 4; // 4 thẻ mỗi dòng
+
+            // Lấy luân phiên: mỗi vòng lấy số điểm cao nhất còn lại của từng nhóm
+            const catKeys = Object.keys(catMap);
+            const midPool = [];
+            const catIndexes = {};
+            catKeys.forEach(k => catIndexes[k] = 0);
+
+            while (midPool.length < midSlots) {
+                let added = false;
+                for (let k of catKeys) {
+                    if (midPool.length >= midSlots) break;
+                    const idx = catIndexes[k];
+                    if (idx < catMap[k].length) {
+                        midPool.push(catMap[k][idx]);
+                        catIndexes[k]++;
+                        added = true;
+                    }
+                }
+                if (!added) break;
+            }
+
+            // Sắp xếp midPool thành từng dòng 4 thẻ - mỗi dòng là số điểm cao nhất của 4 nhóm khác nhau
+            // (đã xen kẽ nhóm rồi nên giữ nguyên thứ tự)
+            const midSet = new Set(midPool.map(x => x.fNum));
+
+            // 3) 2 dòng cuối: random từ những số còn lại chưa chọn
+            const randPool = remaining.filter(x => !midSet.has(x.fNum));
+            const shuffled = [...randPool].sort(() => Math.random() - 0.5);
+            const lastRows2 = shuffled.slice(0, 8);
+
+            const selectedForPrint = [...top4, ...midPool, ...lastRows2].slice(0, limit);
+
+            // --- Render HTML ---
+            const renderItem = (item) => {
                 const formatNum = highlightHTML(item.fNum, item.ai ? item.ai.highlight : '');
                 const price = Number(item.monthly) || 0;
 
@@ -2533,22 +2577,22 @@
                     infoHtml = `<div class="p-info">Trả trước</div>`;
                 } else {
                     const commitVal = (item.commitment && item.commitment > 0) ? `${item.commitment}T` : 'Không';
-                    infoHtml = `
-                        <div class="p-info-grid">
-                            <div class="p-col"><strong>${price / 1000}k</strong></div>
-                            <div class="p-col"><strong>${commitVal}</strong></div>
-                        </div>
-                    `;
+                    infoHtml = `<div class="p-info-grid"><div class="p-col"><strong>${price / 1000}k</strong></div><div class="p-col"><strong>${commitVal}</strong></div></div>`;
                 }
 
-                html += `
-                    <div class="print-item">
-                        <div class="p-num">${formatNum}</div>
-                        ${tagsHtml}
-                        ${infoHtml}
-                    </div>
-                `;
-            });
+                return `<div class="print-item"><div class="p-num">${formatNum}</div>${tagsHtml}${infoHtml}</div>`;
+            };
+
+            let html = `
+            <div id="jpgExportArea" style="zoom: 0.65; margin: 0 auto;">
+                <div class="print-header">
+                    <h2>DANH SÁCH SIM SỐ</h2>
+                    <p>Ngày cập nhật: ${new Date().toLocaleDateString('vi-VN')}</p>
+                </div>
+                <div class="print-grid">
+            `;
+
+            selectedForPrint.forEach(item => { html += renderItem(item); });
 
             html += `</div>`;
 
