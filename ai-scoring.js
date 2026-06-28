@@ -295,10 +295,10 @@
                 categories.push('denho', 'solap');
                 highlight = numStr.slice(-6);
                 isLapCum = true;
-            } else if (matchDongGiua3 && matchDongGiua3[2] !== matchDongGiua3[4]) {
+            } else if (matchDongGiua3 && parseInt(matchDongGiua3[4]) >= parseInt(matchDongGiua3[2])) {
                 const diff = parseInt(matchDongGiua3[4]) - parseInt(matchDongGiua3[2]);
                 score += diff > 0 ? 35 : 25;
-                reasons.push(diff > 0 ? 'Đồng Kẹp Tiến' : 'Đồng Kẹp');
+                reasons.push(diff > 0 ? 'Đồng Kẹp Tiến' : 'Đồng Kẹp Bằng');
                 categories.push('denho', 'solap');
                 highlight = numStr.slice(-6);
                 isLapCum = true;
