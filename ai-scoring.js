@@ -399,7 +399,6 @@
 
 
             // 11. Đầu Đuôi Tương Phùng
-            const prefix3 = numStr.slice(0, 3);
             const prefix4 = numStr.slice(0, 4);
 
             if (numStr.endsWith(prefix4)) {
@@ -407,11 +406,6 @@
                 categories.push('denho');
                 reasons.push('Đầu Đuôi Tương Phùng');
                 highlight = highlight || prefix4;
-            } else if (numStr.endsWith(prefix3)) {
-                score += 20;
-                categories.push('denho');
-                reasons.push('Đầu Đuôi Tương Phùng');
-                highlight = highlight || prefix3;
             }
 
             // 12. Độ bằng phẳng (Lộn xộn)
