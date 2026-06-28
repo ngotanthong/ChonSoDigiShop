@@ -255,8 +255,57 @@
                 highlight = highlight || numStr.slice(-3);
             }
 
+            // 10.4. Lặp Cụm (Đồng Đầu / Đồng Đuôi / Đồng Giữa) cho cụm 3 và cụm 4
+            let isLapCum = false;
+            
+            // Cụm 4 số (8 số cuối) - VD: 1999 2999, 5678 6678
+            const matchDongDuoi4 = numStr.match(/(\d)(\d{3})(\d)\2$/);
+            const matchDongDau4 = numStr.match(/(\d{3})(\d)\1(\d)$/);
+            
+            // Cụm 3 số (6 số cuối) - VD: 665 667, 395 495, 658 678
+            const matchDongDuoi3 = numStr.match(/(\d)(\d{2})(\d)\2$/);
+            const matchDongDau3 = numStr.match(/(\d{2})(\d)\1(\d)$/);
+            const matchDongGiua3 = numStr.match(/(\d)(\d)(\d)\1(\d)\3$/);
+            
+            if (matchDongDuoi4 && matchDongDuoi4[1] !== matchDongDuoi4[3]) {
+                const diff = parseInt(matchDongDuoi4[3]) - parseInt(matchDongDuoi4[1]);
+                score += diff > 0 ? 60 : 50;
+                reasons.push(diff > 0 ? 'Cụm 4 Tiến' : 'Lặp Cụm 4');
+                categories.push('denho', 'solap');
+                highlight = numStr.slice(-8);
+                isLapCum = true;
+            } else if (matchDongDau4 && matchDongDau4[2] !== matchDongDau4[3]) {
+                const diff = parseInt(matchDongDau4[3]) - parseInt(matchDongDau4[2]);
+                score += diff > 0 ? 60 : 50;
+                reasons.push(diff > 0 ? 'Cụm 4 Tiến' : 'Lặp Cụm 4');
+                categories.push('denho', 'solap');
+                highlight = numStr.slice(-8);
+                isLapCum = true;
+            } else if (matchDongDuoi3 && matchDongDuoi3[1] !== matchDongDuoi3[3]) {
+                const diff = parseInt(matchDongDuoi3[3]) - parseInt(matchDongDuoi3[1]);
+                score += diff > 0 ? 40 : 30;
+                reasons.push(diff > 0 ? 'Lặp Cụm Tiến' : 'Lặp Cụm');
+                categories.push('denho', 'solap');
+                highlight = numStr.slice(-6);
+                isLapCum = true;
+            } else if (matchDongDau3 && matchDongDau3[2] !== matchDongDau3[3]) {
+                const diff = parseInt(matchDongDau3[3]) - parseInt(matchDongDau3[2]);
+                score += diff > 0 ? 40 : 30;
+                reasons.push(diff > 0 ? 'Lặp Cụm Tiến' : 'Lặp Cụm');
+                categories.push('denho', 'solap');
+                highlight = numStr.slice(-6);
+                isLapCum = true;
+            } else if (matchDongGiua3 && matchDongGiua3[2] !== matchDongGiua3[4]) {
+                const diff = parseInt(matchDongGiua3[4]) - parseInt(matchDongGiua3[2]);
+                score += diff > 0 ? 35 : 25;
+                reasons.push(diff > 0 ? 'Đồng Kẹp Tiến' : 'Đồng Kẹp');
+                categories.push('denho', 'solap');
+                highlight = numStr.slice(-6);
+                isLapCum = true;
+            }
+
             // 10.5. Cặp Tiến nâng cao (phát hiện 2-3 cặp 2 số tiến đều)
-            {
+            if (!isLapCum) {
                 // Helper: kiểm tra 2 cặp số cuối có tạo thành cặp tiến không
                 const checkPairTien = (str) => {
                     if (str.length < 4) return null;
