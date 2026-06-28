@@ -267,28 +267,28 @@
             const matchDongDau3 = numStr.match(/(\d{2})(\d)\1(\d)$/);
             const matchDongGiua3 = numStr.match(/(\d)(\d)(\d)\1(\d)\3$/);
             
-            if (matchDongDuoi4 && matchDongDuoi4[1] !== matchDongDuoi4[3]) {
+            if (matchDongDuoi4 && parseInt(matchDongDuoi4[3]) >= parseInt(matchDongDuoi4[1])) {
                 const diff = parseInt(matchDongDuoi4[3]) - parseInt(matchDongDuoi4[1]);
                 score += diff > 0 ? 60 : 50;
                 reasons.push(diff > 0 ? 'Cụm 4 Tiến' : 'Lặp Cụm 4');
                 categories.push('denho', 'solap');
                 highlight = numStr.slice(-8);
                 isLapCum = true;
-            } else if (matchDongDau4 && matchDongDau4[2] !== matchDongDau4[3]) {
+            } else if (matchDongDau4 && parseInt(matchDongDau4[3]) >= parseInt(matchDongDau4[2])) {
                 const diff = parseInt(matchDongDau4[3]) - parseInt(matchDongDau4[2]);
                 score += diff > 0 ? 60 : 50;
                 reasons.push(diff > 0 ? 'Cụm 4 Tiến' : 'Lặp Cụm 4');
                 categories.push('denho', 'solap');
                 highlight = numStr.slice(-8);
                 isLapCum = true;
-            } else if (matchDongDuoi3 && matchDongDuoi3[1] !== matchDongDuoi3[3]) {
+            } else if (matchDongDuoi3 && parseInt(matchDongDuoi3[3]) >= parseInt(matchDongDuoi3[1])) {
                 const diff = parseInt(matchDongDuoi3[3]) - parseInt(matchDongDuoi3[1]);
                 score += diff > 0 ? 40 : 30;
                 reasons.push(diff > 0 ? 'Lặp Cụm Tiến' : 'Lặp Cụm');
                 categories.push('denho', 'solap');
                 highlight = numStr.slice(-6);
                 isLapCum = true;
-            } else if (matchDongDau3 && matchDongDau3[2] !== matchDongDau3[3]) {
+            } else if (matchDongDau3 && parseInt(matchDongDau3[3]) >= parseInt(matchDongDau3[2])) {
                 const diff = parseInt(matchDongDau3[3]) - parseInt(matchDongDau3[2]);
                 score += diff > 0 ? 40 : 30;
                 reasons.push(diff > 0 ? 'Lặp Cụm Tiến' : 'Lặp Cụm');
