@@ -2424,90 +2424,6 @@
                 return;
             }
 
-            function shuffle(array) {
-                let currentIndex = array.length, randomIndex;
-                while (currentIndex > 0) {
-                    randomIndex = Math.floor(Math.random() * currentIndex);
-                    currentIndex--;
-                    [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
-                }
-                return array;
-            }
-
-            let topData = [];
-
-            // Nếu ở tab "Tất cả", lấy ngẫu nhiên đa dạng loại số (categories), loại bỏ số cam kết 0đ
-            if (currentCategory === 'all') {
-                // Loại bỏ số cam kết 0đ khỏi bảng in (bảng in chỉ in số có cam kết giá rõ ràng)
-                const paidData = displayData.filter(item => !isFreeSim(item));
-                // Lấy 8 số có điểm cao nhất cố định ở đầu danh sách
-                let top8 = [...paidData].sort((a, b) => (b.ai ? b.ai.score : 0) - (a.ai ? a.ai.score : 0)).slice(0, 8);
-                let top8Set = new Set(top8.map(item => item.fNum));
-
-                const groups = {};
-                paidData.forEach(item => {
-                    if (top8Set.has(item.fNum)) return; // Bỏ qua các số đã lấy ở top 8
-                    const mainReason = (item.ai && item.ai.reasonsArr) ? (item.ai.reasonsArr[0] || 'Khác') : (item.kieuso_name || 'Khác');
-                    if (!groups[mainReason]) groups[mainReason] = [];
-                    groups[mainReason].push(item);
-                });
-
-                // Ưu tiên điểm cao trong mỗi nhóm
-                for (let key in groups) {
-                    groups[key].sort((a, b) => (b.ai ? b.ai.score : 0) - (a.ai ? a.ai.score : 0));
-                }
-
-                // Rút luân phiên mỗi nhóm để có sự đa dạng
-                let keys = Object.keys(groups);
-                let pool = [];
-                let i = 0;
-                let added = true;
-                while (added && pool.length < 150) {
-                    added = false;
-                    for (let key of keys) {
-                        if (groups[key].length > i) {
-                            pool.push(groups[key][i]);
-                            added = true;
-                        }
-                    }
-                    i++;
-                }
-
-                // Nối 8 số đầu với danh sách ngẫu nhiên đã xáo trộn
-                topData = top8.concat(shuffle(pool));
-            } else {
-                // Nếu ở 1 filter cụ thể, lấy đa dạng giá tiền
-                const priceGroups = {};
-                displayData.forEach(item => {
-                    const price = Number(item.monthly) || 0;
-                    if (!priceGroups[price]) priceGroups[price] = [];
-                    priceGroups[price].push(item);
-                });
-
-                // Ưu tiên điểm cao trong mỗi mức giá
-                for (let key in priceGroups) {
-                    priceGroups[key].sort((a, b) => (b.ai ? b.ai.score : 0) - (a.ai ? a.ai.score : 0));
-                }
-
-                let keys = Object.keys(priceGroups);
-                let pool = [];
-                let i = 0;
-                let added = true;
-                while (added && pool.length < 150) {
-                    added = false;
-                    for (let key of keys) {
-                        if (priceGroups[key].length > i) {
-                            pool.push(priceGroups[key][i]);
-                            added = true;
-                        }
-                    }
-                    i++;
-                }
-                topData = shuffle(pool);
-            }
-
-            currentExportData = topData; // Lưu toàn bộ danh sách đã trộn để dùng khi render
-
             document.getElementById('printOptionsModal').style.display = 'flex';
             renderPreview(); // Hiển thị preview ngay lập tức
         }
@@ -2517,15 +2433,36 @@
         }
 
         function renderPreview() {
+            // Luôn lấy dữ liệu mới nhất từ displayData (đã được quét ngầm bổ sung)
+            if (!displayData || displayData.length === 0) return;
+
+            function shuffle(arr) {
+                const a = [...arr];
+                for (let i = a.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [a[i], a[j]] = [a[j], a[i]];
+                }
+                return a;
+            }
+
+            // Chuẩn bị dữ liệu mới mỗi lần render
+            let sourceData;
+            if (currentCategory === 'all') {
+                sourceData = displayData.filter(item => !isFreeSim(item));
+            } else {
+                sourceData = [...displayData];
+            }
+            if (sourceData.length === 0) sourceData = [...displayData];
+
+            // Cập nhật currentExportData từ nguồn mới nhất
+            currentExportData = sourceData;
+
             const showTag = document.getElementById('printShowTag').checked;
             const showContact = document.getElementById('printShowContact').checked;
 
-            // Tính số dòng theo từng tổ hợp tuỳ chọn:
-            // Khung A4 1240x1754px, padding 80px, header ~70px, footer ~60px
-            // Mỗi dòng có tag ~130px, không tag ~95px
-            // Có tag: base 10 dòng | Không tag: base 12 dòng
+            // Tính số dòng theo từng tổ hợp tuỳ chọn
             let rows = showTag ? 10 : 12;
-            if (showContact) rows -= 1;  // Footer liên hệ chiếm thêm chỗ
+            if (showContact) rows -= 1;
             const limit = rows * 4;
 
             // --- Xây dựng bố cục ---
