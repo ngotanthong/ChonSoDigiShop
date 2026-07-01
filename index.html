@@ -24512,13 +24512,13 @@
 
     <!-- Floating Action Pill for Mobile -->
     <div class="mobile-actions-pill" id="mobileActionsPill">
-        <button onclick="scrollToSearch()" title="Tìm kiếm">
+        <button onclick="toggleLocalSearch()" title="Tìm trong kết quả">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                 stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="11" cy="11" r="8"></circle>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-            <span>Tìm kiếm</span>
+            <span>Tìm trong KQ</span>
         </button>
         <div class="divider"></div>
         <button onclick="copyAllNumbers()" id="btnCopyAllFloat" title="Sao chép">
@@ -25386,15 +25386,59 @@
             }
         });
 
-        // Smooth scroll to search box and focus search input
-        window.scrollToSearch = function () {
-            const searchBox = document.querySelector('.search-box');
-            if (searchBox) {
-                searchBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                setTimeout(() => {
-                    const searchInput = document.getElementById('search');
-                    if (searchInput) searchInput.focus();
-                }, 500);
+        // Floating Local Search (Filter in current DOM results)
+        window.toggleLocalSearch = function () {
+            let overlay = document.getElementById('localSearchOverlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'localSearchOverlay';
+                overlay.style.cssText = 'position:fixed; top:20px; left:50%; transform:translateX(-50%); background:white; padding:10px 15px; border-radius:30px; box-shadow:0 10px 30px rgba(0,0,0,0.2); z-index:99999; display:flex; align-items:center; gap:10px; width:90%; max-width:400px; border:2px solid var(--primary);';
+                
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.id = 'localSearchInput';
+                input.placeholder = 'Lọc tìm số đang hiển thị...';
+                input.style.cssText = 'border:none; outline:none; flex:1; height:30px; font-size:16px; padding-left:5px; background:transparent;';
+                
+                const closeBtn = document.createElement('button');
+                closeBtn.innerHTML = '&times;';
+                closeBtn.style.cssText = 'background:none; border:none; font-size:24px; cursor:pointer; padding:0 5px; color:#94a3b8; line-height:1;';
+                
+                overlay.appendChild(input);
+                overlay.appendChild(closeBtn);
+                document.body.appendChild(overlay);
+
+                input.addEventListener('input', function(e) {
+                    const searchStr = e.target.value.trim().toLowerCase();
+                    const cards = document.querySelectorAll('.sim-card');
+                    cards.forEach(card => {
+                        const numSpan = card.querySelector('.sim-number');
+                        if (numSpan) {
+                            // Extract just the number text
+                            const txt = numSpan.textContent.toLowerCase();
+                            if (txt.includes(searchStr)) {
+                                card.style.display = 'flex';
+                            } else {
+                                card.style.display = 'none';
+                            }
+                        }
+                    });
+                });
+
+                closeBtn.addEventListener('click', function() {
+                    overlay.style.display = 'none';
+                    input.value = '';
+                    document.querySelectorAll('.sim-card').forEach(c => c.style.display = 'flex');
+                });
+            }
+            
+            if (overlay.style.display === 'none' || overlay.style.display === '') {
+                overlay.style.display = 'flex';
+                setTimeout(() => document.getElementById('localSearchInput').focus(), 100);
+            } else {
+                overlay.style.display = 'none';
+                document.getElementById('localSearchInput').value = '';
+                document.querySelectorAll('.sim-card').forEach(c => c.style.display = 'flex');
             }
         };
 
