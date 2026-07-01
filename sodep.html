@@ -1363,33 +1363,28 @@
             if (isSendingTelegram || telegramQueue.length === 0) return;
             isSendingTelegram = true;
             
-            const token = window.TELEGRAM_BOT_TOKEN;
-            const chatId = window.TELEGRAM_CHAT_ID;
-            
             while(telegramQueue.length > 0) {
                 const simData = telegramQueue.shift();
-                if (token && chatId) {
-                    const price = simData.price ? (Number(simData.price).toLocaleString('vi-VN') + 'đ') : '0đ';
-                    const commit = simData.commitment ? (Number(simData.commitment).toLocaleString('vi-VN') + 'đ') : '0đ';
-                    const msg = `🔥 <b>PHÁT HIỆN SIM ĐIỂM CAO</b> 🔥\n📞 Số: <b>${simData.fNum}</b>\n🎯 Điểm: ${simData.ai.score}\n✨ Nét đẹp: ${simData.ai.reasonsArr.join(', ')}\n💸 Trả trước: ${price} - Cam kết: ${commit}/tháng\n🌐 Link: https://digishop.vnpt.vn/di-dong/sim-so`;
-                    
-                    const url = `https://api.telegram.org/bot${token}/sendMessage`;
-                    try {
-                        await fetch(url, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                chat_id: chatId,
-                                text: msg,
-                                parse_mode: 'HTML'
-                            })
-                        });
-                    } catch(e) {
-                        console.error("Lỗi gửi Telegram", e);
-                    }
+                const price = simData.price ? (Number(simData.price).toLocaleString('vi-VN') + 'đ') : '0đ';
+                const commit = simData.commitment ? (Number(simData.commitment).toLocaleString('vi-VN') + 'đ') : '0đ';
+                const msg = `🔥 <b>PHÁT HIỆN SIM ĐIỂM CAO</b> 🔥\n📞 Số: <b>${simData.fNum}</b>\n🎯 Điểm: ${simData.ai.score}\n✨ Nét đẹp: ${simData.ai.reasonsArr.join(', ')}\n💸 Trả trước: ${price} - Cam kết: ${commit}/tháng\n🌐 Link: https://digishop.vnpt.vn/di-dong/sim-so`;
+                
+                try {
+                    // Dùng no-cors để tránh lỗi CORS khi gọi Google Apps Script từ frontend tĩnh
+                    await fetch(`${GAS_API_URL}?action=sendTele`, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: {
+                            'Content-Type': 'text/plain;charset=utf-8',
+                        },
+                        body: JSON.stringify({ message: msg })
+                    });
+                } catch(e) {
+                    console.error("Lỗi gửi Telegram qua GAS", e);
                 }
-                // Chờ 1 giây giữa các tin nhắn để tránh bị block do rate limit của Telegram
-                await new Promise(r => setTimeout(r, 1000));
+                
+                // Chờ 1.5 giây giữa các tin nhắn để tránh bị Google/Telegram chặn
+                await new Promise(r => setTimeout(r, 1500));
             }
             
             isSendingTelegram = false;
