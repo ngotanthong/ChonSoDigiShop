@@ -1354,6 +1354,47 @@
         let currentCommitment = 'all';
         let pinnedSims = {};
 
+        // Hàng đợi gửi Telegram
+        const notifiedTelegramSims = new Set();
+        const telegramQueue = [];
+        let isSendingTelegram = false;
+
+        async function processTelegramQueue() {
+            if (isSendingTelegram || telegramQueue.length === 0) return;
+            isSendingTelegram = true;
+            
+            const token = window.TELEGRAM_BOT_TOKEN;
+            const chatId = window.TELEGRAM_CHAT_ID;
+            
+            while(telegramQueue.length > 0) {
+                const simData = telegramQueue.shift();
+                if (token && chatId) {
+                    const price = simData.price ? (Number(simData.price).toLocaleString('vi-VN') + 'đ') : '0đ';
+                    const commit = simData.commitment ? (Number(simData.commitment).toLocaleString('vi-VN') + 'đ') : '0đ';
+                    const msg = `🔥 <b>PHÁT HIỆN SIM ĐIỂM CAO</b> 🔥\n📞 Số: <b>${simData.fNum}</b>\n🎯 Điểm: ${simData.ai.score}\n✨ Nét đẹp: ${simData.ai.reasonsArr.join(', ')}\n💸 Trả trước: ${price} - Cam kết: ${commit}/tháng\n🌐 Link: https://digishop.vnpt.vn/di-dong/sim-so`;
+                    
+                    const url = `https://api.telegram.org/bot${token}/sendMessage`;
+                    try {
+                        await fetch(url, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                chat_id: chatId,
+                                text: msg,
+                                parse_mode: 'HTML'
+                            })
+                        });
+                    } catch(e) {
+                        console.error("Lỗi gửi Telegram", e);
+                    }
+                }
+                // Chờ 1 giây giữa các tin nhắn để tránh bị block do rate limit của Telegram
+                await new Promise(r => setTimeout(r, 1000));
+            }
+            
+            isSendingTelegram = false;
+        }
+
         // Sinh mã định danh thiết bị
         function generateUUID() {
             return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -1934,12 +1975,20 @@
                     const aiResult = analyzeSIM(fNum, item.monthly);
                     // Lọc theo điểm chuẩn
                     if (aiResult.score >= minScore) {
-                        uniqueSims.set(fNum, {
+                        const simData = {
                             ...item,
                             fNum: fNum,
                             ai: aiResult
-                        });
+                        };
+                        uniqueSims.set(fNum, simData);
                         aiResult.reasonsArr.forEach(r => allReasons.add(r));
+
+                        // Gửi thông báo Telegram nếu điểm >= 100
+                        if (aiResult.score >= 100 && !notifiedTelegramSims.has(fNum)) {
+                            notifiedTelegramSims.add(fNum);
+                            telegramQueue.push(simData);
+                            processTelegramQueue(); // Gây kích hoạt hàng đợi
+                        }
                     }
                 }
             });

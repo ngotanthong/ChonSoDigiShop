@@ -15,7 +15,8 @@ window.ALLOWED_USERS = {
     "iphonese": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b", // mật khẩu: 1
     "win": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b", // mật khẩu: 1
     "mac": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b", // mật khẩu: 1
-
-
-
 };
+
+// Cấu hình bot Telegram gửi thông báo khi có SIM điểm cao (>=100)
+window.TELEGRAM_BOT_TOKEN = ""; // Điền Bot Token ở đây (VD: 123456:ABC-DEF1234ghIkl...)
+window.TELEGRAM_CHAT_ID = "";   // Điền Chat ID ở đây (VD: -1001234567890)
