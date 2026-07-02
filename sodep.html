@@ -1191,7 +1191,7 @@
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
                         </svg>
-                        BẮT ĐẦU QUÉT AI
+                        BẮT ĐẦU QUÉT
                     </button>
                     <button class="btn-scan" style="background: #10b981; margin: 0; max-width: 200px;"
                         onclick="generatePrintList()">
@@ -1208,7 +1208,7 @@
                         <input type="checkbox" id="togglePhongThuy"
                             style="width: 18px; height: 18px; margin-right: 10px; accent-color: var(--primary);"
                             onchange="handlePhongThuyToggle()">
-                        Chế độ ưu tiên Phong Thuỷ
+                        Ưu tiên Phong Thuỷ
                     </label>
 
                     <label
@@ -1218,7 +1218,7 @@
                         <input type="checkbox" id="toggleAutoReload"
                             style="width: 18px; height: 18px; margin-right: 10px; accent-color: var(--primary);"
                             onchange="handleAutoReloadToggle()">
-                        Tự động quét số ngầm (mỗi 10 phút)
+                        Quét số ngầm
                     </label>
                 </div>
 
@@ -1301,14 +1301,14 @@
                         <input type="checkbox" id="printShowTag"
                             style="width: 20px; height: 20px; margin-right: 10px; cursor: pointer;" checked
                             onchange="renderPreview()">
-                        Kèm theo Tag ý nghĩa số
+                        Kèm Tag ý nghĩa số
                     </label>
                     <label
                         style="display: flex; align-items: center; cursor: pointer; font-weight: 600; font-size: 15px; color: #333;">
                         <input type="checkbox" id="printShowContact"
                             style="width: 20px; height: 20px; margin-right: 10px; cursor: pointer;" checked
                             onchange="renderPreview()">
-                        Kèm theo Thông tin Nhân viên (LH)
+                        Kèm Thông tin Nhân viên (LH)
                     </label>
                 </div>
                 <span style="font-size: 13px; color: #64748b; margin-top: 5px;">(Vuốt để xem hết bảng)</span>
@@ -1362,13 +1362,13 @@
         async function processTelegramQueue() {
             if (isSendingTelegram || telegramQueue.length === 0) return;
             isSendingTelegram = true;
-            
-            while(telegramQueue.length > 0) {
+
+            while (telegramQueue.length > 0) {
                 const simData = telegramQueue.shift();
                 const price = simData.price ? (Number(simData.price).toLocaleString('vi-VN') + 'đ') : '0đ';
                 const commit = simData.commitment ? (Number(simData.commitment).toLocaleString('vi-VN') + 'đ') : '0đ';
                 const msg = `🔥 <b>PHÁT HIỆN SIM ĐIỂM CAO</b> 🔥\n📞 Số: <b>${simData.fNum}</b>\n🎯 Điểm: ${simData.ai.score}\n✨ Nét đẹp: ${simData.ai.reasonsArr.join(', ')}\n💸 Trả trước: ${price} - Cam kết: ${commit}/tháng\n🌐 Link: https://digishop.vnpt.vn/di-dong/sim-so`;
-                
+
                 try {
                     // Dùng no-cors để tránh lỗi CORS khi gọi Google Apps Script từ frontend tĩnh
                     await fetch(`${GAS_API_URL}?action=sendTele`, {
@@ -1379,14 +1379,14 @@
                         },
                         body: JSON.stringify({ message: msg })
                     });
-                } catch(e) {
+                } catch (e) {
                     console.error("Lỗi gửi Telegram qua GAS", e);
                 }
-                
+
                 // Chờ 1.5 giây giữa các tin nhắn để tránh bị Google/Telegram chặn
                 await new Promise(r => setTimeout(r, 1500));
             }
-            
+
             isSendingTelegram = false;
         }
 
@@ -1670,7 +1670,7 @@
                 // Trình duyệt có thể giới hạn setTimeout khi ẩn tab,
                 // nhưng với file:// ta không dùng Web Worker (gây lỗi SecurityError)
                 autoReloadInterval = setInterval(silentAutoScan, 600000); // 10 phút
-                
+
                 // Chạy ngay lần đầu
                 silentAutoScan();
 
@@ -1704,7 +1704,7 @@
                 "*4078*", "*0404*", "*1102*", "*1368*", "*8668*", "*8386*", "*8683*", "*168*"
             ];
             const tasks = [];
-            
+
             for (const pref of PREFIXES) {
                 for (const c of COMMITS) {
                     // Random 3 mẫu từ database
@@ -1831,7 +1831,7 @@
                         const randomSearch = wildcardDB[Math.floor(Math.random() * wildcardDB.length)];
                         rawTasks.push({ pref, c, search: randomSearch });
                     }
-                    
+
                     // 2. Nhóm Đầu nào Đuôi nấy 4 số (VD: Đầu 088x tìm đuôi *088x*)
                     const basePrefix = '0' + pref.slice(2);
                     const digit1 = Math.floor(Math.random() * 10);
@@ -1840,7 +1840,7 @@
                     if (digit1 !== digit2) {
                         rawTasks.push({ pref, c, search: `*${basePrefix}${digit2}*` });
                     }
-                    
+
                     // 3. Nhóm ngẫu nhiên không điều kiện và dễ ra số
                     rawTasks.push({ pref, c, search: "" });
                     rawTasks.push({ pref, c, search: "*68*" });
@@ -1853,13 +1853,13 @@
                             const randomSearch = wildcardDB[Math.floor(Math.random() * wildcardDB.length)];
                             rawTasks.push({ pref, c, search: randomSearch });
                         }
-                        
+
                         // Thêm các đuôi số tự nhiên tiến/lùi (Sảnh tiến/lùi 3 số)
                         const naturalTails = ['*123*', '*234*', '*345*', '*456*', '*567*', '*678*', '*789*', '*012*', '*321*', '*432*', '*543*', '*654*', '*765*', '*876*', '*987*'];
                         for (let tail of naturalTails) {
                             rawTasks.push({ pref, c, search: tail });
                         }
-                        
+
                         // Thêm đuôi random 2 số lặp (Lặp cặp, Lặp kép)
                         const random2 = ['*11*', '*22*', '*33*', '*44*', '*55*', '*66*', '*77*', '*88*', '*99*', '*00*', '*38*', '*78*'];
                         for (let r2 of random2) {
@@ -1871,7 +1871,7 @@
                         for (let r3 of random3) {
                             rawTasks.push({ pref, c, search: r3 });
                         }
-                        
+
                         // Thêm 40 lệnh sinh số ngẫu nhiên 3 chữ số bất kỳ (tìm Lặp Cụm ngẫu nhiên)
                         for (let i = 0; i < 40; i++) {
                             const random3Digits = Math.floor(Math.random() * 900) + 100; // 100-999
@@ -1880,7 +1880,7 @@
                     }
                 }
             }
-            
+
             // Xáo trộn toàn bộ các yêu cầu để thanh tiến trình hiện đều các đầu số
             const tasks = localShuffle(rawTasks);
 
@@ -1893,7 +1893,7 @@
                     const { pref, c, search } = tasks.shift();
                     const url = `${BASE_API}?search=${encodeURIComponent(search)}&prefix=${pref}&commit=${c}`;
 
-                    statusTxt.textContent = `Đang quét: ${completedRequests}/${totalRequests} (Phân tích 0${pref.slice(2)} - ${c === '0' ? 'Trả trước 0đ' : (c / 1000 + 'k cam kết')})`;
+                    statusTxt.textContent = `Quét: ${completedRequests}/${totalRequests} (0${pref.slice(2)} - ${c === '0' ? 'Trả trước 0đ' : (c / 1000 + 'k cam kết')})`;
 
                     try {
                         const res = await fetch(url);
@@ -1949,7 +1949,7 @@
                 statusTxt.textContent = 'Có lỗi xảy ra khi quét API.';
             } finally {
                 btnScan.disabled = false;
-                btnScan.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg> QUÉT LẠI (LÀM MỚI)';
+                btnScan.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>LÀM MỚI)';
             }
         }
 
@@ -1994,10 +1994,10 @@
 
             // Tạo các nút filter động dựa trên các tag hiện có
             const filterTabs = document.getElementById('filterTabs');
-            filterTabs.innerHTML = '<button class="tab-btn active" onclick="filterCategory(\'all\', event)">Tất cả</button>';
+            filterTabs.innerHTML = `<button class="tab-btn ${currentCategory === 'all' ? 'active' : ''}" onclick="filterCategory('all', event)">Tất cả</button>`;
 
             const pinBtn = document.createElement('button');
-            pinBtn.className = 'tab-btn';
+            pinBtn.className = `tab-btn ${currentCategory === 'pinned' ? 'active' : ''}`;
             pinBtn.innerHTML = '📌 Đã ghim';
             pinBtn.onclick = (e) => filterCategory('pinned', e);
             filterTabs.appendChild(pinBtn);
@@ -2005,7 +2005,7 @@
             const hasFreeSims = scoredData.some(item => isFreeSim(item));
             if (hasFreeSims) {
                 const btn = document.createElement('button');
-                btn.className = 'tab-btn';
+                btn.className = `tab-btn ${currentCategory === 'free' ? 'active' : ''}`;
                 btn.textContent = '🎁 Cam Kết 0đ';
                 btn.onclick = (e) => filterCategory('free', e);
                 filterTabs.appendChild(btn);
@@ -2014,7 +2014,7 @@
             const sortedReasons = Array.from(allReasons).sort();
             sortedReasons.forEach(reason => {
                 const btn = document.createElement('button');
-                btn.className = 'tab-btn';
+                btn.className = `tab-btn ${currentCategory === reason ? 'active' : ''}`;
                 btn.textContent = reason;
                 btn.onclick = (e) => filterCategory(reason, e);
                 filterTabs.appendChild(btn);
@@ -2112,16 +2112,16 @@
             }
 
             let dotIndexes = [];
-            
+
             // Ưu tiên hiển thị cho Lặp Cụm 4 (8 số) và Lặp Cụm (6 số) lên hàng đầu
             const isLapCum4 = matchStr && matchStr.length === 8 && numStr.endsWith(matchStr) && (
-                /(\d)(\d{3})(\d)\2$/.test(matchStr) || 
+                /(\d)(\d{3})(\d)\2$/.test(matchStr) ||
                 /(\d{3})(\d)\1(\d)$/.test(matchStr)
             );
-            
+
             const isLapCum = matchStr && matchStr.length === 6 && numStr.endsWith(matchStr) && (
-                /(\d)(\d{2})(\d)\2$/.test(matchStr) || 
-                /(\d{2})(\d)\1(\d)$/.test(matchStr) || 
+                /(\d)(\d{2})(\d)\2$/.test(matchStr) ||
+                /(\d{2})(\d)\1(\d)$/.test(matchStr) ||
                 /(\d)(\d)(\d)\1(\d)\3$/.test(matchStr)
             );
 
@@ -2174,7 +2174,7 @@
                 const isGanh4 = matchStr.length === 4 && matchStr[0] === matchStr[3] && matchStr[1] === matchStr[2] && matchStr[0] !== matchStr[1]; // ABBA
                 const isGanhKep = matchStr.length === 6 && matchStr[0] === matchStr[2] && matchStr[0] !== matchStr[1] && matchStr[3] === matchStr[5] && matchStr[3] !== matchStr[4]; // ABA+ABA
                 const isCaptien3Bac = matchStr.length === 6 && (() => { const p1 = parseInt(matchStr.slice(0, 2)), p2 = parseInt(matchStr.slice(2, 4)), p3 = parseInt(matchStr.slice(4, 6)); return (p2 - p1) > 0 && (p2 - p1) <= 20 && (p2 - p1) === (p3 - p2); })();
-                
+
                 if (matchStr.length === 3 && isSanh) {
                     dotIndexes = [3, 5, 7]; // Sảnh 3 số cuối: nhịp 3-2-2-3
                 } else if (matchStr.length === 5 && isSanh) {
@@ -2553,7 +2553,7 @@
             // 3) Dòng cuối: random từ số còn lại để lấp đầy bảng in (đảm bảo đủ số lượng)
             const randPool = remaining.filter(x => !midSet.has(x.fNum));
             const shuffled = [...randPool].sort(() => Math.random() - 0.5);
-            
+
             const neededForLastRows = Math.max(0, limit - top4.length - midPool.length);
             const lastRows = shuffled.slice(0, neededForLastRows);
 
