@@ -962,7 +962,7 @@
 
         #jpgExportArea {
             width: 1240px;
-            height: 1754px;
+            min-height: 1754px;
             background: #ffffff;
             padding: 40px 50px;
             font-family: 'Inter', Arial, sans-serif;
@@ -2522,7 +2522,7 @@
             const showContact = document.getElementById('printShowContact').checked;
 
             // Tính số dòng theo từng tổ hợp tuỳ chọn
-            let rows = showTag ? 10 : 12;
+            let rows = showTag ? 12 : 14;
             if (showContact) rows -= 1;
             const limit = rows * 4;
 

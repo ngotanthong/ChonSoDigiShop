@@ -1203,7 +1203,7 @@
 
         #jpgExportArea {
             width: 1080px;
-            height: 1440px;
+            min-height: 1440px;
             background: #ffffff;
             padding: 50px 60px;
             font-family: 'Inter', Arial, sans-serif;
@@ -25612,7 +25612,7 @@
             const showTag = document.getElementById('printShowTag').checked;
             const showContact = document.getElementById('printShowContact').checked;
 
-            let rows = 10;
+            let rows = 12;
             if (showTag) rows -= 1;
             if (showContact) rows -= 1;
 
