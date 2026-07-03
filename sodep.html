@@ -961,10 +961,10 @@
         }
 
         #jpgExportArea {
-            width: 1240px;
-            min-height: 1754px;
+            width: 1080px;
+            min-height: 1440px;
             background: #ffffff;
-            padding: 40px 50px;
+            padding: 50px 60px;
             font-family: 'Inter', Arial, sans-serif;
             color: #000000;
             margin: 0 auto;
@@ -999,12 +999,11 @@
 
         #jpgExportArea .p-num {
             color: #000000;
-            font-size: 30px;
+            font-size: 28px;
             font-weight: 900;
             margin-bottom: 6px;
             letter-spacing: 0.5px;
             white-space: nowrap;
-            -webkit-text-stroke: 0.5px #000000;
         }
 
         #jpgExportArea .p-tags-container {
@@ -1019,10 +1018,10 @@
             background: #ffffff;
             border: 1.5px solid #000000;
             color: #000000;
-            padding: 3px 10px;
+            padding: 2px 8px;
             border-radius: 20px;
-            font-size: 15px;
-            font-weight: 900;
+            font-size: 13px;
+            font-weight: 800;
         }
 
         #jpgExportArea .p-info-grid {
@@ -1062,24 +1061,24 @@
 
         #jpgExportArea .print-header {
             text-align: center;
-            margin-bottom: 16px;
+            margin-bottom: 40px;
         }
 
         #jpgExportArea .print-header h2 {
             color: #000000;
-            font-size: 32px;
+            font-size: 48px;
             font-weight: 900;
-            margin: 0 0 6px 0;
+            margin: 0 0 16px 0;
             text-transform: uppercase;
             letter-spacing: 2px;
             display: inline-block;
-            border-bottom: 3px solid #000000;
-            padding-bottom: 4px;
+            border-bottom: 4px solid #000000;
+            padding-bottom: 8px;
         }
 
         #jpgExportArea .print-header p {
             color: #000000;
-            font-size: 16px;
+            font-size: 22px;
             font-weight: 700;
             margin: 0;
             display: block;
@@ -1087,20 +1086,20 @@
 
         #jpgExportArea .print-footer-container {
             text-align: center;
-            margin-top: 14px;
-            margin-bottom: 6px;
+            margin-top: 30px;
+            margin-bottom: 10px;
         }
 
         #jpgExportArea .print-footer {
             background: #ffffff;
             color: #000000;
-            padding: 10px 32px;
+            padding: 18px 50px;
             border-radius: 50px;
-            font-size: 22px;
+            font-size: 30px;
             font-weight: 900;
             display: inline-block;
             letter-spacing: 2px;
-            border: 3px solid #000000;
+            border: 4px solid #000000;
             text-transform: uppercase;
         }
 
@@ -2621,7 +2620,7 @@
             };
 
             let html = `
-            <div id="jpgExportArea" style="zoom: 0.57; margin: 0 auto;">
+            <div id="jpgExportArea" style="zoom: 0.65; margin: 0 auto;">
                 <div class="print-header">
                     <h2>DANH SÁCH SIM SỐ</h2>
                     <p>Ngày cập nhật: ${new Date().toLocaleDateString('vi-VN')}</p>
@@ -2728,7 +2727,7 @@
                             print-color-adjust: exact; 
                         }
                         #jpgExportArea {
-                            zoom: calc(100vw / 1240) !important;
+                            zoom: calc(100vw / 1080) !important;
                             height: auto !important;
                             margin: 0 auto !important;
                         }
