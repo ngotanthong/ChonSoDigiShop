@@ -25612,8 +25612,7 @@
             const showTag = document.getElementById('printShowTag').checked;
             const showContact = document.getElementById('printShowContact').checked;
 
-            let baseRows = isPrint ? 12 : 10;
-            let rows = baseRows;
+            let rows = 12;
             if (showTag) rows -= 1;
             if (showContact) rows -= 1;
 

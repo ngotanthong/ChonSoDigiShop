@@ -2521,8 +2521,7 @@
             const showContact = document.getElementById('printShowContact').checked;
 
             // Tính số dòng theo từng tổ hợp tuỳ chọn
-            let baseRows = isPrint ? (showTag ? 12 : 14) : (showTag ? 10 : 12);
-            let rows = baseRows;
+            let rows = showTag ? 10 : 12;
             if (showContact) rows -= 1;
             const limit = rows * 4;
 
