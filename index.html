@@ -25608,11 +25608,12 @@
             document.getElementById('printOptionsModal').style.display = 'none';
         }
 
-        function renderPreview() {
+        function renderPreview(isPrint = false, returnHtml = false) {
             const showTag = document.getElementById('printShowTag').checked;
             const showContact = document.getElementById('printShowContact').checked;
 
-            let rows = 12;
+            let baseRows = isPrint ? 12 : 10;
+            let rows = baseRows;
             if (showTag) rows -= 1;
             if (showContact) rows -= 1;
 
@@ -25684,6 +25685,7 @@
             }
 
             html += `</div>`;
+            if (returnHtml) return html;
             document.getElementById('previewContainer').innerHTML = html;
         }
 
@@ -25743,8 +25745,8 @@
         }
 
         function printDirectly() {
-            const jpgArea = document.getElementById('jpgExportArea');
-            if (!jpgArea) return;
+            const printHtml = renderPreview(true, true);
+            if (!printHtml) return;
 
             const iframe = document.createElement('iframe');
             iframe.style.position = 'fixed';
@@ -25783,7 +25785,7 @@
                     </style>
                 </head>
                 <body>
-                    ${jpgArea.outerHTML}
+                    ${printHtml}
                     <script>
                         window.onload = function() {
                             setTimeout(function() {
