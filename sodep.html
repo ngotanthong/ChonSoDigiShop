@@ -1550,17 +1550,8 @@
                 try {
                     const objToSave = { ...simObj, fNum: fNum };
                     const targetUrl = GAS_PIN_API_URL || GAS_API_URL;
-                    const res = await fetch(targetUrl, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                        body: new URLSearchParams({
-                            action: "pin",
-                            user: user,
-                            deviceId: deviceId,
-                            phone: fNum,
-                            simData: JSON.stringify(objToSave)
-                        })
-                    });
+                    const simDataStr = encodeURIComponent(JSON.stringify(objToSave));
+                    const res = await fetch(`${targetUrl}?action=pin&user=${encodeURIComponent(user)}&deviceId=${deviceId}&phone=${encodeURIComponent(fNum)}&simData=${simDataStr}`);
                     const data = await res.json();
                     if (data.status !== "ok") alert("Lỗi lưu ghim: " + data.message);
                 } catch (e) {
@@ -1569,16 +1560,7 @@
             } else if (isPinned) {
                 try {
                     const targetUrl = GAS_PIN_API_URL || GAS_API_URL;
-                    const res = await fetch(targetUrl, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                        body: new URLSearchParams({
-                            action: "unpin",
-                            user: user,
-                            deviceId: deviceId,
-                            phone: fNum
-                        })
-                    });
+                    const res = await fetch(`${targetUrl}?action=unpin&user=${encodeURIComponent(user)}&deviceId=${deviceId}&phone=${encodeURIComponent(fNum)}`);
                     const data = await res.json();
                     if (data.status !== "ok") alert("Lỗi bỏ ghim: " + data.message);
                 } catch (e) {
