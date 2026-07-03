@@ -1513,7 +1513,9 @@
                             pinnedSims[num] = item;
                         }
                     });
-                    if (currentCategory === 'pinned') renderResults();
+                    if (typeof displayData !== 'undefined' || typeof scoredData !== 'undefined') {
+                        renderResults();
+                    }
                 }
             } catch (e) {
                 console.error("Lỗi tải danh sách ghim:", e);
@@ -1548,15 +1550,9 @@
             const action = isPinned ? 'unpin' : 'pin';
             if (!isPinned && simObj) {
                 try {
-                    const objToSave = { 
-                        fNum: fNum,
-                        so_tb: simObj.so_tb || fNum,
-                        price: simObj.price || 0,
-                        monthly: simObj.monthly || 0,
-                        commitment: simObj.commitment || 0,
-                        kieuso_name: simObj.kieuso_name || '',
-                        ai: simObj.ai || null
-                    };
+                    let objToSave = Object.assign({}, simObj);
+                    objToSave.fNum = fNum;
+                    objToSave.ai = simObj.ai || null;
                     const targetUrl = GAS_PIN_API_URL || GAS_API_URL;
                     await fetch(targetUrl, {
                         method: "POST",

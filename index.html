@@ -24979,7 +24979,9 @@
                             pinnedSims[num] = item;
                         }
                     });
-                    if (priorityTag === 'pinned') {
+                    
+                    // Always re-render if we have data so pinned status updates on UI
+                    if (typeof currentData !== 'undefined' && currentData.length > 0) {
                         applySort();
                         renderTags(currentData);
                     }
@@ -25090,14 +25092,8 @@
             
             if (!isPinned && simObj) {
                 try {
-                    const objToSave = { 
-                        fNum: fNum,
-                        so_tb: simObj.so_tb || fNum,
-                        price: simObj.price || 0,
-                        monthly: simObj.monthly || 0,
-                        commitment: simObj.commitment || 0,
-                        kieuso_name: simObj.kieuso_name || ''
-                    };
+                    let objToSave = Object.assign({}, simObj);
+                    objToSave.fNum = fNum;
                     if (typeof analyzeSIM === 'function') {
                         const monthlyFee = Number(objToSave.monthly) || Number(objToSave.price) || 0;
                         objToSave.ai = analyzeSIM(fNum, monthlyFee);
