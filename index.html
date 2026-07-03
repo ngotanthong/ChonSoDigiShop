@@ -25567,7 +25567,9 @@
             <div style="display: flex; gap: 10px; justify-content: flex-end;">
                 <button class="btn-copy" style="background: #94a3b8; padding: 12px; margin: 0; width: 120px;"
                     onclick="closePrintModal()">Hủy</button>
-                <button class="btn-copy" style="background: #10b981; padding: 12px; margin: 0; width: 200px;"
+                <button class="btn-copy" style="background: #3b82f6; padding: 12px; margin: 0; width: 180px;"
+                    onclick="printDirectly()">🖨️ IN TRỰC TIẾP</button>
+                <button class="btn-copy" style="background: #10b981; padding: 12px; margin: 0; width: 180px;"
                     onclick="downloadJPG()">📥 TẢI ẢNH JPG</button>
             </div>
         </div>
@@ -25738,6 +25740,67 @@
                     }, 3000);
                 }
             }
+        }
+
+        function printDirectly() {
+            const jpgArea = document.getElementById('jpgExportArea');
+            if (!jpgArea) return;
+
+            const iframe = document.createElement('iframe');
+            iframe.style.position = 'fixed';
+            iframe.style.right = '0';
+            iframe.style.bottom = '0';
+            iframe.style.width = '0';
+            iframe.style.height = '0';
+            iframe.style.border = '0';
+            document.body.appendChild(iframe);
+
+            const styleNodes = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
+                .map(node => node.outerHTML)
+                .join('\\n');
+
+            const doc = iframe.contentWindow.document;
+            doc.open();
+            doc.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    ${styleNodes}
+                    <style>
+                        @page { size: A4 portrait; margin: 0; }
+                        body { 
+                            margin: 0; 
+                            padding: 0; 
+                            background: white; 
+                            -webkit-print-color-adjust: exact; 
+                            print-color-adjust: exact; 
+                            display: flex;
+                            justify-content: center;
+                        }
+                        #jpgExportArea {
+                            transform: scale(0.73);
+                            transform-origin: top center;
+                            margin-top: 10px;
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${jpgArea.outerHTML}
+                    <script>
+                        window.onload = function() {
+                            setTimeout(function() {
+                                window.focus();
+                                window.print();
+                                setTimeout(function() {
+                                    window.parent.document.body.removeChild(window.frameElement);
+                                }, 500);
+                            }, 500);
+                        };
+                    </script>
+                </body>
+                </html>
+            `);
+            doc.close();
         }
     </script>
 </body>
