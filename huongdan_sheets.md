@@ -48,15 +48,7 @@ var TELEGRAM_CHAT_ID = "7007784178";
       } catch (e) {}
     }
 
-    function getPinnedSheet() {
-      var ss = SpreadsheetApp.getActiveSpreadsheet();
-      var pSheet = ss.getSheetByName("PinnedSIMs");
-      if (!pSheet) {
-        pSheet = ss.insertSheet("PinnedSIMs");
-        pSheet.appendRow(["User", "Phone", "SIM Data", "Pinned At"]);
-      }
-      return pSheet;
-    }
+
 
 function doGet(e) {
       // CORS header helper
@@ -175,79 +167,7 @@ function doGet(e) {
         return makeResponse({ status: "ok" });
       }
 
-      // ---- PINNED SIMs actions ----
-      if (action === "pin") {
-        var phone = e.parameter.phone;
-        var simData = e.parameter.simData || ""; // Nhận thêm dữ liệu simData
-        var pinSheet = getPinnedSheet();
-        var pData = pinSheet.getDataRange().getValues();
-        var found = false;
-        for (var i = 1; i < pData.length; i++) {
-          var sheetPhone = pData[i][1].toString().trim();
-          if (!sheetPhone.startsWith("0")) sheetPhone = "0" + sheetPhone;
-          if (pData[i][0].toString().toLowerCase() === user.toLowerCase() && sheetPhone === phone.trim()) {
-            found = true;
-            pinSheet.getRange(i + 1, 3).setValue(simData); // Cập nhật lại data mới nhất
-            pinSheet.getRange(i + 1, 4).setValue(new Date());
-            break;
-          }
-        }
-        if (!found) {
-          pinSheet.appendRow([user, "'" + phone, simData, new Date()]); // Thêm dấu ' để ép kiểu text không mất số 0
-          sendTelegramMessage("📌 <b>TEST GHIM SỐ:</b>\n👤 User: <code>" + user + "</code>\n📱 Số: " + phone + "\nĐã lưu thành công vào Sheet!");
-        }
-        return makeResponse({ status: "ok" });
-      }
 
-      if (action === "unpin") {
-        var phone = e.parameter.phone;
-        var pinSheet = getPinnedSheet();
-        var pData = pinSheet.getDataRange().getValues();
-        var isAdmin = (user.toLowerCase() === "admin");
-        for (var i = pData.length - 1; i >= 1; i--) {
-          var sheetPhone = pData[i][1].toString().trim();
-          if (!sheetPhone.startsWith("0")) sheetPhone = "0" + sheetPhone;
-          if ((isAdmin || pData[i][0].toString().toLowerCase() === user.toLowerCase()) && sheetPhone === phone.trim()) {
-            pinSheet.deleteRow(i + 1);
-          }
-        }
-        return makeResponse({ status: "ok" });
-      }
-
-      if (action === "get_pinned") {
-        var pinSheet = getPinnedSheet();
-        var pData = pinSheet.getDataRange().getValues();
-        var results = [];
-        var isAdmin = (user.toLowerCase() === "admin");
-        for (var i = 1; i < pData.length; i++) {
-          var rowUser = pData[i][0].toString();
-          if (isAdmin || rowUser.toLowerCase() === user.toLowerCase()) {
-            try {
-              var simObj = pData[i][2] ? JSON.parse(pData[i][2]) : null;
-              if (!simObj || typeof simObj !== "object") {
-                  simObj = {
-                      fNum: pData[i][1].toString(),
-                      so_tb: pData[i][1].toString().replace(/\s/g, ""),
-                      monthly: 0,
-                      commitment: 0,
-                      ai: { score: 0, reasonText: "Đã ghim", highlight: [] }
-                  };
-              }
-              simObj._pinnedBy = rowUser;
-              results.push(simObj);
-            } catch(ex) {
-              // Fallback an toàn nếu có lỗi
-              results.push({
-                  fNum: pData[i][1].toString(),
-                  ai: { score: 0, reasonText: "Lỗi dữ liệu", highlight: [] },
-                  _pinnedBy: rowUser
-              });
-            }
-          }
-        }
-        results.reverse();
-        return makeResponse({ status: "ok", data: results });
-      }
 
         return makeResponse({ status: "error", message: "Invalid action received: " + String(action) });
 
@@ -256,6 +176,9 @@ function doGet(e) {
       }
     }
 
+    function doPost(e) {
+      return doGet(e);
+    }
 ```
 
 4. Nhấn biểu tượng **Lưu dự án (Save project)** (hình đĩa mềm) hoặc bấm `Cmd + S` / `Ctrl + S`.

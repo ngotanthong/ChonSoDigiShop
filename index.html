@@ -24942,7 +24942,7 @@
         // CẤU HÌNH GOOGLE SHEET API (Ví dụ: 'https://script.google.com/macros/s/XXXXX/exec')
         // Dán đường dẫn Web App của anh vào đây để kích hoạt tính năng khóa thiết bị cố định!
         let GAS_API_URL = localStorage.getItem('CUSTOM_GAS_API_URL') || 'https://script.google.com/macros/s/AKfycbyFacGhuuIqpF7ZVo8Ezh9zYA_7XjstBG7YGF1vMg15UnKaCmb63xcpIDZ4EMpMHP6GXg/exec';
-
+        let GAS_PIN_API_URL = localStorage.getItem('CUSTOM_GAS_PIN_API_URL') || 'https://script.google.com/macros/s/AKfycbzuUk3M2D-eIxnBugn30VmUrIUok9qYj28pRlOTK0s_FDrsEknyJ-0ZfwUFBER2j3KVUQ/exec';
         // Sinh mã định danh thiết bị duy nhất (UUID)
         function generateUUID() {
             return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -24963,9 +24963,11 @@
 
         async function fetchPinnedSims() {
             const user = localStorage.getItem('simso_auth_user') || sessionStorage.getItem('simso_auth_user');
-            if (!user || !GAS_API_URL) return;
+            if (!user) return;
+            const targetUrl = GAS_PIN_API_URL || GAS_API_URL;
+            if (!targetUrl) return;
             try {
-                const res = await fetch(`${GAS_API_URL}?action=get_pinned&user=${encodeURIComponent(user)}&deviceId=${deviceId}`);
+                const res = await fetch(`${targetUrl}?action=get_pinned&user=${encodeURIComponent(user)}&deviceId=${deviceId}`);
                 const data = await res.json();
                 if (data.status === 'ok') {
                     pinnedSims = {};
@@ -25093,8 +25095,18 @@
                         const monthlyFee = Number(simObj.monthly) || Number(simObj.price) || 0;
                         objToSave.ai = analyzeSIM(fNum, monthlyFee);
                     }
-                    const simDataStr = encodeURIComponent(JSON.stringify(objToSave));
-                    const res = await fetch(`${GAS_API_URL}?action=pin&user=${encodeURIComponent(user)}&deviceId=${deviceId}&phone=${encodeURIComponent(fNum)}&simData=${simDataStr}`);
+                    const targetUrl = GAS_PIN_API_URL || GAS_API_URL;
+                    const res = await fetch(targetUrl, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                        body: new URLSearchParams({
+                            action: "pin",
+                            user: user,
+                            deviceId: deviceId,
+                            phone: fNum,
+                            simData: JSON.stringify(objToSave)
+                        })
+                    });
                     const data = await res.json();
                     if (data.status !== "ok") alert("Lỗi lưu ghim: " + data.message);
                 } catch(e) { 
@@ -25102,7 +25114,17 @@
                 }
             } else if (isPinned) {
                 try {
-                    const res = await fetch(`${GAS_API_URL}?action=unpin&user=${encodeURIComponent(user)}&deviceId=${deviceId}&phone=${encodeURIComponent(fNum)}`);
+                    const targetUrl = GAS_PIN_API_URL || GAS_API_URL;
+                    const res = await fetch(targetUrl, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                        body: new URLSearchParams({
+                            action: "unpin",
+                            user: user,
+                            deviceId: deviceId,
+                            phone: fNum
+                        })
+                    });
                     const data = await res.json();
                     if (data.status !== "ok") alert("Lỗi bỏ ghim: " + data.message);
                 } catch(e) { 

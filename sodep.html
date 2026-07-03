@@ -1339,6 +1339,7 @@
     <script>
         // --- CẤU HÌNH BẢO MẬT & API ---
         let GAS_API_URL = localStorage.getItem('CUSTOM_GAS_API_URL') || 'https://script.google.com/macros/s/AKfycbyFacGhuuIqpF7ZVo8Ezh9zYA_7XjstBG7YGF1vMg15UnKaCmb63xcpIDZ4EMpMHP6GXg/exec';
+        let GAS_PIN_API_URL = localStorage.getItem('CUSTOM_GAS_PIN_API_URL') || 'https://script.google.com/macros/s/AKfycbzuUk3M2D-eIxnBugn30VmUrIUok9qYj28pRlOTK0s_FDrsEknyJ-0ZfwUFBER2j3KVUQ/exec'; // Đường dẫn API cho Ghim Sim (nếu trống sẽ dùng chung GAS_API_URL)
         const BASE_API = 'https://digishop.vnpt.vn/apiprod/v2/simso/num_search';
         const PREFIXES = ['8491', '8494', '8488', '8481', '8482', '8483', '8484', '8485'];
         // Lấy cam kết 0đ và giá rẻ <=400k
@@ -1496,9 +1497,11 @@
 
         async function fetchPinnedSims() {
             const user = localStorage.getItem('simso_auth_user') || sessionStorage.getItem('simso_auth_user');
-            if (!user || !GAS_API_URL) return;
+            if (!user) return;
+            const targetUrl = GAS_PIN_API_URL || GAS_API_URL;
+            if (!targetUrl) return;
             try {
-                const res = await fetch(`${GAS_API_URL}?action=get_pinned&user=${encodeURIComponent(user)}&deviceId=${deviceId}`);
+                const res = await fetch(`${targetUrl}?action=get_pinned&user=${encodeURIComponent(user)}&deviceId=${deviceId}`);
                 const data = await res.json();
                 if (data.status === 'ok') {
                     pinnedSims = {};
@@ -1545,8 +1548,19 @@
             const action = isPinned ? 'unpin' : 'pin';
             if (!isPinned && simObj) {
                 try {
-                    const simDataStr = encodeURIComponent(JSON.stringify(simObj));
-                    const res = await fetch(`${GAS_API_URL}?action=pin&user=${encodeURIComponent(user)}&deviceId=${deviceId}&phone=${encodeURIComponent(fNum)}&simData=${simDataStr}`);
+                    const objToSave = { ...simObj, fNum: fNum };
+                    const targetUrl = GAS_PIN_API_URL || GAS_API_URL;
+                    const res = await fetch(targetUrl, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                        body: new URLSearchParams({
+                            action: "pin",
+                            user: user,
+                            deviceId: deviceId,
+                            phone: fNum,
+                            simData: JSON.stringify(objToSave)
+                        })
+                    });
                     const data = await res.json();
                     if (data.status !== "ok") alert("Lỗi lưu ghim: " + data.message);
                 } catch (e) {
@@ -1554,7 +1568,17 @@
                 }
             } else if (isPinned) {
                 try {
-                    const res = await fetch(`${GAS_API_URL}?action=unpin&user=${encodeURIComponent(user)}&deviceId=${deviceId}&phone=${encodeURIComponent(fNum)}`);
+                    const targetUrl = GAS_PIN_API_URL || GAS_API_URL;
+                    const res = await fetch(targetUrl, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                        body: new URLSearchParams({
+                            action: "unpin",
+                            user: user,
+                            deviceId: deviceId,
+                            phone: fNum
+                        })
+                    });
                     const data = await res.json();
                     if (data.status !== "ok") alert("Lỗi bỏ ghim: " + data.message);
                 } catch (e) {
@@ -1566,15 +1590,22 @@
         // Xử lý đổi API thủ công
         window.promptCustomApi = function () {
             const currentApi = localStorage.getItem('CUSTOM_GAS_API_URL') || GAS_API_URL;
-            const newApi = prompt("Nhập đường dẫn Google Apps Script mới:\n(Để trống nếu muốn quay về mặc định)", currentApi);
+            const currentPinApi = localStorage.getItem('CUSTOM_GAS_PIN_API_URL') || GAS_PIN_API_URL;
+            
+            const newApi = prompt("Nhập đường dẫn Google Apps Script (Đăng nhập/Kiểm tra):\n(Để trống nếu muốn quay về mặc định)", currentApi);
             if (newApi !== null) {
-                if (newApi.trim() === "") {
-                    localStorage.removeItem('CUSTOM_GAS_API_URL');
-                    alert("Đã khôi phục API về mặc định!");
-                } else {
-                    localStorage.setItem('CUSTOM_GAS_API_URL', newApi.trim());
-                    alert("Đã lưu API mới thành công!");
-                }
+                if (newApi.trim() === "") localStorage.removeItem('CUSTOM_GAS_API_URL');
+                else localStorage.setItem('CUSTOM_GAS_API_URL', newApi.trim());
+            }
+
+            const newPinApi = prompt("Nhập đường dẫn Google Apps Script riêng cho tính năng Ghim Sim:\n(Để trống nếu dùng chung với API trên)", currentPinApi);
+            if (newPinApi !== null) {
+                if (newPinApi.trim() === "") localStorage.removeItem('CUSTOM_GAS_PIN_API_URL');
+                else localStorage.setItem('CUSTOM_GAS_PIN_API_URL', newPinApi.trim());
+            }
+            
+            if (newApi !== null || newPinApi !== null) {
+                alert("Đã lưu API mới thành công!");
                 location.reload();
             }
         };
