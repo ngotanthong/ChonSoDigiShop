@@ -25095,7 +25095,8 @@
                         so_tb: simObj.so_tb || fNum,
                         price: simObj.price || 0,
                         monthly: simObj.monthly || 0,
-                        commitment: simObj.commitment || 0
+                        commitment: simObj.commitment || 0,
+                        kieuso_name: simObj.kieuso_name || ''
                     };
                     if (typeof analyzeSIM === 'function') {
                         const monthlyFee = Number(objToSave.monthly) || Number(objToSave.price) || 0;

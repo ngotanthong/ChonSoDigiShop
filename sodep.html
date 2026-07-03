@@ -1548,7 +1548,15 @@
             const action = isPinned ? 'unpin' : 'pin';
             if (!isPinned && simObj) {
                 try {
-                    const objToSave = { ...simObj, fNum: fNum };
+                    const objToSave = { 
+                        fNum: fNum,
+                        so_tb: simObj.so_tb || fNum,
+                        price: simObj.price || 0,
+                        monthly: simObj.monthly || 0,
+                        commitment: simObj.commitment || 0,
+                        kieuso_name: simObj.kieuso_name || '',
+                        ai: simObj.ai || null
+                    };
                     const targetUrl = GAS_PIN_API_URL || GAS_API_URL;
                     const simDataStr = encodeURIComponent(JSON.stringify(objToSave));
                     const res = await fetch(`${targetUrl}?action=pin&user=${encodeURIComponent(user)}&deviceId=${deviceId}&phone=${encodeURIComponent(fNum)}&simData=${simDataStr}`);
