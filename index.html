@@ -25090,13 +25090,18 @@
             
             if (!isPinned && simObj) {
                 try {
-                    const objToSave = { ...simObj, fNum: fNum };
+                    const objToSave = { 
+                        fNum: fNum,
+                        price: simObj.price || 0,
+                        monthly: simObj.monthly || 0,
+                        commitment: simObj.commitment || 0
+                    };
                     if (typeof analyzeSIM === 'function' && !objToSave.ai) {
-                        const monthlyFee = Number(simObj.monthly) || Number(simObj.price) || 0;
+                        const monthlyFee = Number(objToSave.monthly) || Number(objToSave.price) || 0;
                         objToSave.ai = analyzeSIM(fNum, monthlyFee);
                     }
                     const targetUrl = GAS_PIN_API_URL || GAS_API_URL;
-                    const res = await fetch(targetUrl, {
+                    const res = await fetch(`${targetUrl}?action=pin&user=${encodeURIComponent(user)}`, {
                         method: "POST",
                         headers: { "Content-Type": "application/x-www-form-urlencoded" },
                         body: new URLSearchParams({
@@ -25115,7 +25120,7 @@
             } else if (isPinned) {
                 try {
                     const targetUrl = GAS_PIN_API_URL || GAS_API_URL;
-                    const res = await fetch(targetUrl, {
+                    const res = await fetch(`${targetUrl}?action=unpin&user=${encodeURIComponent(user)}`, {
                         method: "POST",
                         headers: { "Content-Type": "application/x-www-form-urlencoded" },
                         body: new URLSearchParams({
