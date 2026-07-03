@@ -25277,15 +25277,22 @@
         // Xử lý đổi API thủ công
         window.promptCustomApi = function() {
             const currentApi = localStorage.getItem('CUSTOM_GAS_API_URL') || GAS_API_URL;
+            const currentPinApi = localStorage.getItem('CUSTOM_GAS_PIN_API_URL') || GAS_PIN_API_URL;
+            
             const newApi = prompt("Nhập đường dẫn Google Apps Script mới:\n(Để trống nếu muốn quay về mặc định)", currentApi);
             if (newApi !== null) {
-                if (newApi.trim() === "") {
-                    localStorage.removeItem('CUSTOM_GAS_API_URL');
-                    alert("Đã khôi phục API về mặc định!");
-                } else {
-                    localStorage.setItem('CUSTOM_GAS_API_URL', newApi.trim());
-                    alert("Đã lưu API mới thành công!");
-                }
+                if (newApi.trim() === "") localStorage.removeItem('CUSTOM_GAS_API_URL');
+                else localStorage.setItem('CUSTOM_GAS_API_URL', newApi.trim());
+            }
+
+            const newPinApi = prompt("Nhập đường dẫn Google Apps Script riêng cho tính năng Ghim Sim:\n(Để trống nếu dùng chung với API trên)", currentPinApi);
+            if (newPinApi !== null) {
+                if (newPinApi.trim() === "") localStorage.removeItem('CUSTOM_GAS_PIN_API_URL');
+                else localStorage.setItem('CUSTOM_GAS_PIN_API_URL', newPinApi.trim());
+            }
+            
+            if (newApi !== null || newPinApi !== null) {
+                alert("Đã lưu API mới thành công!");
                 location.reload();
             }
         };
