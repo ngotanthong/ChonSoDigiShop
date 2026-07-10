@@ -1247,6 +1247,7 @@
                         <div>
                             <div style="font-weight:800; font-size:16px; color:#92400e;">Kết quả Taxi VIP</div>
                             <div id="taxiStatusText" style="font-size:13px; color:#b45309;">Đang quét...</div>
+                            <div id="taxiDetailText" style="font-size:12px; color:#92400e; margin-top:3px; font-weight:600;"></div>
                         </div>
                     </div>
                     <button onclick="stopTaxiScan()" id="btnStopTaxi"
@@ -2024,6 +2025,7 @@
             const btnStop = document.getElementById('btnStopTaxi');
             const panel = document.getElementById('taxiPanel');
             const statusTxt = document.getElementById('taxiStatusText');
+            const detailTxt = document.getElementById('taxiDetailText');
             const progBar = document.getElementById('taxiProgressBar');
             const grid = document.getElementById('taxiGrid');
             const emptyDiv = document.getElementById('taxiEmpty');
@@ -2034,6 +2036,7 @@
             grid.innerHTML = '';
             emptyDiv.style.display = 'none';
             progBar.style.width = '0%';
+            detailTxt.textContent = '';
 
             panel.style.display = 'block';
             panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -2061,8 +2064,21 @@
             const total = tasks.length;
             let done = 0;
             let idx = 0;
+            let lastCurrentPref = '';
+            let lastCurrentCommit = '';
             const CONCURRENCY = 8; // Song song nhẹ để không quá tải
             const BATCH_PAUSE_MS = 150; // Nghỉ mỗi batch để không spam
+            const scanStartTime = Date.now();
+
+            function formatETA(seconds) {
+                if (seconds < 60) return `${Math.round(seconds)}s`;
+                const m = Math.floor(seconds / 60);
+                const s = Math.round(seconds % 60);
+                if (m < 60) return `${m}p ${s}s`;
+                const h = Math.floor(m / 60);
+                const rm = m % 60;
+                return `${h}g ${rm}p`;
+            }
 
             function renderTaxiCard(simItem) {
                 const raw = simItem.so_tb || '';
@@ -2088,7 +2104,14 @@
 
             async function taxiWorker() {
                 while (idx < tasks.length && !taxiScanAbort) {
+                    const taskIdx = idx;
                     const { pref, c, search } = tasks[idx++];
+                    // Cập nhật đầu số / cam kết đang quét (chỉ khi thay đổi)
+                    const dispPref = '0' + pref.slice(2);
+                    const dispCommit = c === '0' ? '0đ' : (Number(c) / 1000 + 'k');
+                    lastCurrentPref = dispPref;
+                    lastCurrentCommit = dispCommit;
+
                     const url = `${BASE_API}?search=${encodeURIComponent(search)}&prefix=${pref}&commit=${c}`;
                     try {
                         const res = await fetch(url);
@@ -2113,7 +2136,15 @@
                     }
                     done++;
                     progBar.style.width = `${(done / total) * 100}%`;
-                    statusTxt.textContent = `Quét ${done.toLocaleString()}/${total.toLocaleString()} · Tìm thấy: ${taxiFoundNums.size} số Taxi VIP`;
+
+                    // Tính ETA
+                    const elapsed = (Date.now() - scanStartTime) / 1000; // giây
+                    const speed = done / elapsed; // request/giây
+                    const remaining = (total - done) / speed;
+                    const etaStr = speed > 0 && remaining > 0 ? ` · ⏱ Còn lại: ${formatETA(remaining)}` : '';
+
+                    statusTxt.textContent = `Quét ${done.toLocaleString()}/${total.toLocaleString()} · Tìm thấy: ${taxiFoundNums.size} số Taxi VIP${etaStr}`;
+                    detailTxt.textContent = `📡 Đầu số: ${lastCurrentPref}  |  Cam kết: ${lastCurrentCommit}  |  Tốc độ: ${speed.toFixed(1)} req/s`;
 
                     // Ngắt nhịp sau mỗi CONCURRENCY request để tránh quá tải
                     if (done % CONCURRENCY === 0) {
@@ -2130,10 +2161,13 @@
                 await Promise.all(workers);
 
                 if (!taxiScanAbort) {
-                    statusTxt.textContent = `✅ Hoàn tất! Tìm thấy ${taxiFoundNums.size} số Taxi VIP trong toàn kho.`;
+                    const totalSecs = Math.round((Date.now() - scanStartTime) / 1000);
+                    statusTxt.textContent = `✅ Hoàn tất! Tìm thấy ${taxiFoundNums.size} số Taxi VIP trong toàn kho. (${formatETA(totalSecs)})`;
+                    detailTxt.textContent = '';
                     if (taxiFoundNums.size === 0) emptyDiv.style.display = 'block';
                 } else {
                     statusTxt.textContent = `⏹ Đã dừng. Đã quét ${done.toLocaleString()}/${total.toLocaleString()} · Tìm thấy: ${taxiFoundNums.size} số.`;
+                    detailTxt.textContent = '';
                 }
             } catch (err) {
                 statusTxt.textContent = 'Có lỗi xảy ra khi quét Taxi VIP.';
