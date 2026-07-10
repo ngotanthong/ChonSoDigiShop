@@ -1250,10 +1250,20 @@
                             <div id="taxiDetailText" style="font-size:12px; color:#92400e; margin-top:3px; font-weight:600;"></div>
                         </div>
                     </div>
-                    <button onclick="stopTaxiScan()" id="btnStopTaxi"
-                        style="background:#ef4444; color:white; border:none; border-radius:8px; padding:7px 16px; font-weight:700; font-size:13px; cursor:pointer; display:none;">
-                        ⏹ Dừng
-                    </button>
+                    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                        <button onclick="stopTaxiScan()" id="btnStopTaxi"
+                            style="background:#ef4444; color:white; border:none; border-radius:8px; padding:7px 16px; font-weight:700; font-size:13px; cursor:pointer; display:none;">
+                            ⏹ Dừng
+                        </button>
+                        <button onclick="startTaxiScan(true)" id="btnResumeTaxi"
+                            style="background:#10b981; color:white; border:none; border-radius:8px; padding:7px 16px; font-weight:700; font-size:13px; cursor:pointer; display:none;">
+                            ▶ Tiếp Tục
+                        </button>
+                        <button onclick="resetTaxiScan()" id="btnResetTaxi"
+                            style="background:#6b7280; color:white; border:none; border-radius:8px; padding:7px 14px; font-weight:700; font-size:12px; cursor:pointer; display:none;">
+                            🔄 Quét Lại
+                        </button>
+                    </div>
                 </div>
                 <div style="background:#e5e7eb; border-radius:8px; height:8px; overflow:hidden; margin-bottom:14px;">
                     <div id="taxiProgressBar" style="height:100%; width:0%; background:linear-gradient(90deg,#f59e0b,#d97706); border-radius:8px; transition:width 0.3s;"></div>
@@ -2019,10 +2029,14 @@
         // =============================================
         let taxiScanAbort = false;
         let taxiFoundNums = new Set();
+        // State tồn tại giữa các lần: lưu tasks để có thể tiếp tục
+        let taxiState = null; // { tasks, idx, done, total, resumeProgress }
 
-        async function startTaxiScan() {
+        async function startTaxiScan(resume = false) {
             const btnTaxi = document.getElementById('btnTaxiScan');
             const btnStop = document.getElementById('btnStopTaxi');
+            const btnResume = document.getElementById('btnResumeTaxi');
+            const btnReset = document.getElementById('btnResetTaxi');
             const panel = document.getElementById('taxiPanel');
             const statusTxt = document.getElementById('taxiStatusText');
             const detailTxt = document.getElementById('taxiDetailText');
@@ -2030,48 +2044,64 @@
             const grid = document.getElementById('taxiGrid');
             const emptyDiv = document.getElementById('taxiEmpty');
 
-            // Reset trạng thái
+            let tasks, idx, done, total;
+
+            if (resume && taxiState) {
+                // Tiếp tục từ điểm dừng
+                ({ tasks, total } = taxiState);
+                idx = taxiState.idx;
+                done = taxiState.done;
+                // giữ nguyên grid & taxiFoundNums
+            } else {
+                // Quét mới từ đầu
+                taxiFoundNums = new Set();
+                grid.innerHTML = '';
+                emptyDiv.style.display = 'none';
+                progBar.style.width = '0%';
+                detailTxt.textContent = '';
+
+                // Tạo toàn bộ 1000 cụm ABC (000 → 999)
+                const taxiClusters = [];
+                for (let i = 0; i <= 999; i++) {
+                    taxiClusters.push(String(i).padStart(3, '0'));
+                }
+
+                // Cam kết cao trước (nhiều số taxi VIP hơn), thấp dần
+                const COMMITS_DESC = [...COMMITS].sort((a, b) => Number(b) - Number(a));
+
+                tasks = [];
+                for (const pref of PREFIXES) {
+                    for (const c of COMMITS_DESC) {
+                        for (const cluster of taxiClusters) {
+                            tasks.push({ pref, c, search: `*${cluster}${cluster}` });
+                        }
+                    }
+                }
+                idx = 0;
+                done = 0;
+                total = tasks.length;
+            }
+
+            // Lưu state để có thể resume sau
+            taxiState = { tasks, idx, done, total };
+
             taxiScanAbort = false;
-            taxiFoundNums = new Set();
-            grid.innerHTML = '';
-            emptyDiv.style.display = 'none';
-            progBar.style.width = '0%';
-            detailTxt.textContent = '';
 
             panel.style.display = 'block';
             panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
             btnTaxi.disabled = true;
-            btnTaxi.innerHTML = '<span class="login-spinner" style="width:16px;height:16px;border-width:2px;"></span> ĐANG QUÉT TAXI...';
+            btnTaxi.style.display = 'none';
             btnStop.style.display = 'inline-block';
+            btnResume.style.display = 'none';
+            btnReset.style.display = 'none';
 
-            // Tạo toàn bộ 1000 cụm ABC (000 → 999)
-            const taxiClusters = [];
-            for (let i = 0; i <= 999; i++) {
-                taxiClusters.push(String(i).padStart(3, '0'));
-            }
-
-            // Cam kết cao trước (nhiều số taxi VIP hơn), thấp dần
-            const COMMITS_DESC = [...COMMITS].sort((a, b) => Number(b) - Number(a));
-
-            // Tạo danh sách task: mỗi task = { pref, c, search }
-            const tasks = [];
-            for (const pref of PREFIXES) {
-                for (const c of COMMITS_DESC) {
-                    for (const cluster of taxiClusters) {
-                        tasks.push({ pref, c, search: `*${cluster}${cluster}` }); // kết thúc bằng cụm
-                    }
-                }
-            }
-
-            const total = tasks.length;
-            let done = 0;
-            let idx = 0;
             let lastCurrentPref = '';
             let lastCurrentCommit = '';
-            const CONCURRENCY = 8; // Song song nhẹ để không quá tải
-            const BATCH_PAUSE_MS = 150; // Nghỉ mỗi batch để không spam
-            const scanStartTime = Date.now();
+            const CONCURRENCY = 8;
+            const BATCH_PAUSE_MS = 150;
+            const sessionStart = Date.now(); // thời điểm bắt đầu phiên này
+            const doneatStart = done;         // done khi bắt đầu phiên (dùng để tính tốc độ phiên)
 
             function formatETA(seconds) {
                 if (seconds < 60) return `${Math.round(seconds)}s`;
@@ -2106,10 +2136,12 @@
             }
 
             async function taxiWorker() {
-                while (idx < tasks.length && !taxiScanAbort) {
-                    const taskIdx = idx;
-                    const { pref, c, search } = tasks[idx++];
-                    // Cập nhật đầu số / cam kết đang quét (chỉ khi thay đổi)
+                while (taxiState.idx < tasks.length && !taxiScanAbort) {
+                    const currentIdx = taxiState.idx++;
+                    const { pref, c, search } = tasks[currentIdx];
+                    taxiState.done++;
+                    done = taxiState.done;
+
                     const dispPref = '0' + pref.slice(2);
                     const dispCommit = c === '0' ? '0đ' : (Number(c) / 1000 + 'k');
                     lastCurrentPref = dispPref;
@@ -2123,7 +2155,6 @@
                             json.data.forEach(item => {
                                 const fNum = item.so_tb || '';
                                 if (!taxiFoundNums.has(fNum)) {
-                                    // Kiểm tra có thực sự là taxi không (AI score)
                                     const num = fNum.startsWith('84') ? '0' + fNum.slice(2) : fNum;
                                     const ai = analyzeSIM(num, item.monthly);
                                     if (ai.categories.includes('solap') && ai.reasons.includes('Taxi Đẹp')) {
@@ -2134,22 +2165,20 @@
                                 }
                             });
                         }
-                    } catch (e) {
-                        // bỏ qua lỗi mạng
-                    }
-                    done++;
+                    } catch (e) { /* bỏ qua lỗi mạng */ }
+
                     progBar.style.width = `${(done / total) * 100}%`;
 
-                    // Tính ETA
-                    const elapsed = (Date.now() - scanStartTime) / 1000; // giây
-                    const speed = done / elapsed; // request/giây
-                    const remaining = (total - done) / speed;
+                    // Tính tốc độ theo phiên hiện tại
+                    const sessionElapsed = (Date.now() - sessionStart) / 1000;
+                    const sessionDone = done - doneatStart;
+                    const speed = sessionDone > 0 ? sessionDone / sessionElapsed : 0;
+                    const remaining = speed > 0 ? (total - done) / speed : 0;
                     const etaStr = speed > 0 && remaining > 0 ? ` · ⏱ Còn lại: ${formatETA(remaining)}` : '';
 
                     statusTxt.textContent = `Quét ${done.toLocaleString()}/${total.toLocaleString()} · Tìm thấy: ${taxiFoundNums.size} số Taxi VIP${etaStr}`;
                     detailTxt.textContent = `📡 Đầu số: ${lastCurrentPref}  |  Cam kết: ${lastCurrentCommit}  |  Cụm: ${search}  |  Tốc độ: ${speed.toFixed(1)} req/s`;
 
-                    // Ngắt nhịp sau mỗi CONCURRENCY request để tránh quá tải
                     if (done % CONCURRENCY === 0) {
                         await new Promise(r => setTimeout(r, BATCH_PAUSE_MS));
                     }
@@ -2158,26 +2187,31 @@
 
             try {
                 const workers = [];
-                for (let w = 0; w < CONCURRENCY; w++) {
-                    workers.push(taxiWorker());
-                }
+                for (let w = 0; w < CONCURRENCY; w++) workers.push(taxiWorker());
                 await Promise.all(workers);
 
                 if (!taxiScanAbort) {
-                    const totalSecs = Math.round((Date.now() - scanStartTime) / 1000);
+                    const totalSecs = Math.round((Date.now() - sessionStart) / 1000);
                     statusTxt.textContent = `✅ Hoàn tất! Tìm thấy ${taxiFoundNums.size} số Taxi VIP trong toàn kho. (${formatETA(totalSecs)})`;
                     detailTxt.textContent = '';
                     if (taxiFoundNums.size === 0) emptyDiv.style.display = 'block';
+                    taxiState = null; // reset sau khi hoàn tất
+                    btnTaxi.innerHTML = '🚖 QUÉT LẠI TAXI VIP';
+                    btnResume.style.display = 'none';
+                    btnReset.style.display = 'none';
                 } else {
-                    statusTxt.textContent = `⏹ Đã dừng. Đã quét ${done.toLocaleString()}/${total.toLocaleString()} · Tìm thấy: ${taxiFoundNums.size} số.`;
-                    detailTxt.textContent = '';
+                    const pct = Math.round((done / total) * 100);
+                    statusTxt.textContent = `⏹ Tạm dừng tại ${pct}% · Đã quét ${done.toLocaleString()}/${total.toLocaleString()} · Tìm thấy: ${taxiFoundNums.size} số.`;
+                    detailTxt.textContent = '▶ Nhấn “Tiếp Tục” để quét nốt phần còn lại, hoặc “Quét Lại” để bắt đầu từ đầu.';
+                    btnResume.style.display = 'inline-block';
+                    btnReset.style.display = 'inline-block';
                 }
             } catch (err) {
                 statusTxt.textContent = 'Có lỗi xảy ra khi quét Taxi VIP.';
                 console.error('Taxi scan error:', err);
             } finally {
                 btnTaxi.disabled = false;
-                btnTaxi.innerHTML = '🚖 QUÉT LẠI TAXI VIP';
+                btnTaxi.style.display = 'inline-block';
                 btnStop.style.display = 'none';
             }
         }
@@ -2186,6 +2220,14 @@
             taxiScanAbort = true;
             document.getElementById('btnStopTaxi').style.display = 'none';
             document.getElementById('taxiStatusText').textContent = 'Đang dừng...';
+        }
+
+        function resetTaxiScan() {
+            taxiState = null;
+            taxiFoundNums = new Set();
+            document.getElementById('btnResumeTaxi').style.display = 'none';
+            document.getElementById('btnResetTaxi').style.display = 'none';
+            startTaxiScan(false);
         }
 
         function processAIScores(minScore = 20) {
