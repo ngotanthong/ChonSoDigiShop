@@ -77,8 +77,8 @@
                 reasons.push('Tứ Quý');
                 highlight = numStr.slice(-4);
             }
-            // 2. Tam Hoa (3 số giống nhau ở cuối)
-            else if (/(.)\1{2}$/.test(numStr)) {
+            // 2. Tam Hoa (3 số giống nhau ở cuối, chỉ tính số >= 5)
+            else if (/([5-9])\1{2}$/.test(numStr)) {
                 score += 30;
                 categories.push('tamhoa');
                 reasons.push('Tam Hoa');
