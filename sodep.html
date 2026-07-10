@@ -2144,7 +2144,7 @@
                     const etaStr = speed > 0 && remaining > 0 ? ` · ⏱ Còn lại: ${formatETA(remaining)}` : '';
 
                     statusTxt.textContent = `Quét ${done.toLocaleString()}/${total.toLocaleString()} · Tìm thấy: ${taxiFoundNums.size} số Taxi VIP${etaStr}`;
-                    detailTxt.textContent = `📡 Đầu số: ${lastCurrentPref}  |  Cam kết: ${lastCurrentCommit}  |  Tốc độ: ${speed.toFixed(1)} req/s`;
+                    detailTxt.textContent = `📡 Đầu số: ${lastCurrentPref}  |  Cam kết: ${lastCurrentCommit}  |  Cụm: ${search}  |  Tốc độ: ${speed.toFixed(1)} req/s`;
 
                     // Ngắt nhịp sau mỗi CONCURRENCY request để tránh quá tải
                     if (done % CONCURRENCY === 0) {
