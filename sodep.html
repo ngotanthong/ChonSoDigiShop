@@ -2051,12 +2051,15 @@
                 taxiClusters.push(String(i).padStart(3, '0'));
             }
 
-            // Tạo danh sách task: mỗi task = { pref, c, cluster }
+            // Cam kết cao trước (nhiều số taxi VIP hơn), thấp dần
+            const COMMITS_DESC = [...COMMITS].sort((a, b) => Number(b) - Number(a));
+
+            // Tạo danh sách task: mỗi task = { pref, c, search }
             const tasks = [];
             for (const pref of PREFIXES) {
-                for (const c of COMMITS) {
+                for (const c of COMMITS_DESC) {
                     for (const cluster of taxiClusters) {
-                        tasks.push({ pref, c, search: `*${cluster}${cluster}*` });
+                        tasks.push({ pref, c, search: `*${cluster}${cluster}` }); // kết thúc bằng cụm
                     }
                 }
             }
