@@ -1240,14 +1240,17 @@
             </div>
 
             <!-- Panel kết quả Taxi VIP riêng biệt -->
-            <div id="taxiPanel" style="display:none; margin-top: 18px; background: linear-gradient(135deg, #fffbeb, #fef3c7); border: 2px solid #f59e0b; border-radius: 16px; padding: 20px;">
-                <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+            <div id="taxiPanel"
+                style="display:none; margin-top: 18px; background: linear-gradient(135deg, #fffbeb, #fef3c7); border: 2px solid #f59e0b; border-radius: 16px; padding: 20px;">
+                <div
+                    style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
                     <div style="display:flex; align-items:center; gap:10px;">
                         <span style="font-size:22px;">🚖</span>
                         <div>
                             <div style="font-weight:800; font-size:16px; color:#92400e;">Kết quả Taxi VIP</div>
                             <div id="taxiStatusText" style="font-size:13px; color:#b45309;">Đang quét...</div>
-                            <div id="taxiDetailText" style="font-size:12px; color:#92400e; margin-top:3px; font-weight:600;"></div>
+                            <div id="taxiDetailText"
+                                style="font-size:12px; color:#92400e; margin-top:3px; font-weight:600;"></div>
                         </div>
                     </div>
                     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
@@ -1266,10 +1269,16 @@
                     </div>
                 </div>
                 <div style="background:#e5e7eb; border-radius:8px; height:8px; overflow:hidden; margin-bottom:14px;">
-                    <div id="taxiProgressBar" style="height:100%; width:0%; background:linear-gradient(90deg,#f59e0b,#d97706); border-radius:8px; transition:width 0.3s;"></div>
+                    <div id="taxiProgressBar"
+                        style="height:100%; width:0%; background:linear-gradient(90deg,#f59e0b,#d97706); border-radius:8px; transition:width 0.3s;">
+                    </div>
                 </div>
-                <div id="taxiGrid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px; max-height:500px; overflow-y:auto;"></div>
-                <div id="taxiEmpty" style="display:none; text-align:center; padding:30px; color:#92400e; font-style:italic;">Chưa tìm thấy số Taxi VIP nào.</div>
+                <div id="taxiGrid"
+                    style="display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px; max-height:500px; overflow-y:auto;">
+                </div>
+                <div id="taxiEmpty"
+                    style="display:none; text-align:center; padding:30px; color:#92400e; font-style:italic;">Chưa tìm
+                    thấy số Taxi VIP nào.</div>
             </div>
 
             <div class="toolbar" id="toolbar">
@@ -1631,7 +1640,7 @@
         window.promptCustomApi = function () {
             const currentApi = localStorage.getItem('CUSTOM_GAS_API_URL') || GAS_API_URL;
             const currentPinApi = localStorage.getItem('CUSTOM_GAS_PIN_API_URL') || GAS_PIN_API_URL;
-            
+
             const newApi = prompt("Nhập đường dẫn Google Apps Script (Đăng nhập/Kiểm tra):\n(Để trống nếu muốn quay về mặc định)", currentApi);
             if (newApi !== null) {
                 if (newApi.trim() === "") localStorage.removeItem('CUSTOM_GAS_API_URL');
@@ -1643,7 +1652,7 @@
                 if (newPinApi.trim() === "") localStorage.removeItem('CUSTOM_GAS_PIN_API_URL');
                 else localStorage.setItem('CUSTOM_GAS_PIN_API_URL', newPinApi.trim());
             }
-            
+
             if (newApi !== null || newPinApi !== null) {
                 alert("Đã lưu API mới thành công!");
                 location.reload();
@@ -2070,8 +2079,10 @@
                 const COMMITS_DESC = [...COMMITS].sort((a, b) => Number(b) - Number(a));
 
                 tasks = [];
-                for (const pref of PREFIXES) {
-                    for (const c of COMMITS_DESC) {
+                // Cam kết cao trước, phủ TẤT CẢ đầu số ở mức đó rồi mới xuống thấp hơn
+                // Thứ tự: 400k×[091,094,088...] → 200k×[091,094...] → ...
+                for (const c of COMMITS_DESC) {
+                    for (const pref of PREFIXES) {
                         for (const cluster of taxiClusters) {
                             tasks.push({ pref, c, search: `*${cluster}${cluster}` });
                         }
@@ -2123,9 +2134,9 @@
 
                 const card = document.createElement('div');
                 card.style.cssText = 'background:white;border:2px solid #f59e0b;border-radius:12px;padding:14px 16px;box-shadow:0 2px 12px rgba(245,158,11,0.15);cursor:pointer;transition:transform 0.15s,box-shadow 0.15s;';
-                card.onmouseenter = () => { card.style.transform='translateY(-2px)'; card.style.boxShadow='0 6px 20px rgba(245,158,11,0.3)'; };
-                card.onmouseleave = () => { card.style.transform=''; card.style.boxShadow='0 2px 12px rgba(245,158,11,0.15)'; };
-                card.onclick = () => { navigator.clipboard.writeText(num).catch(()=>{}); };
+                card.onmouseenter = () => { card.style.transform = 'translateY(-2px)'; card.style.boxShadow = '0 6px 20px rgba(245,158,11,0.3)'; };
+                card.onmouseleave = () => { card.style.transform = ''; card.style.boxShadow = '0 2px 12px rgba(245,158,11,0.15)'; };
+                card.onclick = () => { navigator.clipboard.writeText(num).catch(() => { }); };
                 card.innerHTML = `
                     <div style="font-size:18px;font-weight:800;color:#92400e;letter-spacing:1px;">🚖 ${formatted}</div>
                     <div style="margin-top:6px;font-size:12px;color:#b45309;font-weight:600;">Điểm AI: ${aiResult.score} &nbsp;|&nbsp; ${aiResult.reasonsArr.join(', ')}</div>
