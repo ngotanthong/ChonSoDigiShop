@@ -2110,9 +2110,11 @@
             let lastCurrentPref = '';
             let lastCurrentCommit = '';
             const CONCURRENCY = 8;
-            const BATCH_PAUSE_MS = 150;
-            const sessionStart = Date.now(); // thời điểm bắt đầu phiên này
-            const doneatStart = done;         // done khi bắt đầu phiên (dùng để tính tốc độ phiên)
+            const BATCH_PAUSE_MS = 300;        // 300ms nghỉ mỗi batch → ~3 req/s
+            const COMMIT_BREAK_MS = 3 * 60 * 1000; // 3 phút nghỉ giữa mỗi mức cam kết
+            const TASKS_PER_COMMIT = PREFIXES.length * 1000; // 8 prefix × 1000 cụm
+            const sessionStart = Date.now();
+            const doneatStart = done;
 
             function formatETA(seconds) {
                 if (seconds < 60) return `${Math.round(seconds)}s`;
@@ -2122,6 +2124,16 @@
                 const h = Math.floor(m / 60);
                 const rm = m % 60;
                 return `${h}g ${rm}p`;
+            }
+
+            // Đếm ngược nghỉ giữa các mức cam kết
+            async function sleepWithCountdown(ms, nextCommit) {
+                const total = ms / 1000;
+                for (let s = Math.round(total); s > 0 && !taxiScanAbort; s--) {
+                    statusTxt.textContent = `☕ Nghỉ ${s}s trước khi chuyển sang cam kết: ${nextCommit} (tránh quá tải server)`;
+                    detailTxt.textContent = `⏳ Tìm thấy ${taxiFoundNums.size} số Taxi VIP cho đến giờ`;
+                    await new Promise(r => setTimeout(r, 1000));
+                }
             }
 
             function renderTaxiCard(simItem) {
@@ -2144,6 +2156,13 @@
                     <div style="margin-top:6px;font-size:11px;color:#a8a29e;">📋 Click để copy số</div>
                 `;
                 grid.appendChild(card);
+            }
+
+            // Tính mức cam kết của task tại vị trí idx
+            function getCommitAtIdx(i) {
+                const commitIdx = Math.floor(i / TASKS_PER_COMMIT);
+                const COMMITS_DESC = [...COMMITS].sort((a, b) => Number(b) - Number(a));
+                return COMMITS_DESC[commitIdx] || '';
             }
 
             async function taxiWorker() {
@@ -2192,6 +2211,14 @@
 
                     if (done % CONCURRENCY === 0) {
                         await new Promise(r => setTimeout(r, BATCH_PAUSE_MS));
+                    }
+
+                    // Nghỉ dài sau mỗi mức cam kết (mỗi TASKS_PER_COMMIT tasks)
+                    // Chỉ 1 worker xử lý (dùng modulo để tránh nhiều worker cùng nghỉ)
+                    if (done % TASKS_PER_COMMIT === 0 && done < total && !taxiScanAbort) {
+                        const nextCommit = getCommitAtIdx(taxiState.idx);
+                        const nextDispCommit = nextCommit === '0' ? '0đ' : (Number(nextCommit) / 1000 + 'k');
+                        await sleepWithCountdown(COMMIT_BREAK_MS, nextDispCommit);
                     }
                 }
             }
