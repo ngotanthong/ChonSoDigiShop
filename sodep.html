@@ -1419,9 +1419,12 @@
 
             while (telegramQueue.length > 0) {
                 const simData = telegramQueue.shift();
-                const price = simData.price ? (Number(simData.price).toLocaleString('vi-VN') + 'đ') : '0đ';
-                const commit = simData.commitment ? (Number(simData.commitment).toLocaleString('vi-VN') + 'đ') : '0đ';
-                const msg = `🔥 <b>PHÁT HIỆN SIM ĐIỂM CAO</b> 🔥\n📞 Số: <b>${simData.fNum}</b>\n🎯 Điểm: ${simData.ai.score}\n✨ Nét đẹp: ${simData.ai.reasonsArr.join(', ')}\n💸 Trả trước: ${price} - Cam kết: ${commit}/tháng\n🌐 Link: https://digishop.vnpt.vn/di-dong/sim-so`;
+                const monthlyVal = Number(simData.monthly) || 0;
+                const commitMonths = simData.commitment ? simData.commitment + ' tháng' : 'Không cam kết';
+                const priceVal = Number(simData.price) || 0;
+                const monthlyText = monthlyVal > 0 ? (monthlyVal.toLocaleString('vi-VN') + 'đ/tháng') : '0đ (Trả trước)';
+                const priceText = priceVal > 0 ? (priceVal.toLocaleString('vi-VN') + 'đ') : '0đ';
+                const msg = `🔥 <b>PHÁT HIỆN SIM ĐIỂM CAO</b> 🔥\n📞 Số: <b>${simData.fNum}</b>\n🎯 Điểm: ${simData.ai.score}\n✨ Nét đẹp: ${simData.ai.reasonsArr.join(', ')}\n💰 Giá bán: ${priceText}\n📋 Gói cước: ${monthlyText} · ${commitMonths}\n🌐 Link: https://digishop.vnpt.vn/di-dong/sim-so`;
 
                 try {
                     if (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
