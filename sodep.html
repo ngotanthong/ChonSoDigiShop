@@ -1385,8 +1385,11 @@
 
     <script>
         // --- CẤU HÌNH BẢO MẬT & API ---
-        let GAS_API_URL = localStorage.getItem('CUSTOM_GAS_API_URL') || 'https://script.google.com/macros/s/AKfycbyFacGhuuIqpF7ZVo8Ezh9zYA_7XjstBG7YGF1vMg15UnKaCmb63xcpIDZ4EMpMHP6GXg/exec';
-        let GAS_PIN_API_URL = localStorage.getItem('CUSTOM_GAS_PIN_API_URL') || 'https://script.google.com/macros/s/AKfycbzuUk3M2D-eIxnBugn30VmUrIUok9qYj28pRlOTK0s_FDrsEknyJ-0ZfwUFBER2j3KVUQ/exec'; // Đường dẫn API cho Ghim Sim (nếu trống sẽ dùng chung GAS_API_URL)
+        // Cấu hình Telegram Bot trực tiếp
+        let TELEGRAM_BOT_TOKEN = localStorage.getItem('TELEGRAM_BOT_TOKEN') || '8985605068:AAHWSdxaHnGgJ9H41YFToGzgSxAJk90vIQs'; 
+        let TELEGRAM_CHAT_ID = localStorage.getItem('TELEGRAM_CHAT_ID') || '-5281663284';
+        
+        let GAS_PIN_API_URL = localStorage.getItem('CUSTOM_GAS_PIN_API_URL') || 'https://script.google.com/macros/s/AKfycbzuUk3M2D-eIxnBugn30VmUrIUok9qYj28pRlOTK0s_FDrsEknyJ-0ZfwUFBER2j3KVUQ/exec'; // Đường dẫn API cho Ghim Sim
         const BASE_API = 'https://digishop.vnpt.vn/apiprod/v2/simso/num_search';
         const PREFIXES = ['8491', '8494', '8488', '8481', '8482', '8483', '8484', '8485'];
         // Lấy cam kết 0đ và giá rẻ <=600k
@@ -1418,17 +1421,24 @@
                 const msg = `🔥 <b>PHÁT HIỆN SIM ĐIỂM CAO</b> 🔥\n📞 Số: <b>${simData.fNum}</b>\n🎯 Điểm: ${simData.ai.score}\n✨ Nét đẹp: ${simData.ai.reasonsArr.join(', ')}\n💸 Trả trước: ${price} - Cam kết: ${commit}/tháng\n🌐 Link: https://digishop.vnpt.vn/di-dong/sim-so`;
 
                 try {
-                    // Dùng no-cors để tránh lỗi CORS khi gọi Google Apps Script từ frontend tĩnh
-                    await fetch(`${GAS_API_URL}?action=sendTele`, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: {
-                            'Content-Type': 'text/plain;charset=utf-8',
-                        },
-                        body: JSON.stringify({ message: msg })
-                    });
+                    if (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
+                        const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+                        await fetch(url, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ 
+                                chat_id: TELEGRAM_CHAT_ID,
+                                text: msg,
+                                parse_mode: 'HTML'
+                            })
+                        });
+                    } else {
+                        console.warn("Chưa cấu hình TELEGRAM_BOT_TOKEN hoặc TELEGRAM_CHAT_ID trong localStorage.");
+                    }
                 } catch (e) {
-                    console.error("Lỗi gửi Telegram qua GAS", e);
+                    console.error("Lỗi gửi Telegram API trực tiếp", e);
                 }
 
                 // Chờ 1.5 giây giữa các tin nhắn để tránh bị Google/Telegram chặn
@@ -1436,6 +1446,34 @@
             }
 
             isSendingTelegram = false;
+        }
+
+        // Hàm test Telegram
+        async function testTelegram() {
+            const msg = `🤖 <b>TEST TIN NHẮN TỪ CHỌN SỐ DIGISHOP</b>\n\n✅ Nếu bạn nhận được tin nhắn này, cấu hình Telegram Bot đã hoạt động chính xác!`;
+            if (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
+                try {
+                    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+                    const res = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: msg, parse_mode: 'HTML' })
+                    });
+                    const data = await res.json();
+                    if (data.ok) {
+                        alert('✅ Gửi tin nhắn test thành công! Hãy kiểm tra nhóm Telegram của bạn.');
+                        console.log("Telegram Response:", data);
+                    } else {
+                        alert('❌ Lỗi từ Telegram: ' + data.description);
+                        console.error("Telegram Error:", data);
+                    }
+                } catch (e) {
+                    alert('❌ Lỗi kết nối API Telegram: ' + e.message);
+                    console.error("Fetch Error:", e);
+                }
+            } else {
+                alert('⚠️ Chưa cấu hình TELEGRAM_BOT_TOKEN hoặc TELEGRAM_CHAT_ID');
+            }
         }
 
         // Sinh mã định danh thiết bị
@@ -2192,6 +2230,17 @@
                                         taxiFoundNums.add(fNum);
                                         renderTaxiCard(item);
                                         emptyDiv.style.display = 'none';
+
+                                        if (!notifiedTelegramSims.has(fNum)) {
+                                            notifiedTelegramSims.add(fNum);
+                                            const simData = {
+                                                ...item,
+                                                fNum: formatNumber(fNum),
+                                                ai: ai
+                                            };
+                                            telegramQueue.push(simData);
+                                            processTelegramQueue();
+                                        }
                                     }
                                 }
                             });
