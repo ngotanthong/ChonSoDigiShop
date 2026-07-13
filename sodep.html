@@ -1393,8 +1393,10 @@
         let GAS_PIN_API_URL = localStorage.getItem('CUSTOM_GAS_PIN_API_URL') || 'https://script.google.com/macros/s/AKfycbzuUk3M2D-eIxnBugn30VmUrIUok9qYj28pRlOTK0s_FDrsEknyJ-0ZfwUFBER2j3KVUQ/exec'; // Đường dẫn API cho Ghim Sim
         const BASE_API = 'https://digishop.vnpt.vn/apiprod/v2/simso/num_search';
         const PREFIXES = ['8491', '8494', '8488', '8481', '8482', '8483', '8484', '8485'];
-        // Lấy cam kết 0đ và giá rẻ <=600k
-        const COMMITS = ['0', '100000', '150000', '200000', '400000', '600000']; // 0đ (trả trước) + các mức cam kết ≤600k/tháng
+        // Cam kết cho quét AI (≤400k)
+        const COMMITS = ['0', '100000', '150000', '200000', '400000']; // 0đ (trả trước) + các mức cam kết ≤400k/tháng
+        // Cam kết cho quét Taxi (≤600k)
+        const TAXI_COMMITS = ['0', '100000', '150000', '200000', '400000', '600000'];
 
         let rawData = [];
         let scoredData = [];
@@ -2115,7 +2117,7 @@
                 }
 
                 // Cam kết cao trước (nhiều số taxi VIP hơn), thấp dần
-                const COMMITS_DESC = [...COMMITS].sort((a, b) => Number(b) - Number(a));
+                const COMMITS_DESC = [...TAXI_COMMITS].sort((a, b) => Number(b) - Number(a));
 
                 tasks = [];
                 // Cam kết cao trước, phủ TẤT CẢ đầu số ở mức đó rồi mới xuống thấp hơn
@@ -2201,7 +2203,7 @@
             // Tính mức cam kết của task tại vị trí idx
             function getCommitAtIdx(i) {
                 const commitIdx = Math.floor(i / TASKS_PER_COMMIT);
-                const COMMITS_DESC = [...COMMITS].sort((a, b) => Number(b) - Number(a));
+                const COMMITS_DESC = [...TAXI_COMMITS].sort((a, b) => Number(b) - Number(a));
                 return COMMITS_DESC[commitIdx] || '';
             }
 
