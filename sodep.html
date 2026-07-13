@@ -1389,8 +1389,8 @@
         let GAS_PIN_API_URL = localStorage.getItem('CUSTOM_GAS_PIN_API_URL') || 'https://script.google.com/macros/s/AKfycbzuUk3M2D-eIxnBugn30VmUrIUok9qYj28pRlOTK0s_FDrsEknyJ-0ZfwUFBER2j3KVUQ/exec'; // Đường dẫn API cho Ghim Sim (nếu trống sẽ dùng chung GAS_API_URL)
         const BASE_API = 'https://digishop.vnpt.vn/apiprod/v2/simso/num_search';
         const PREFIXES = ['8491', '8494', '8488', '8481', '8482', '8483', '8484', '8485'];
-        // Lấy cam kết 0đ và giá rẻ <=400k
-        const COMMITS = ['0', '100000', '150000', '200000', '400000']; // 0đ (trả trước) + các mức cam kết ≤400k/tháng
+        // Lấy cam kết 0đ và giá rẻ <=600k
+        const COMMITS = ['0', '100000', '150000', '200000', '400000', '600000']; // 0đ (trả trước) + các mức cam kết ≤600k/tháng
 
         let rawData = [];
         let scoredData = [];
@@ -2080,9 +2080,9 @@
 
                 tasks = [];
                 // Cam kết cao trước, phủ TẤT CẢ đầu số ở mức đó rồi mới xuống thấp hơn
-                // Thứ tự: 400k×[091,094,088...] → 200k×[091,094...] → ...
+                const TAXI_PREFIXES = PREFIXES.filter(p => p.startsWith('848')); // Chỉ quét đầu 08
                 for (const c of COMMITS_DESC) {
-                    for (const pref of PREFIXES) {
+                    for (const pref of TAXI_PREFIXES) {
                         for (const cluster of taxiClusters) {
                             tasks.push({ pref, c, search: `*${cluster}${cluster}` });
                         }
@@ -2109,10 +2109,11 @@
 
             let lastCurrentPref = '';
             let lastCurrentCommit = '';
-            const CONCURRENCY = 8;
-            const BATCH_PAUSE_MS = 300;        // 300ms nghỉ mỗi batch → ~3 req/s
-            const COMMIT_BREAK_MS = 3 * 60 * 1000; // 3 phút nghỉ giữa mỗi mức cam kết
-            const TASKS_PER_COMMIT = PREFIXES.length * 1000; // 8 prefix × 1000 cụm
+            const CONCURRENCY = 20;
+            const BATCH_PAUSE_MS = 100;        // 100ms nghỉ mỗi batch
+            const COMMIT_BREAK_MS = 30 * 1000; // 30s nghỉ giữa mỗi mức cam kết
+            const TAXI_PREFIXES_COUNT = PREFIXES.filter(p => p.startsWith('848')).length;
+            const TASKS_PER_COMMIT = TAXI_PREFIXES_COUNT * 1000; // Số prefix đầu 08 × 1000 cụm
             const sessionStart = Date.now();
             const doneatStart = done;
 
