@@ -330,8 +330,8 @@
                     const p3 = parseInt(last6.slice(4, 6));
                     const diff1 = p2 - p1;
                     const diff2 = p3 - p2;
-                    // Cặp Tiến 3 Bậc đẹp: chỉ chấp nhận diff=10 (chục tròn: 10 20 30) hoặc diff=11 (đôi: 11 22 33)
-                    if ((diff1 === 10 || diff1 === 11) && diff1 === diff2) {
+                    // Cặp Tiến 3 Bậc đẹp: chỉ chấp nhận diff=10 (chục tròn: 10 20 30, 63 73 83)
+                    if (diff1 === 10 && diff1 === diff2) {
                         if (!highlight) {
                             score += 30;
                             categories.push('captien');
@@ -349,9 +349,9 @@
                     const p1 = parseInt(last4.slice(0, 2));
                     const p2 = parseInt(last4.slice(2, 4));
                     const diff = p2 - p1;
-                    // Cặp Tiến đẹp: chỉ chấp nhận diff=10 (chục tròn: 20→30) hoặc diff=11 (đôi tăng dần: 22→33, 12→23)
-                    // Loại bỏ các cặp ngẫu nhiên như 50→65 (diff=15), 21→33 (diff=12), 81→93 (diff=12)
-                    if ((diff === 10 || diff === 11) && p1 >= 10) {
+                    // Cặp Tiến đẹp: chỉ chấp nhận diff=10 (chục tròn: 20→30, 63→73)
+                    // Loại bỏ diff=11 (dạng 63→74 nhìn xấu) và các cặp ngẫu nhiên khác
+                    if (diff === 10 && p1 >= 10) {
                         if (!highlight) {
                             score += 15;
                             categories.push('captien');
