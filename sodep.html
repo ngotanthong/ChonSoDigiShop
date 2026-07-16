@@ -2113,10 +2113,17 @@
                 progBar.style.width = '0%';
                 detailTxt.textContent = '';
 
-                // Tạo toàn bộ 1000 cụm ABC (000 → 999)
+                // Tạo toàn bộ 1000 cụm ABCABC (000 → 999)
                 const taxiClusters = [];
                 for (let i = 0; i <= 999; i++) {
-                    taxiClusters.push(String(i).padStart(3, '0'));
+                    const abc = String(i).padStart(3, '0');
+                    taxiClusters.push(`${abc}${abc}`); // ABCABC
+                }
+
+                // Thêm 100 cụm ABABAB (00 → 99)
+                for (let i = 0; i <= 99; i++) {
+                    const ab = String(i).padStart(2, '0');
+                    taxiClusters.push(`${ab}${ab}${ab}`); // ABABAB
                 }
 
                 // Cam kết cao trước (nhiều số taxi VIP hơn), thấp dần
@@ -2127,8 +2134,8 @@
                 const TAXI_PREFIXES = PREFIXES.filter(p => p.startsWith('848')); // Chỉ quét đầu 08
                 for (const c of COMMITS_DESC) {
                     for (const pref of TAXI_PREFIXES) {
-                        for (const cluster of taxiClusters) {
-                            tasks.push({ pref, c, search: `*${cluster}${cluster}` });
+                        for (const query of taxiClusters) {
+                            tasks.push({ pref, c, search: query });
                         }
                     }
                 }
@@ -2157,7 +2164,7 @@
             const BATCH_PAUSE_MS = 100;        // 100ms nghỉ mỗi batch
             const COMMIT_BREAK_MS = 30 * 1000; // 30s nghỉ giữa mỗi mức cam kết
             const TAXI_PREFIXES_COUNT = PREFIXES.filter(p => p.startsWith('848')).length;
-            const TASKS_PER_COMMIT = TAXI_PREFIXES_COUNT * 1000; // Số prefix đầu 08 × 1000 cụm
+            const TASKS_PER_COMMIT = TAXI_PREFIXES_COUNT * 1100; // Số prefix đầu 08 × 1100 cụm (1000 ABCABC + 100 ABABAB)
             const sessionStart = Date.now();
             const doneatStart = done;
 
