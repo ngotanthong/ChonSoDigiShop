@@ -2230,35 +2230,45 @@
                     lastCurrentCommit = dispCommit;
 
                     const url = `${BASE_API}?search=${encodeURIComponent(search)}&prefix=${pref}&commit=${c}`;
-                    try {
-                        const res = await fetch(url);
-                        const json = await res.json();
-                        if (json.errorCode === 0 && json.data) {
-                            json.data.forEach(item => {
-                                const fNum = item.so_tb || '';
-                                if (!taxiFoundNums.has(fNum)) {
-                                    const num = fNum.startsWith('84') ? '0' + fNum.slice(2) : fNum;
-                                    const ai = analyzeSIM(num, item.monthly);
-                                    if (ai.categories.includes('solap') && ai.reasons.includes('Taxi Đẹp')) {
-                                        taxiFoundNums.add(fNum);
-                                        renderTaxiCard(item);
-                                        emptyDiv.style.display = 'none';
+                    let retries = 3;
+                    while (retries > 0) {
+                        try {
+                            const res = await fetch(url);
+                            const json = await res.json();
+                            if (json.errorCode === 0 && json.data) {
+                                json.data.forEach(item => {
+                                    const fNum = item.so_tb || '';
+                                    if (!taxiFoundNums.has(fNum)) {
+                                        const num = fNum.startsWith('84') ? '0' + fNum.slice(2) : fNum;
+                                        const ai = analyzeSIM(num, item.monthly);
+                                        if (ai.categories.includes('solap') && ai.reasons.includes('Taxi Đẹp')) {
+                                            taxiFoundNums.add(fNum);
+                                            renderTaxiCard(item);
+                                            emptyDiv.style.display = 'none';
 
-                                        if (!notifiedTelegramSims.has(fNum)) {
-                                            notifiedTelegramSims.add(fNum);
-                                            const simData = {
-                                                ...item,
-                                                fNum: formatNumber(fNum),
-                                                ai: ai
-                                            };
-                                            telegramQueue.push(simData);
-                                            processTelegramQueue();
+                                            if (!notifiedTelegramSims.has(fNum)) {
+                                                notifiedTelegramSims.add(fNum);
+                                                const simData = {
+                                                    ...item,
+                                                    fNum: formatNumber(fNum),
+                                                    ai: ai
+                                                };
+                                                telegramQueue.push(simData);
+                                                processTelegramQueue();
+                                            }
                                         }
                                     }
-                                }
-                            });
+                                });
+                            }
+                            break; // Thành công thì thoát vòng lặp retry
+                        } catch (e) {
+                            retries--;
+                            if (retries > 0) {
+                                // Nghỉ 1s trước khi thử lại
+                                await new Promise(r => setTimeout(r, 1000));
+                            }
                         }
-                    } catch (e) { /* bỏ qua lỗi mạng */ }
+                    }
 
                     progBar.style.width = `${(done / total) * 100}%`;
 
