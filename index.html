@@ -25637,7 +25637,8 @@
                 if (formatNum.length === 10) {
                     formatNum = formatNum.replace(/(\d{3})(\d{3})(\d{4})/, '$1.$2.$3');
                 }
-                const isFree = !item.monthly || item.monthly == 0 || item.monthly === "0";
+                const hasCommitment = item.commitment && Number(item.commitment) > 0;
+                const isFree = (!item.monthly || item.monthly == 0 || item.monthly === "0") && !hasCommitment;
                 const price = Number(item.monthly) || 0;
                 let displayPrice = Number(item.price || 0);
                 if (displayPrice === 33500) displayPrice = 170000;
@@ -25656,10 +25657,10 @@
                         </div>
                     `;
                 } else {
-                    const commitVal = (item.commitment && item.commitment > 0) ? `${item.commitment}T` : 'Không';
+                    const commitVal = hasCommitment ? `${item.commitment}T` : 'Không';
                     infoHtml = `
                         <div class="p-info-grid">
-                            <div class="p-col"><strong>${price / 1000}k</strong></div>
+                            <div class="p-col"><strong>${price > 0 ? price / 1000 + 'k' : '0đ'}</strong></div>
                             <div class="p-col"><strong>${commitVal}</strong></div>
                         </div>
                     `;

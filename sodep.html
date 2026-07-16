@@ -1387,16 +1387,16 @@
         // --- CẤU HÌNH BẢO MẬT & API ---
         let GAS_API_URL = localStorage.getItem('CUSTOM_GAS_API_URL') || 'https://script.google.com/macros/s/AKfycbyFacGhuuIqpF7ZVo8Ezh9zYA_7XjstBG7YGF1vMg15UnKaCmb63xcpIDZ4EMpMHP6GXg/exec';
         // Cấu hình Telegram Bot trực tiếp
-        let TELEGRAM_BOT_TOKEN = localStorage.getItem('TELEGRAM_BOT_TOKEN') || '8985605068:AAHWSdxaHnGgJ9H41YFToGzgSxAJk90vIQs'; 
+        let TELEGRAM_BOT_TOKEN = localStorage.getItem('TELEGRAM_BOT_TOKEN') || '8985605068:AAHWSdxaHnGgJ9H41YFToGzgSxAJk90vIQs';
         let TELEGRAM_CHAT_ID = localStorage.getItem('TELEGRAM_CHAT_ID') || '-5281663284';
-        
+
         let GAS_PIN_API_URL = localStorage.getItem('CUSTOM_GAS_PIN_API_URL') || 'https://script.google.com/macros/s/AKfycbzuUk3M2D-eIxnBugn30VmUrIUok9qYj28pRlOTK0s_FDrsEknyJ-0ZfwUFBER2j3KVUQ/exec'; // Đường dẫn API cho Ghim Sim
         const BASE_API = 'https://digishop.vnpt.vn/apiprod/v2/simso/num_search';
         const PREFIXES = ['8491', '8494', '8488', '8481', '8482', '8483', '8484', '8485'];
         // Cam kết cho quét AI (≤400k)
         const COMMITS = ['0', '100000', '150000', '200000', '400000']; // 0đ (trả trước) + các mức cam kết ≤400k/tháng
-        // Cam kết cho quét Taxi (≤600k)
-        const TAXI_COMMITS = ['0', '100000', '150000', '200000', '400000', '600000'];
+        // Cam kết cho quét Taxi (100k–800k, không quét 0đ)
+        const TAXI_COMMITS = ['100000', '150000', '200000', '400000', '600000', '800000'];
 
         let rawData = [];
         let scoredData = [];
@@ -1424,7 +1424,7 @@
                 const priceVal = Number(simData.price) || 0;
                 const monthlyText = monthlyVal > 0 ? (monthlyVal.toLocaleString('vi-VN') + 'đ/tháng') : '0đ (Trả trước)';
                 const priceText = priceVal > 0 ? (priceVal.toLocaleString('vi-VN') + 'đ') : '0đ';
-                const msg = `🔥 <b>PHÁT HIỆN SIM ĐIỂM CAO</b> 🔥\n📞 Số: <b>${simData.fNum}</b>\n🎯 Điểm: ${simData.ai.score}\n✨ Nét đẹp: ${simData.ai.reasonsArr.join(', ')}\n💰 Giá bán: ${priceText}\n📋 Gói cước: ${monthlyText} · ${commitMonths}\n🌐 Link: https://digishop.vnpt.vn/di-dong/sim-so`;
+                const msg = `🔥 <b>PHÁT HIỆN SIM ĐIỂM CAO</b> 🔥\n📞 Số: <b>${simData.fNum}</b>\n🎯 Điểm: ${simData.ai.score}\n✨ Nét đẹp: ${simData.ai.reasonsArr.join(', ')}\n💰 Giá bán: ${priceText}\n📋 Gói cước: ${monthlyText} · ${commitMonths}`;
 
                 try {
                     if (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
@@ -1434,7 +1434,7 @@
                             headers: {
                                 'Content-Type': 'application/json',
                             },
-                            body: JSON.stringify({ 
+                            body: JSON.stringify({
                                 chat_id: TELEGRAM_CHAT_ID,
                                 text: msg,
                                 parse_mode: 'HTML'
@@ -2943,11 +2943,13 @@
                 }
 
                 let infoHtml = '';
-                if (price === 0) {
+                const hasCommitment = item.commitment && Number(item.commitment) > 0;
+                const isTraTruoc = price === 0 && !hasCommitment;
+                if (isTraTruoc) {
                     infoHtml = `<div class="p-info">Trả trước</div>`;
                 } else {
-                    const commitVal = (item.commitment && item.commitment > 0) ? `${item.commitment}T` : 'Không';
-                    infoHtml = `<div class="p-info-grid"><div class="p-col"><strong>${price / 1000}k</strong></div><div class="p-col"><strong>${commitVal}</strong></div></div>`;
+                    const commitVal = hasCommitment ? `${item.commitment}T` : 'Không';
+                    infoHtml = `<div class="p-info-grid"><div class="p-col"><strong>${price > 0 ? price / 1000 + 'k' : '0đ'}</strong></div><div class="p-col"><strong>${commitVal}</strong></div></div>`;
                 }
 
                 return `<div class="print-item"><div class="p-num">${formatNum}</div>${tagsHtml}${infoHtml}</div>`;
