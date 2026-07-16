@@ -2167,6 +2167,10 @@
             const TASKS_PER_COMMIT = TAXI_PREFIXES_COUNT * 1100; // Số prefix đầu 08 × 1100 cụm (1000 ABCABC + 100 ABABAB)
             const sessionStart = Date.now();
             const doneatStart = done;
+            
+            // Phục vụ tính tốc độ tức thời
+            let recentSpeedData = [];
+            let lastCalculatedSpeed = 0;
 
             function formatETA(seconds) {
                 if (seconds < 60) return `${Math.round(seconds)}s`;
@@ -2272,10 +2276,22 @@
 
                     progBar.style.width = `${(done / total) * 100}%`;
 
-                    // Tính tốc độ theo phiên hiện tại
-                    const sessionElapsed = (Date.now() - sessionStart) / 1000;
-                    const sessionDone = done - doneatStart;
-                    const speed = sessionDone > 0 ? sessionDone / sessionElapsed : 0;
+                    // Tính tốc độ TỨC THỜI (Moving Average trong 50 request gần nhất)
+                    const now = Date.now();
+                    recentSpeedData.push({ time: now, done: done });
+                    if (recentSpeedData.length > 50) recentSpeedData.shift();
+                    
+                    let speed = lastCalculatedSpeed;
+                    if (recentSpeedData.length > 10) {
+                        const oldest = recentSpeedData[0];
+                        const newest = recentSpeedData[recentSpeedData.length - 1];
+                        const elapsedSec = (newest.time - oldest.time) / 1000;
+                        if (elapsedSec > 0) {
+                            speed = (newest.done - oldest.done) / elapsedSec;
+                            lastCalculatedSpeed = speed;
+                        }
+                    }
+
                     const remaining = speed > 0 ? (total - done) / speed : 0;
                     const etaStr = speed > 0 && remaining > 0 ? ` · ⏱ Còn lại: ${formatETA(remaining)}` : '';
 
