@@ -1395,7 +1395,7 @@
         const PREFIXES = ['8491', '8494', '8488', '8481', '8482', '8483', '8484', '8485'];
         // Cam kết cho quét AI (≤400k)
         const COMMITS = ['0', '100000', '150000', '200000', '400000']; // 0đ (trả trước) + các mức cam kết ≤400k/tháng
-        // Cam kết cho quét Taxi (Thêm 0đ để quét vét kho)
+        // Cam kết cho quét Taxi
         const TAXI_COMMITS = ['100000', '150000', '200000', '400000', '600000', '800000'];
 
         let rawData = [];
@@ -2131,7 +2131,9 @@
 
                 tasks = [];
                 // Cam kết cao trước, phủ TẤT CẢ đầu số ở mức đó rồi mới xuống thấp hơn
-                const TAXI_PREFIXES = PREFIXES.filter(p => p.startsWith('848')); // Chỉ quét đầu 08
+                let TAXI_PREFIXES = PREFIXES.filter(p => p.startsWith('848')); // Chỉ quét đầu 08
+                // Ưu tiên quét đầu 084 trước để test
+                TAXI_PREFIXES.sort((a, b) => (a === '8484' ? -1 : (b === '8484' ? 1 : 0)));
                 for (const c of COMMITS_DESC) {
                     for (const pref of TAXI_PREFIXES) {
                         for (const query of taxiClusters) {
@@ -2192,10 +2194,10 @@
                 }
             }
 
-            function renderTaxiCard(simItem) {
+            function renderTaxiCard(simItem, aiOverride = null) {
                 const raw = simItem.so_tb || '';
                 let num = raw.startsWith('84') ? '0' + raw.slice(2) : raw;
-                const aiResult = analyzeSIM(num, simItem.monthly);
+                const aiResult = aiOverride || analyzeSIM(num, simItem.monthly);
                 const commit = simItem.monthly ? (Number(simItem.monthly) / 1000 + 'k/tháng') : '0đ';
                 const price = simItem.price ? Number(simItem.price).toLocaleString('vi-VN') + 'đ' : '0đ';
                 const formatted = formatNumber(raw);
@@ -2244,22 +2246,27 @@
                                     const fNum = item.so_tb || '';
                                     if (!taxiFoundNums.has(fNum)) {
                                         const num = fNum.startsWith('84') ? '0' + fNum.slice(2) : fNum;
-                                        const ai = analyzeSIM(num, item.monthly);
-                                        if (ai.categories.includes('solap') && ai.reasons.includes('Taxi Đẹp')) {
-                                            taxiFoundNums.add(fNum);
-                                            renderTaxiCard(item);
-                                            emptyDiv.style.display = 'none';
+                                        // Không cần chấm điểm, mặc định 1000 điểm
+                                        const ai = {
+                                            score: 1000,
+                                            categories: ['solap'],
+                                            reasons: ['Taxi VIP'],
+                                            reasonsArr: ['Taxi VIP'],
+                                            highlight: num.slice(-6)
+                                        };
+                                        taxiFoundNums.add(fNum);
+                                        renderTaxiCard(item, ai);
+                                        emptyDiv.style.display = 'none';
 
-                                            if (!notifiedTelegramSims.has(fNum)) {
-                                                notifiedTelegramSims.add(fNum);
-                                                const simData = {
-                                                    ...item,
-                                                    fNum: formatNumber(fNum),
-                                                    ai: ai
-                                                };
-                                                telegramQueue.push(simData);
-                                                processTelegramQueue();
-                                            }
+                                        if (!notifiedTelegramSims.has(fNum)) {
+                                            notifiedTelegramSims.add(fNum);
+                                            const simData = {
+                                                ...item,
+                                                fNum: formatNumber(fNum),
+                                                ai: ai
+                                            };
+                                            telegramQueue.push(simData);
+                                            processTelegramQueue();
                                         }
                                     }
                                 });
