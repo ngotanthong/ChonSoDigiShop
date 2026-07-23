@@ -1622,7 +1622,7 @@
             }
 
             const isPinned = !!pinnedSims[fNum];
-            let simObj = displayData.find(s => s.fNum === fNum) || scoredData.find(s => s.fNum === fNum) || pinnedSims[fNum];
+            let simObj = displayData.find(s => s.fNum === fNum) || scoredData.find(s => s.fNum === fNum) || (window.taxiResultsMap && window.taxiResultsMap[fNum]) || pinnedSims[fNum];
 
             if (isPinned) {
                 delete pinnedSims[fNum];
@@ -2200,7 +2200,16 @@
                 const aiResult = aiOverride || analyzeSIM(num, simItem.monthly);
                 const commit = simItem.monthly ? (Number(simItem.monthly) / 1000 + 'k/tháng') : '0đ';
                 const price = simItem.price ? Number(simItem.price).toLocaleString('vi-VN') + 'đ' : '0đ';
-                const formatted = formatNumber(raw);
+                let formatted = formatNumber(raw);
+                if (aiOverride && formatted.length === 10) {
+                    formatted = formatted.replace(/(\d{4})(\d{3})(\d{3})/, '$1 $2 $3');
+                }
+
+                window.taxiResultsMap = window.taxiResultsMap || {};
+                window.taxiResultsMap[num] = { ...simItem, fNum: num, ai: aiResult };
+
+                const isPinned = !!pinnedSims[num];
+                const pinClass = isPinned ? 'btn-pin pinned' : 'btn-pin';
 
                 const card = document.createElement('div');
                 card.style.cssText = 'background:white;border:2px solid #f59e0b;border-radius:12px;padding:14px 16px;box-shadow:0 2px 12px rgba(245,158,11,0.15);cursor:pointer;transition:transform 0.15s,box-shadow 0.15s;';
@@ -2208,7 +2217,14 @@
                 card.onmouseleave = () => { card.style.transform = ''; card.style.boxShadow = '0 2px 12px rgba(245,158,11,0.15)'; };
                 card.onclick = () => { navigator.clipboard.writeText(num).catch(() => { }); };
                 card.innerHTML = `
-                    <div style="font-size:18px;font-weight:800;color:#92400e;letter-spacing:1px;">🚖 ${formatted}</div>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                        <div style="font-size:18px;font-weight:800;color:#92400e;letter-spacing:1px;">🚖 ${formatted}</div>
+                        <div style="display: flex; gap: 4px; align-items: center;">
+                            <button class="${pinClass}" onclick="togglePin('${num}', this, event)" title="Ghim số">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                            </button>
+                        </div>
+                    </div>
                     <div style="margin-top:6px;font-size:12px;color:#b45309;font-weight:600;">Điểm AI: ${aiResult.score} &nbsp;|&nbsp; ${aiResult.reasonsArr.join(', ')}</div>
                     <div style="margin-top:4px;font-size:12px;color:#78716c;">Trả trước: ${price} &nbsp;·&nbsp; Cam kết: ${commit}</div>
                     <div style="margin-top:6px;font-size:11px;color:#a8a29e;">📋 Click để copy số</div>
@@ -2260,9 +2276,10 @@
 
                                         if (!notifiedTelegramSims.has(fNum)) {
                                             notifiedTelegramSims.add(fNum);
+                                            const taxiFormatted = num.length === 10 ? num.replace(/(\d{4})(\d{3})(\d{3})/, '$1 $2 $3') : formatNumber(fNum);
                                             const simData = {
                                                 ...item,
-                                                fNum: formatNumber(fNum),
+                                                fNum: taxiFormatted,
                                                 ai: ai
                                             };
                                             telegramQueue.push(simData);
