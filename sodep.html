@@ -2001,6 +2001,14 @@
                             const random3Digits = Math.floor(Math.random() * 900) + 100; // 100-999
                             rawTasks.push({ pref, c, search: `*${random3Digits}*` });
                         }
+
+                        // ĐẶC BIỆT VÉT MẠNH ĐẦU 094 CAM KẾT 0Đ (Vì kho ít số)
+                        if (pref === '8494') {
+                            for (let i = 0; i < 100; i++) {
+                                const twoDigits = i.toString().padStart(2, '0');
+                                rawTasks.push({ pref, c, search: `*${twoDigits}*` });
+                            }
+                        }
                     }
                 }
             }
