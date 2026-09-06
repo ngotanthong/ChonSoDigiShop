@@ -2004,9 +2004,15 @@
 
                         // ĐẶC BIỆT VÉT MẠNH ĐẦU 094 CAM KẾT 0Đ (Vì kho ít số)
                         if (pref === '8494') {
+                            // 100 truy vấn 2 số để quét tổng quan
                             for (let i = 0; i < 100; i++) {
                                 const twoDigits = i.toString().padStart(2, '0');
                                 rawTasks.push({ pref, c, search: `*${twoDigits}*` });
+                            }
+                            // Thêm 400 truy vấn 3 số ngẫu nhiên để vét thật sâu (vượt giới hạn 50 số/request của API)
+                            for (let i = 0; i < 400; i++) {
+                                const threeDigits = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+                                rawTasks.push({ pref, c, search: `*${threeDigits}*` });
                             }
                         }
                     }
