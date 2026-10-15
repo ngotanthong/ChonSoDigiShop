@@ -1858,7 +1858,7 @@
             }
 
             function enqueueSilentShards(pref, commit, search, depth) {
-                if (depth >= 1) return;
+                if (depth >= 2) return;
                 const core = String(search || '').replace(/\*/g, '');
                 const seeds = new Set();
                 if (core === '') {
@@ -2078,7 +2078,7 @@
 
             // ---- Hàm tách truy vấn khi API trả đầy 50 số (mục 3) ----
             function enqueueShards(pref, commit, search, depth) {
-                if (depth >= 2) return; // Giới hạn độ sâu để tránh bùng nổ request
+                if (depth >= 3) return; // Giới hạn độ sâu để tránh bùng nổ request
                 const core = String(search || '').replace(/\*/g, '');
                 const seeds = new Set();
                 if (core === '') {
