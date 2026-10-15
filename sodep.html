@@ -2664,6 +2664,9 @@
 
             const sortedReasons = Array.from(allReasons).sort();
             sortedReasons.forEach(reason => {
+                // Chỉ chấm điểm, không tạo filter cho Gánh và Dễ Nhớ
+                if (reason === 'Gánh' || reason === 'Dễ Nhớ' || reason === 'Siêu Dễ Nhớ') return;
+
                 const btn = document.createElement('button');
                 btn.className = `tab-btn ${currentCategory === reason ? 'active' : ''}`;
                 btn.textContent = reason;
@@ -2756,7 +2759,7 @@
             }
         }
 
-        function highlightHTML(numStr, matchStr) {
+        function highlightHTML(numStr, matchStr, reasonText = '') {
             if (!numStr || numStr.length !== 10) {
                 if (!matchStr) return numStr;
                 return numStr.replace(matchStr, `<span class="hi">${matchStr}</span>`);
@@ -2776,7 +2779,12 @@
                 /(\d)(\d)(\d)\1(\d)\3$/.test(matchStr)
             );
 
-            if (isLapCum4) {
+            const isDongKepTien = /Đồng Kẹp Tiến/.test(reasonText || '');
+            const isLapCumTien = /Lặp Cụm Tiến/.test(reasonText || '');
+
+            if (isDongKepTien || isLapCumTien) {
+                dotIndexes = [4, 7]; // Nhịp 4-3-3 cho Đồng Kẹp Tiến / Lặp Cụm Tiến
+            } else if (isLapCum4) {
                 dotIndexes = [2, 6]; // Nhịp 2-4-4
             } else if (isLapCum) {
                 dotIndexes = [4, 7]; // Nhịp 4-3-3
@@ -3037,7 +3045,7 @@
                     ? '<span class="price-desktop">0 đ/tháng</span><span class="price-mobile">0đ/tháng</span>'
                     : `<span class="price-desktop">${price.toLocaleString()} đ/tháng</span><span class="price-mobile">${price / 1000}k/tháng</span>`;
                 const commitText = (item.commitment && item.commitment > 0) ? `Cam kết ${item.commitment}T` : 'Không cam kết';
-                const hlNum = highlightHTML(item.fNum, item.ai ? item.ai.highlight : '');
+                const hlNum = highlightHTML(item.fNum, item.ai ? item.ai.highlight : '', item.ai ? item.ai.reasonText : '');
 
                 const card = document.createElement('div');
                 card.className = 'sim-card';
