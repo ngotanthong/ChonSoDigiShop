@@ -2048,6 +2048,7 @@
                         }
                     }
                 }
+            } // đóng vòng lặp đầu số gốc trước khi quét deterministic
             // ---- Bổ sung quét deterministic toàn bộ cụm 2 số, tam hoa, tiến ----
             // Mục tiêu: tránh lệ thuộc random và giảm tình trạng bỏ lỡ số do API trả tối đa 50 kết quả.
             for (const pref of PREFIXES) {
