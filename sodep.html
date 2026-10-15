@@ -2781,9 +2781,10 @@
 
             const isDongKepTien = /Đồng Kẹp Tiến/.test(reasonText || '');
             const isLapCumTien = /Lặp Cụm Tiến/.test(reasonText || '');
+            const isLapXenKe = /Lặp Xen Kẽ/.test(reasonText || '');
 
-            if (isDongKepTien || isLapCumTien) {
-                dotIndexes = [4, 7]; // Nhịp 4-3-3 cho Đồng Kẹp Tiến / Lặp Cụm Tiến
+            if (isDongKepTien || isLapCumTien || isLapXenKe) {
+                dotIndexes = [4, 7]; // Nhịp 4-3-3 cho Đồng Kẹp Tiến / Lặp Cụm Tiến / Lặp Xen Kẽ
             } else if (isLapCum4) {
                 dotIndexes = [2, 6]; // Nhịp 2-4-4
             } else if (isLapCum) {
