@@ -2106,6 +2106,10 @@
             async function fetchWorker() {
                 while (tasks.length > 0) {
                     const { pref, c, search, depth } = tasks.shift();
+                    const queryKey = `${pref}|${c}|${search}`;
+                    if (globalQueryKeys.has(queryKey)) { completedRequests++; continue; }
+                    globalQueryKeys.add(queryKey);
+
                     const url = `${BASE_API}?search=${encodeURIComponent(search)}&prefix=${pref}&commit=${c}`;
 
                     statusTxt.textContent = `Quét: ${completedRequests} đã xong, ${tasks.length} còn lại (0${pref.slice(2)} - ${c === '0' ? 'Trả trước 0đ' : (c / 1000 + 'k cam kết')})`;
@@ -2164,6 +2168,9 @@
 
                 updateLastFetchTime();
 
+                // Sau khi quét nhanh xong, tự động chạy vét sâu cụm 3 số ngầm (mức 2)
+                setTimeout(() => { runDeep3DigitScan(); }, 500);
+
             } catch (err) {
                 console.error(err);
                 statusTxt.textContent = 'Có lỗi xảy ra khi quét API.';
@@ -2171,6 +2178,128 @@
                 btnScan.disabled = false;
                 btnScan.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>LÀM MỚI)';
             }
+        }
+
+        // =============================================
+        // VÉT SÂU NGẦM CỤM 3 SỐ (MỨC 2) SAU KHI QUÉT NHANH
+        // =============================================
+        let deepScanRunning = false;
+        const globalQueryKeys = (window.__VC_QUERY_KEYS = window.__VC_QUERY_KEYS || new Set());
+
+        async function runDeep3DigitScan() {
+            if (deepScanRunning) return;
+            deepScanRunning = true;
+
+            const toast = document.getElementById('toast');
+            if (toast) {
+                toast.querySelector('span').textContent = 'Đang vét sâu cụm 3 số trong kho ngầm...';
+                toast.classList.add('show');
+            }
+
+            const rawTasks = [];
+            for (const pref of PREFIXES) {
+                for (const c of COMMITS) {
+                    for (let i = 0; i <= 999; i++) {
+                        const threeDigits = i.toString().padStart(3, '0');
+                        rawTasks.push({ pref, c, search: `*${threeDigits}*`, depth: 0 });
+                    }
+                }
+            }
+
+            const taskKeys = new Set();
+            const dedupedTasks = [];
+            rawTasks.forEach(t => {
+                const search = String(t.search || '').trim();
+                const key = `${t.pref}|${t.c}|${search}`;
+                if (taskKeys.has(key) || globalQueryKeys.has(key)) return;
+                taskKeys.add(key);
+                dedupedTasks.push({ pref: t.pref, c: t.c, search: search, depth: 0 });
+            });
+
+            function enqueueShards(pref, commit, search, depth) {
+                if (depth >= 3) return;
+                const core = String(search || '').replace(/\\*/g, '');
+                const seeds = new Set();
+                if (core === '') {
+                    for (let d = 0; d <= 9; d++) seeds.add(`*${d}*`);
+                } else {
+                    for (let d = 0; d <= 9; d++) {
+                        seeds.add(`*${d}${core}*`);
+                        seeds.add(`*${core}${d}*`);
+                    }
+                }
+                seeds.forEach(shard => {
+                    const key = `${pref}|${commit}|${shard}`;
+                    if (taskKeys.has(key) || globalQueryKeys.has(key)) return;
+                    taskKeys.add(key);
+                    dedupedTasks.push({ pref, c: commit, search: shard, depth: depth + 1 });
+                });
+            }
+
+            const tasks = dedupedTasks;
+
+            const CONCURRENCY = 8;
+            let completed = 0;
+            let newDataCount = 0;
+            let lastProcessed = 0;
+
+            async function fetchWorker() {
+                while (tasks.length > 0) {
+                    const { pref, c, search, depth } = tasks.shift();
+                    const queryKey = `${pref}|${c}|${search}`;
+                    if (globalQueryKeys.has(queryKey)) { completed++; continue; }
+                    globalQueryKeys.add(queryKey);
+
+                    const url = `${BASE_API}?search=${encodeURIComponent(search)}&prefix=${pref}&commit=${c}`;
+                    try {
+                        const res = await fetch(url);
+                        const json = await res.json();
+                        if (json.errorCode === 0 && json.data) {
+                            const before = rawData.length;
+                            rawData = rawData.concat(json.data);
+                            newDataCount += Math.max(0, rawData.length - before);
+                            if (Array.isArray(json.data) && json.data.length >= 50) {
+                                enqueueShards(pref, c, search, depth || 0);
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Deep scan fetch error:', url);
+                    }
+
+                    completed++;
+                    if (completed - lastProcessed >= 200 || newDataCount >= 300) {
+                        lastProcessed = completed;
+                        try { processAIScores(); } catch (e) {}
+                        newDataCount = 0;
+                        if (scoredData.length > 0) {
+                            if (toolbar) toolbar.style.display = 'flex';
+                            const emptyState = document.getElementById('emptyState');
+                            if (emptyState) emptyState.style.display = 'none';
+                            renderResults();
+                        }
+                    }
+                }
+            }
+
+            const workers = [];
+            for (let i = 0; i < CONCURRENCY; i++) workers.push(fetchWorker());
+            await Promise.all(workers);
+
+            try { processAIScores(); } catch (e) {}
+            if (scoredData.length > 0) {
+                const toolbar = document.getElementById('toolbar');
+                if (toolbar) toolbar.style.display = 'flex';
+                const emptyState = document.getElementById('emptyState');
+                if (emptyState) emptyState.style.display = 'none';
+                renderResults();
+            }
+
+            if (toast) {
+                toast.querySelector('span').textContent = `Vét sâu ngầm hoàn tất: tìm thấy ${scoredData.length} số đẹp.`;
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 5000);
+            }
+            deepScanRunning = false;
         }
 
         // =============================================
