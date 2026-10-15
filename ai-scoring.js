@@ -1,474 +1,407 @@
 // --- AI SCORING ENGINE ---
-        function analyzeSIM(numStr, monthlyFee = 0) {
-            let score = 0;
-            let categories = [];
-            let reasons = [];
-            let highlight = ''; // Đoạn được highlight
+// Rule-based scoring engine for VNPT DigiShop numbers.
+// Score is normalized to the 0-100 range and deduplicated by pattern group.
 
-            const isPhongThuyMode = document.getElementById('togglePhongThuy') && document.getElementById('togglePhongThuy').checked;
+function analyzeSIM(numStr, monthlyFee = 0) {
+    numStr = String(numStr || '').replace(/\D/g, '');
+    const fee = Number(monthlyFee) || 0;
 
-            if (isPhongThuyMode) {
-                // Tính điểm thuần Phong Thuỷ
-                
-                // 1. Tổng nút (tổng 10 số)
-                const sum10 = numStr.split('').reduce((acc, val) => acc + parseInt(val), 0);
-                const nut = sum10 % 10;
-                if (nut >= 7) { 
-                    score += (nut === 9) ? 40 : (nut === 8 ? 30 : 20);
-                    reasons.push('Nút ' + nut);
-                    categories.push('phongthuy');
-                } else {
-                    score -= 20; // Nút thấp trừ điểm
-                }
+    let score = 0;
+    const categories = new Set();
+    const reasons = [];
+    let highlight = '';
 
-                // 2. Tránh 4, 7
-                if (!/4/.test(numStr) && !/7/.test(numStr)) {
-                    score += 30;
-                    reasons.push('Không 4, 7');
-                    categories.push('phongthuy');
-                } else {
-                    score -= 50; // Có 4 hoặc 7 phạt nặng
-                }
+    const addReason = (tag, points, category = null) => {
+        if (!reasons.includes(tag)) reasons.push(tag);
+        if (category) categories.add(category);
+        score += points;
+    };
 
-                // 3. Tránh 49, 53
-                if (/49|53/.test(numStr)) {
-                    score -= 100; // Phạt rất nặng
-                }
+    // -------------------------------------------------------------------------
+    // Phong thủy mode
+    // -------------------------------------------------------------------------
+    const isPhongThuyMode = typeof document !== 'undefined' &&
+        document.getElementById('togglePhongThuy') &&
+        document.getElementById('togglePhongThuy').checked;
 
-                // 4. Đuôi Thần Tài, Ông Địa
-                if (/(79|39)$/.test(numStr)) {
-                    score += 20;
-                    reasons.push('Thần Tài');
-                    highlight = numStr.slice(-2);
-                } else if (/(38|78)$/.test(numStr)) {
-                    score += 15;
-                    reasons.push('Ông Địa');
-                    highlight = numStr.slice(-2);
-                }
+    if (isPhongThuyMode) {
+        const sum10 = numStr.split('').reduce((acc, val) => acc + (parseInt(val, 10) || 0), 0);
+        const nut = sum10 % 10;
 
-                return {
-                    score: score,
-                    categories: categories,
-                    reasonsArr: reasons,
-                    reasonText: reasons.join(' + ') || 'Bình thường',
-                    highlight: highlight
-                };
-            }
-
-            // Tứ Quý / Ngũ Quý Giữa
-            if (/(.)\1{4}/.test(numStr.slice(0, -1))) { 
-                score += 40;
-                categories.push('tuquy');
-                reasons.push('Ngũ Quý Giữa');
-                const match = numStr.match(/(.)\1{4}/);
-                highlight = highlight || match[0];
-            } else if (/(.)\1{3}/.test(numStr.slice(0, -1))) {
-                score += 30;
-                categories.push('tuquy');
-                reasons.push('Tứ Quý Giữa');
-                const match = numStr.match(/(.)\1{3}/);
-                highlight = highlight || match[0];
-            }
-
-            // 1. Tứ Quý (4 số giống nhau ở cuối)
-            if (/(.)\1{3}$/.test(numStr)) {
-                score += 50;
-                categories.push('tuquy');
-                reasons.push('Tứ Quý');
-                highlight = numStr.slice(-4);
-            }
-            // 2. Tam Hoa (3 số giống nhau ở cuối, chỉ tính số >= 5)
-            else if (/([5-9])\1{2}$/.test(numStr)) {
-                score += 30;
-                categories.push('tamhoa');
-                reasons.push('Tam Hoa');
-                highlight = numStr.slice(-3);
-            }
-
-            // 3. Lộc Phát (chứa 68, 86, 168, 868 ở cuối)
-            if (/(168|868)$/.test(numStr)) {
-                score += 35;
-                categories.push('locphat');
-                reasons.push('Phát Lộc Phát');
-                highlight = highlight || numStr.slice(-3);
-            } else if (/(68|86)$/.test(numStr)) {
-                score += 25;
-                categories.push('locphat');
-                reasons.push('Lộc Phát');
-                highlight = highlight || numStr.slice(-2);
-            }
-
-            // 4. Số Tiến (1234, 6789, 2345)
-            if (/(0123|1234|2345|3456|4567|5678|6789)$/.test(numStr)) {
-                score += 35;
-                categories.push('sotien');
-                reasons.push('Sảnh Tiến Lớn');
-                highlight = highlight || numStr.slice(-4);
-            } else if (/(012|123|234|345|456|567|678|789)$/.test(numStr)) {
-                score += 15;
-                categories.push('sotien');
-                reasons.push('Sảnh Tiến');
-                highlight = highlight || numStr.slice(-3);
-            }
-
-            // 5. Số Lặp Cao Cấp (Taxi, Lặp Kép) & Lặp Thường (ABAB)
-            let isLap = false;
-            if (/(\d{2})\1\1$/.test(numStr)) { // ABABAB (Taxi 3 cặp)
-                score += 60;
-                categories.push('solap');
-                reasons.push('Taxi Đẹp');
-                highlight = highlight || numStr.slice(-6);
-                isLap = true;
-            } else if (/(\d{3})\1$/.test(numStr)) { // ABCABC (Taxi cụm 3)
-                score += 55;
-                categories.push('solap');
-                reasons.push('Taxi Đẹp');
-                highlight = highlight || numStr.slice(-6);
-                isLap = true;
-            } else if (/(\d)\1(\d)\2$/.test(numStr) && numStr.slice(-2, -1) !== numStr.slice(-1)) { // AABB
-                score += 25;
-                categories.push('solap');
-                reasons.push('Lặp Kép');
-                highlight = highlight || numStr.slice(-4);
-                isLap = true;
-            } else if (/(\d{2})\1$/.test(numStr)) { // ABAB
-                score += 20;
-                categories.push('solap');
-                reasons.push('Lặp Cặp');
-                highlight = highlight || numStr.slice(-4);
-                isLap = true;
-            }
-
-            // 5.5. Số Gánh / Số Đảo (ABBA, ABA, AB CD AB)
-            if (!isLap) {
-                // Kiểm tra Cặp Tiến trước Gánh để không bị override sai
-                const _ct6 = numStr.slice(-6);
-                const _ct4 = numStr.slice(-4);
-                const _p1_6 = parseInt(_ct6.slice(0, 2)), _p2_6 = parseInt(_ct6.slice(2, 4)), _p3_6 = parseInt(_ct6.slice(4, 6));
-                const _d1_6 = _p2_6 - _p1_6, _d2_6 = _p3_6 - _p2_6;
-                const _p1_4 = parseInt(_ct4.slice(0, 2)), _p2_4 = parseInt(_ct4.slice(2, 4));
-                const _d_4 = _p2_4 - _p1_4;
-                const isCaptienHere = (_d1_6 > 0 && _d1_6 <= 20 && _d1_6 === _d2_6) ||
-                    (_d_4 > 0 && _d_4 <= 20 && _p1_4 >= 10);
-
-                if (!isCaptienHere) {
-                    // Kiểm tra Gánh Kép: 6 số cuối gồm 2 cụm ABA liền nhau (VD: 323262)
-                    const last6g = numStr.slice(-6);
-                    const g1 = last6g.slice(0, 3), g2 = last6g.slice(3, 6);
-                    const isABA = (s) => s.length === 3 && s[0] === s[2] && s[0] !== s[1];
-                    // Gánh kép có liên kết: chung số giữa (181 282), chung số ngoài (818 828), hoặc xen kẽ (181 818)
-                    if (isABA(g1) && isABA(g2) && (g1[1] === g2[1] || g1[0] === g2[0] || (g1[0] === g2[1] && g1[1] === g2[0]))) {
-                        score += 25;
-                        categories.push('soganh');
-                        reasons.push('Gánh Kép');
-                        highlight = highlight || last6g;
-                    } else {
-                        const matchGanhCap = numStr.match(/(\d{2})(\d{2})\1$/);
-                        if (matchGanhCap && Math.abs(parseInt(matchGanhCap[1]) - parseInt(matchGanhCap[2])) <= 2) { // AB CD AB (Gánh cặp 6 số gần nhau)
-                            score += 30;
-                            categories.push('soganh');
-                            reasons.push('Gánh Cặp');
-                            highlight = highlight || numStr.slice(-6);
-                        } else if (/(\d)(\d)\2\1$/.test(numStr) && numStr.slice(-1) !== numStr.slice(-2, -1)) { // ABBA
-                            score += 25;
-                            categories.push('soganh');
-                            reasons.push('Gánh Đảo');
-                            highlight = highlight || numStr.slice(-4);
-                        } else if (/(\d)(\d)\1$/.test(numStr) && numStr.slice(-1) !== numStr.slice(-2, -1)) { // ABA - hạ điểm
-                            score += 8;
-                            categories.push('soganh');
-                            reasons.push('Gánh');
-                            highlight = highlight || numStr.slice(-3);
-                        }
-                    }
-                }
-            }
-
-            // 6. Đuôi Đẹp phong thủy (79: thần tài lớn, 39: thần tài nhỏ, 38: ông địa)
-            if (/(79|39)$/.test(numStr)) {
-                score += 20;
-                categories.push('duoidep');
-                categories.push('phongthuy');
-                reasons.push('Thần Tài');
-                highlight = highlight || numStr.slice(-2);
-            } else if (/(38|78)$/.test(numStr)) {
-                score += 15;
-                categories.push('duoidep');
-                categories.push('phongthuy');
-                reasons.push('Ông Địa');
-                highlight = highlight || numStr.slice(-2);
-            }
-
-            // 7. Tổng nút (tổng 10 số = 7, 8, 9 là đẹp)
-            const sum10 = numStr.split('').reduce((acc, val) => acc + parseInt(val), 0);
-            const nut = sum10 % 10;
-            if (nut >= 7) { // Nút 7, 8, 9
-                let point = 5;
-                if (nut === 9) {
-                    point = 10; // 9 điểm cao nhất
-                    categories.push('phongthuy'); // Nút 9 đưa vào bộ lọc Phong Thủy
-                }
-                score += point;
-                reasons.push('Nút ' + nut);
-            }
-
-            // 8. Trừ điểm số kỵ / Cộng số sạch
-            if (/49|53/.test(numStr)) {
-                score -= 15;
-            } else if (!/4/.test(numStr) && !/7/.test(numStr)) {
-                score += 10;
-                reasons.push('Không 4, 7');
-            }
-
-            // 9. Thuật toán "Số Ít Phím" (Dễ nhớ)
-            const uniqueDigitsCount = new Set(numStr.split('')).size;
-            if (uniqueDigitsCount <= 3) {
-                score += 30;
-                categories.push('denho');
-                reasons.push('Siêu Dễ Nhớ');
-            } else if (uniqueDigitsCount === 4) {
-                score += 15;
-                categories.push('denho');
-                reasons.push('Dễ Nhớ');
-            }
-
-            // 10. Tiến Chẵn / Tiến Lẻ
-            if (/(1357|3579)$/.test(numStr)) {
-                score += 20;
-                categories.push('sotien');
-                reasons.push('Tiến Lẻ Đều');
-                highlight = highlight || numStr.slice(-4);
-            } else if (/(135|357|579)$/.test(numStr)) {
-                score += 15;
-                categories.push('sotien');
-                reasons.push('Sảnh Tiến Lẻ');
-                highlight = highlight || numStr.slice(-3);
-            } else if (/(2468|0246)$/.test(numStr)) {
-                score += 20;
-                categories.push('sotien');
-                reasons.push('Tiến Chẵn Đều');
-                highlight = highlight || numStr.slice(-4);
-            } else if (/(024|246|468)$/.test(numStr)) {
-                score += 15;
-                categories.push('sotien');
-                reasons.push('Sảnh Tiến Chẵn');
-                highlight = highlight || numStr.slice(-3);
-            }
-
-            // 10.4. Lặp Cụm (Đồng Đầu / Đồng Đuôi / Đồng Giữa) cho cụm 3 và cụm 4
-            let isLapCum = false;
-            
-            // Cụm 4 số (8 số cuối) - VD: 1999 2999, 5678 6678
-            const matchDongDuoi4 = numStr.match(/(\d)(\d{3})(\d)\2$/);
-            const matchDongDau4 = numStr.match(/(\d{3})(\d)\1(\d)$/);
-            
-            // Cụm 3 số (6 số cuối) - VD: 665 667, 395 495, 658 678
-            const matchDongDuoi3 = numStr.match(/(\d)(\d{2})(\d)\2$/);
-            const matchDongDau3 = numStr.match(/(\d{2})(\d)\1(\d)$/);
-            const matchDongGiua3 = numStr.match(/(\d)(\d)(\d)\1(\d)\3$/);
-            
-            if (matchDongDuoi4 && parseInt(matchDongDuoi4[3]) >= parseInt(matchDongDuoi4[1])) {
-                const diff = parseInt(matchDongDuoi4[3]) - parseInt(matchDongDuoi4[1]);
-                score += diff > 0 ? 60 : 50;
-                reasons.push(diff > 0 ? 'Cụm 4 Tiến' : 'Lặp Cụm 4');
-                categories.push('denho', 'solap');
-                highlight = numStr.slice(-8);
-                isLapCum = true;
-            } else if (matchDongDau4 && parseInt(matchDongDau4[3]) >= parseInt(matchDongDau4[2])) {
-                const diff = parseInt(matchDongDau4[3]) - parseInt(matchDongDau4[2]);
-                score += diff > 0 ? 60 : 50;
-                reasons.push(diff > 0 ? 'Cụm 4 Tiến' : 'Lặp Cụm 4');
-                categories.push('denho', 'solap');
-                highlight = numStr.slice(-8);
-                isLapCum = true;
-            } else if (matchDongDuoi3 && parseInt(matchDongDuoi3[3]) >= parseInt(matchDongDuoi3[1])) {
-                const diff = parseInt(matchDongDuoi3[3]) - parseInt(matchDongDuoi3[1]);
-                score += diff > 0 ? 40 : 30;
-                reasons.push(diff > 0 ? 'Lặp Cụm Tiến' : 'Lặp Cụm');
-                categories.push('denho', 'solap');
-                highlight = numStr.slice(-6);
-                isLapCum = true;
-            } else if (matchDongDau3 && parseInt(matchDongDau3[3]) >= parseInt(matchDongDau3[2])) {
-                const diff = parseInt(matchDongDau3[3]) - parseInt(matchDongDau3[2]);
-                score += diff > 0 ? 40 : 30;
-                reasons.push(diff > 0 ? 'Lặp Cụm Tiến' : 'Lặp Cụm');
-                categories.push('denho', 'solap');
-                highlight = numStr.slice(-6);
-                isLapCum = true;
-            } else if (matchDongGiua3 && parseInt(matchDongGiua3[4]) >= parseInt(matchDongGiua3[2])) {
-                const diff = parseInt(matchDongGiua3[4]) - parseInt(matchDongGiua3[2]);
-                let point = 25; // Đồng Kẹp Bằng
-                if (diff === 1) point = 50; // Tiến liền kề (rất đẹp, VD: 647 657)
-                else if (diff > 1) point = 35; // Tiến bước nhảy xa
-                
-                score += point;
-                reasons.push(diff > 0 ? 'Đồng Kẹp Tiến' : 'Đồng Kẹp Bằng');
-                categories.push('denho', 'solap');
-                highlight = numStr.slice(-6);
-                isLapCum = true;
-            }
-
-            // 10.5. Cặp Tiến nâng cao (phát hiện 2-3 cặp 2 số tiến đều)
-            if (!isLapCum) {
-                // Helper: kiểm tra 2 cặp số cuối có tạo thành cặp tiến không
-                const checkPairTien = (str) => {
-                    if (str.length < 4) return null;
-                    const last4 = str.slice(-4);
-                    const p1 = parseInt(last4.slice(0, 2));
-                    const p2 = parseInt(last4.slice(2, 4));
-                    const diff = p2 - p1;
-                    if (diff > 0 && diff <= 20 && diff % 1 === 0) return { pairs: [p1, p2], diff, len: 4 };
-                    return null;
-                };
-
-                // Kiểm tra 3 cặp đuôi 6 số (mạnh hơn)
-                const last6 = numStr.slice(-6);
-                let captienFound = false;
-                if (last6.length === 6) {
-                    const p1 = parseInt(last6.slice(0, 2));
-                    const p2 = parseInt(last6.slice(2, 4));
-                    const p3 = parseInt(last6.slice(4, 6));
-                    const diff1 = p2 - p1;
-                    const diff2 = p3 - p2;
-                    // Cặp Tiến 3 Bậc đẹp: chỉ chấp nhận diff=10 (chục tròn: 10 20 30, 63 73 83)
-                    if (diff1 === 10 && diff1 === diff2) {
-                        if (!highlight) {
-                            score += 30;
-                            categories.push('captien');
-                            reasons.push('Cặp Tiến 3 Bậc');
-                            highlight = last6;
-                            captienFound = true;
-                        }
-                    }
-                }
-
-
-                // Kiểm tra 2 cặp đuôi 4 số (thông thường)
-                if (!captienFound) {
-                    const last4 = numStr.slice(-4);
-                    const p1 = parseInt(last4.slice(0, 2));
-                    const p2 = parseInt(last4.slice(2, 4));
-                    const diff = p2 - p1;
-                    // Cặp Tiến đẹp: chỉ chấp nhận diff=10 (chục tròn: 20→30, 63→73)
-                    // Loại bỏ diff=11 (dạng 63→74 nhìn xấu) và các cặp ngẫu nhiên khác
-                    if (diff === 10 && p1 >= 10) {
-                        if (!highlight) {
-                            score += 15;
-                            categories.push('captien');
-                            reasons.push('Cặp Tiến');
-                            highlight = last4;
-                        }
-                    }
-                }
-            }
-
-            // Cặp Đồng Đầu Tiến hoặc Bằng (VD: 60 63 68, 71 73)
-            const matchCap3 = numStr.match(/(\d)(\d)\1(\d)\1(\d)$/);
-            let isCap3 = false;
-            if (matchCap3 && !/(\d{2})\1\1$/.test(numStr)) {
-                if (parseInt(matchCap3[2]) <= parseInt(matchCap3[3]) && parseInt(matchCap3[3]) <= parseInt(matchCap3[4])) {
-                    score += 25;
-                    categories.push('denho');
-                    reasons.push('Số Cặp');
-                    highlight = highlight || numStr.slice(-6);
-                    isCap3 = true;
-                }
-            }
-            if (!isCap3) {
-                const matchCap2 = numStr.match(/(\d)(\d)\1(\d)$/);
-                if (matchCap2 && !/(\d{2})\1$/.test(numStr)) {
-                    if (parseInt(matchCap2[2]) <= parseInt(matchCap2[3])) {
-                        score += 15;
-                        categories.push('denho');
-                        reasons.push('Số Cặp');
-                        highlight = highlight || numStr.slice(-4);
-                    }
-                }
-            }
-
-            // Taxi biến thể (VD: 168 468, 279 179)
-            const taxiVarMatch = numStr.match(/(\d)(79|39|68|86|38|78)(\d)\2$/);
-            if (taxiVarMatch && taxiVarMatch[1] !== taxiVarMatch[3]) {
-                score += 45;
-                categories.push('phongthuy');
-                categories.push('solap');
-                reasons.push(`Taxi Đuôi ${taxiVarMatch[2]}`);
-                highlight = highlight || numStr.slice(-6);
-            }
-
-
-
-            // 11. Đầu Đuôi Tương Phùng
-            const prefix4 = numStr.slice(0, 4);
-
-            if (numStr.endsWith(prefix4)) {
-                score += 25;
-                categories.push('denho');
-                reasons.push('Đầu Đuôi Tương Phùng');
-                highlight = highlight || prefix4;
-            }
-
-            // 12. Độ bằng phẳng (Lộn xộn)
-            let flipCount = 0;
-            let lastDirection = 0;
-            for (let i = 1; i < numStr.length; i++) {
-                let diff = parseInt(numStr[i]) - parseInt(numStr[i - 1]);
-                if (diff > 0) {
-                    if (lastDirection === -1) flipCount++;
-                    lastDirection = 1;
-                } else if (diff < 0) {
-                    if (lastDirection === 1) flipCount++;
-                    lastDirection = -1;
-                }
-            }
-            if (flipCount > 5) {
-                score -= 10;
-            } else if (flipCount <= 2 && uniqueDigitsCount >= 5) {
-                score += 5;
-            }
-
-            // 13. Ưu tiên số Rẻ & Đẹp (Cam kết <= 100k) có từ 3 tag trở lên
-            const fee = Number(monthlyFee) || 0;
-            if (fee <= 100000) {
-                if (reasons.length >= 4) {
-                    score += 20;
-                    categories.push('phongthuy');
-                    reasons.push('Rẻ & Siêu Đẹp');
-                } else if (reasons.length === 3) {
-                    score += 10;
-                    categories.push('phongthuy');
-                    reasons.push('Rẻ & Đẹp');
-                }
-            }
-
-            // --- Xử lý hiển thị Tag (giới hạn max 4 tag, ưu tiên ẩn tag phụ) ---
-            const lowPriorityTags = ["Nút 7", "Nút 8", "Nút 9", "Rẻ & Đẹp", "Rẻ & Siêu Đẹp", "Dễ Nhớ", "Siêu Dễ Nhớ"];
-            let finalReasons = [...reasons];
-            
-            if (finalReasons.length > 4) {
-                let keepTags = [];
-                let dropTags = [];
-                for (let tag of finalReasons) {
-                    if (lowPriorityTags.includes(tag)) {
-                        dropTags.push(tag);
-                    } else {
-                        keepTags.push(tag);
-                    }
-                }
-                
-                if (keepTags.length >= 4) {
-                    finalReasons = keepTags.slice(0, 4);
-                } else {
-                    const needed = 4 - keepTags.length;
-                    finalReasons = keepTags.concat(dropTags.slice(0, needed));
-                }
-            }
-
-            return {
-                score: score,
-                categories: categories,
-                reasonsArr: finalReasons, // Mảng tag đã được rút gọn
-                reasonText: finalReasons.join(' + ') || 'Phong Thủy Khá',
-                highlight: highlight
-            };
+        if (nut >= 7) {
+            addReason('Nút ' + nut, nut === 9 ? 32 : (nut === 8 ? 24 : 16), 'phongthuy');
+        } else {
+            score -= 12;
         }
+
+        if (!/4/.test(numStr) && !/7/.test(numStr)) {
+            addReason('Không 4, 7', 22, 'phongthuy');
+        } else {
+            score -= 28;
+        }
+
+        if (/49|53/.test(numStr)) {
+            score -= 40;
+        }
+
+        if (/(79|39)$/.test(numStr)) {
+            addReason('Thần Tài', 18, 'phongthuy');
+            highlight = highlight || numStr.slice(-2);
+        } else if (/(38|78)$/.test(numStr)) {
+            addReason('Ông Địa', 14, 'phongthuy');
+            highlight = highlight || numStr.slice(-2);
+        }
+
+        // Clean ending improves memory/readability even in phong thủy mode.
+        const uniqueDigits = new Set(numStr.split('')).size;
+        if (uniqueDigits <= 4) {
+            addReason('Dễ Nhớ', 10, 'denho');
+        }
+
+        const finalScore = Math.max(0, Math.min(100, Math.round(score)));
+        const finalReasons = finalizeReasons(reasons);
+        return {
+            score: finalScore,
+            categories: [...categories],
+            reasonsArr: finalReasons,
+            reasonText: finalReasons.join(' + ') || 'Phong Thủy Khá',
+            highlight: highlight
+        };
+    }
+
+    // -------------------------------------------------------------------------
+    // Structural pattern group: only one dominant pattern is scored here.
+    // -------------------------------------------------------------------------
+    let structuralScoreAwarded = false;
+    let isLap = false;
+
+    // Ngũ Quý / Tứ Quý
+    const quintupleMatch = numStr.match(/(.)\1{4}/);
+    const suffixQuadMatch = numStr.match(/(.)\1{3}$/);
+    const middleQuadMatch = !suffixQuadMatch ? numStr.match(/(.)\1{3}/) : null;
+
+    if (quintupleMatch) {
+        structuralScoreAwarded = true;
+        addReason('Ngũ Quý', 58, 'tuquy');
+        highlight = highlight || quintupleMatch[0];
+    } else if (suffixQuadMatch) {
+        structuralScoreAwarded = true;
+        addReason('Tứ Quý', 52, 'tuquy');
+        highlight = highlight || numStr.slice(-4);
+    } else if (middleQuadMatch) {
+        structuralScoreAwarded = true;
+        addReason('Tứ Quý', 44, 'tuquy');
+        highlight = highlight || middleQuadMatch[0];
+    }
+
+    // Tam Hoa: only if no quad-level pattern already owns the suffix.
+    if (!suffixQuadMatch && /([5-9])\1{2}$/.test(numStr)) {
+        structuralScoreAwarded = true;
+        addReason('Tam Hoa', 32, 'tamhoa');
+        highlight = highlight || numStr.slice(-3);
+    }
+
+    // Lộc Phát
+    if (/(168|868)$/.test(numStr)) {
+        addReason('Phát Lộc Phát', 34, 'locphat');
+        highlight = highlight || numStr.slice(-3);
+    } else if (/(68|86)$/.test(numStr)) {
+        addReason('Lộc Phát', 24, 'locphat');
+        highlight = highlight || numStr.slice(-2);
+    }
+
+    // Số Tiến
+    if (/(0123|1234|2345|3456|4567|5678|6789)$/.test(numStr)) {
+        addReason('Sảnh Tiến Lớn', 34, 'sotien');
+        highlight = highlight || numStr.slice(-4);
+    } else if (/(012|123|234|345|456|567|678|789)$/.test(numStr)) {
+        addReason('Sảnh Tiến', 18, 'sotien');
+        highlight = highlight || numStr.slice(-3);
+    }
+
+    // Taxi / lap. Prefer the highest match within this lap sub-group.
+    let taxiAwarded = false;
+    if (/(\d{2})\1\1$/.test(numStr)) {
+        addReason('Taxi Đẹp', 58, 'solap');
+        highlight = highlight || numStr.slice(-6);
+        taxiAwarded = true;
+        isLap = true;
+    } else if (/(\d{3})\1$/.test(numStr)) {
+        addReason('Taxi Đẹp', 54, 'solap');
+        highlight = highlight || numStr.slice(-6);
+        taxiAwarded = true;
+        isLap = true;
+    } else if (/(\d)\1(\d)\2$/.test(numStr) && numStr.slice(-2, -1) !== numStr.slice(-1)) {
+        addReason('Lặp Kép', 24, 'solap');
+        highlight = highlight || numStr.slice(-4);
+        isLap = true;
+    } else if (/(\d{2})\1$/.test(numStr)) {
+        addReason('Lặp Cặp', 18, 'solap');
+        highlight = highlight || numStr.slice(-4);
+        isLap = true;
+    }
+
+    // Taxi biến thể: only when main lap pattern was not already awarded.
+    if (!taxiAwarded) {
+        const taxiVarMatch = numStr.match(/(\d)(79|39|68|86|38|78)(\d)\2$/);
+        if (taxiVarMatch && taxiVarMatch[1] !== taxiVarMatch[3]) {
+            addReason(`Taxi Đuôi ${taxiVarMatch[2]}`, 42, 'phongthuy');
+            addReason(`Taxi Đuôi ${taxiVarMatch[2]}`, 0, 'solap');
+            highlight = highlight || numStr.slice(-6);
+            isLap = true;
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Gánh / đảo group
+    // -------------------------------------------------------------------------
+    if (!isLap) {
+        const last6g = numStr.slice(-6);
+        const g1 = last6g.slice(0, 3);
+        const g2 = last6g.slice(3, 6);
+        const isABA = (s) => s.length === 3 && s[0] === s[2] && s[0] !== s[1];
+
+        const matchGanhCap = numStr.match(/(\d{2})(\d{2})\1$/);
+        const hasABBA = /(\d)(\d)\2\1$/.test(numStr) && numStr.slice(-1) !== numStr.slice(-2, -1);
+        const hasABA = /(\d)(\d)\1$/.test(numStr) && numStr.slice(-1) !== numStr.slice(-2, -1);
+
+        if (isABA(g1) && isABA(g2) &&
+            (g1[1] === g2[1] || g1[0] === g2[0] || (g1[0] === g2[1] && g1[1] === g2[0]))) {
+            addReason('Gánh Kép', 26, 'soganh');
+            highlight = highlight || last6g;
+        } else if (matchGanhCap && Math.abs(parseInt(matchGanhCap[1], 10) - parseInt(matchGanhCap[2], 10)) <= 2) {
+            addReason('Gánh Cặp', 30, 'soganh');
+            highlight = highlight || numStr.slice(-6);
+        } else if (hasABBA) {
+            addReason('Gánh Đảo', 24, 'soganh');
+            highlight = highlight || numStr.slice(-4);
+        } else if (hasABA) {
+            addReason('Gánh', 8, 'soganh');
+            highlight = highlight || numStr.slice(-3);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Đuôi đẹp phong thủy
+    // -------------------------------------------------------------------------
+    if (/(79|39)$/.test(numStr)) {
+        addReason('Thần Tài', 22, 'duoidep');
+        addReason('Thần Tài', 0, 'phongthuy');
+        highlight = highlight || numStr.slice(-2);
+    } else if (/(38|78)$/.test(numStr)) {
+        addReason('Ông Địa', 17, 'duoidep');
+        addReason('Ông Địa', 0, 'phongthuy');
+        highlight = highlight || numStr.slice(-2);
+    }
+
+    // -------------------------------------------------------------------------
+    // Tổng nút + số sạch
+    // -------------------------------------------------------------------------
+    const sum10 = numStr.split('').reduce((acc, val) => acc + (parseInt(val, 10) || 0), 0);
+    const nut = sum10 % 10;
+    if (nut >= 7) {
+        addReason('Nút ' + nut, nut === 9 ? 12 : (nut === 8 ? 8 : 5), 'phongthuy');
+    }
+    if (/49|53/.test(numStr)) {
+        score -= 15;
+    } else if (!/4/.test(numStr) && !/7/.test(numStr)) {
+        addReason('Không 4, 7', 10, 'phongthuy');
+    }
+
+    // -------------------------------------------------------------------------
+    // Dễ nhớ
+    // -------------------------------------------------------------------------
+    const uniqueDigitsCount = new Set(numStr.split('')).size;
+    if (uniqueDigitsCount <= 3) {
+        addReason('Siêu Dễ Nhớ', 30, 'denho');
+    } else if (uniqueDigitsCount === 4) {
+        addReason('Dễ Nhớ', 14, 'denho');
+    }
+
+    // -------------------------------------------------------------------------
+    // Tiến chẵn / lẻ
+    // -------------------------------------------------------------------------
+    if (/(1357|3579)$/.test(numStr)) {
+        addReason('Tiến Lẻ Đều', 18, 'sotien');
+        highlight = highlight || numStr.slice(-4);
+    } else if (/(135|357|579)$/.test(numStr)) {
+        addReason('Sảnh Tiến Lẻ', 14, 'sotien');
+        highlight = highlight || numStr.slice(-3);
+    } else if (/(2468|0246)$/.test(numStr)) {
+        addReason('Tiến Chẵn Đều', 18, 'sotien');
+        highlight = highlight || numStr.slice(-4);
+    } else if (/(024|246|468)$/.test(numStr)) {
+        addReason('Sảnh Tiến Chẵn', 14, 'sotien');
+        highlight = highlight || numStr.slice(-3);
+    }
+
+    // -------------------------------------------------------------------------
+    // Lặp cụm (cluster repetition). Only add when no direct lap pattern dominated.
+    // -------------------------------------------------------------------------
+    if (!isLap) {
+        const matchDongDuoi4 = numStr.match(/(\d)(\d{3})(\d)\2$/);
+        const matchDongDau4 = numStr.match(/(\d{3})(\d)\1(\d)$/);
+        const matchDongDuoi3 = numStr.match(/(\d)(\d{2})(\d)\2$/);
+        const matchDongDau3 = numStr.match(/(\d{2})(\d)\1(\d)$/);
+        const matchDongGiua3 = numStr.match(/(\d)(\d)(\d)\1(\d)\3$/);
+
+        if (matchDongDuoi4 && parseInt(matchDongDuoi4[3], 10) >= parseInt(matchDongDuoi4[1], 10)) {
+            const diff = parseInt(matchDongDuoi4[3], 10) - parseInt(matchDongDuoi4[1], 10);
+            addReason(diff > 0 ? 'Cụm 4 Tiến' : 'Lặp Cụm 4', diff > 0 ? 30 : 24, 'denho');
+            addReason(diff > 0 ? 'Cụm 4 Tiến' : 'Lặp Cụm 4', 0, 'solap');
+            highlight = highlight || numStr.slice(-8);
+        } else if (matchDongDau4 && parseInt(matchDongDau4[3], 10) >= parseInt(matchDongDau4[2], 10)) {
+            const diff = parseInt(matchDongDau4[3], 10) - parseInt(matchDongDau4[2], 10);
+            addReason(diff > 0 ? 'Cụm 4 Tiến' : 'Lặp Cụm 4', diff > 0 ? 30 : 24, 'denho');
+            addReason(diff > 0 ? 'Cụm 4 Tiến' : 'Lặp Cụm 4', 0, 'solap');
+            highlight = highlight || numStr.slice(-8);
+        } else if (matchDongDuoi3 && parseInt(matchDongDuoi3[3], 10) >= parseInt(matchDongDuoi3[1], 10)) {
+            const diff = parseInt(matchDongDuoi3[3], 10) - parseInt(matchDongDuoi3[1], 10);
+            addReason(diff > 0 ? 'Lặp Cụm Tiến' : 'Lặp Cụm', diff > 0 ? 20 : 16, 'denho');
+            addReason(diff > 0 ? 'Lặp Cụm Tiến' : 'Lặp Cụm', 0, 'solap');
+            highlight = highlight || numStr.slice(-6);
+        } else if (matchDongDau3 && parseInt(matchDongDau3[3], 10) >= parseInt(matchDongDau3[2], 10)) {
+            const diff = parseInt(matchDongDau3[3], 10) - parseInt(matchDongDau3[2], 10);
+            addReason(diff > 0 ? 'Lặp Cụm Tiến' : 'Lặp Cụm', diff > 0 ? 20 : 16, 'denho');
+            addReason(diff > 0 ? 'Lặp Cụm Tiến' : 'Lặp Cụm', 0, 'solap');
+            highlight = highlight || numStr.slice(-6);
+        } else if (matchDongGiua3 && parseInt(matchDongGiua3[4], 10) >= parseInt(matchDongGiua3[2], 10)) {
+            const diff = parseInt(matchDongGiua3[4], 10) - parseInt(matchDongGiua3[2], 10);
+            const point = diff === 1 ? 28 : (diff > 1 ? 20 : 14);
+            addReason(diff > 0 ? 'Đồng Kẹp Tiến' : 'Đồng Kẹp Bằng', point, 'denho');
+            addReason(diff > 0 ? 'Đồng Kẹp Tiến' : 'Đồng Kẹp Bằng', 0, 'solap');
+            highlight = highlight || numStr.slice(-6);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Cặp tiến nâng cao. Only when it did not already become a lap pattern.
+    // -------------------------------------------------------------------------
+    if (!isLap) {
+        const last6 = numStr.slice(-6);
+        if (last6.length === 6) {
+            const p1 = parseInt(last6.slice(0, 2), 10);
+            const p2 = parseInt(last6.slice(2, 4), 10);
+            const p3 = parseInt(last6.slice(4, 6), 10);
+            const diff1 = p2 - p1;
+            const diff2 = p3 - p2;
+            if (diff1 === 10 && diff1 === diff2) {
+                addReason('Cặp Tiến 3 Bậc', 28, 'captien');
+                highlight = highlight || last6;
+            }
+        }
+
+        const last4 = numStr.slice(-4);
+        const pair1 = parseInt(last4.slice(0, 2), 10);
+        const pair2 = parseInt(last4.slice(2, 4), 10);
+        const pairDiff = pair2 - pair1;
+        if (!(pairDiff === 10 && pair1 >= 10 && reasons.includes('Cặp Tiến 3 Bậc')) && pairDiff === 10 && pair1 >= 10) {
+            addReason('Cặp Tiến', 14, 'captien');
+            highlight = highlight || last4;
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Cặp đồng đầu / trailing pair.
+    // -------------------------------------------------------------------------
+    const matchCap3 = numStr.match(/(\d)(\d)\1(\d)\1(\d)$/);
+    let isCap3 = false;
+    if (matchCap3 && !/(\d{2})\1\1$/.test(numStr)) {
+        if (parseInt(matchCap3[2], 10) <= parseInt(matchCap3[3], 10) &&
+            parseInt(matchCap3[3], 10) <= parseInt(matchCap3[4], 10)) {
+            addReason('Số Cặp', 20, 'denho');
+            highlight = highlight || numStr.slice(-6);
+            isCap3 = true;
+        }
+    }
+    if (!isCap3) {
+        const matchCap2 = numStr.match(/(\d)(\d)\1(\d)$/);
+        if (matchCap2 && !/(\d{2})\1$/.test(numStr)) {
+            if (parseInt(matchCap2[2], 10) <= parseInt(matchCap2[3], 10)) {
+                addReason('Số Cặp', 13, 'denho');
+                highlight = highlight || numStr.slice(-4);
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Đầu đuôi tương phùng
+    // -------------------------------------------------------------------------
+    const prefix4 = numStr.slice(0, 4);
+    if (numStr.endsWith(prefix4)) {
+        addReason('Đầu Đuôi Tương Phùng', 24, 'denho');
+        highlight = highlight || prefix4;
+    }
+
+    // -------------------------------------------------------------------------
+    // Độ bằng phẳng.
+    // -------------------------------------------------------------------------
+    let flipCount = 0;
+    let lastDirection = 0;
+    for (let i = 1; i < numStr.length; i++) {
+        const diff = parseInt(numStr[i], 10) - parseInt(numStr[i - 1], 10);
+        if (diff > 0) {
+            if (lastDirection === -1) flipCount++;
+            lastDirection = 1;
+        } else if (diff < 0) {
+            if (lastDirection === 1) flipCount++;
+            lastDirection = -1;
+        }
+    }
+    if (flipCount > 5) {
+        score -= 8;
+    } else if (flipCount <= 2 && uniqueDigitsCount >= 5) {
+        score += 5;
+    }
+
+    // -------------------------------------------------------------------------
+    // Rẻ & đẹp: bonus gated by category count, not inflated tag count.
+    // -------------------------------------------------------------------------
+    const richCategoryCount = categories.size;
+    if (fee <= 100000 && richCategoryCount >= 4) {
+        addReason('Rẻ & Siêu Đẹp', 18, 'phongthuy');
+    } else if (fee <= 100000 && richCategoryCount === 3) {
+        addReason('Rẻ & Đẹp', 10, 'phongthuy');
+    }
+
+    // -------------------------------------------------------------------------
+    // Finalize: deduplicate reasons/tags and cap score.
+    // -------------------------------------------------------------------------
+    const lowPriorityTags = ['Nút 7', 'Nút 8', 'Nút 9', 'Rẻ & Đẹp', 'Rẻ & Siêu Đẹp', 'Dễ Nhớ', 'Siêu Dễ Nhớ', 'Không 4, 7', 'Gánh'];
+    let finalReasons = Array.from(new Set(reasons));
+
+    if (finalReasons.length > 4) {
+        const keepTags = [];
+        const dropTags = [];
+        for (const tag of finalReasons) {
+            if (lowPriorityTags.includes(tag)) dropTags.push(tag);
+            else keepTags.push(tag);
+        }
+        if (keepTags.length >= 4) {
+            finalReasons = keepTags.slice(0, 4);
+        } else {
+            const needed = 4 - keepTags.length;
+            finalReasons = keepTags.concat(dropTags.slice(0, needed));
+        }
+    }
+
+    const finalScore = Math.max(0, Math.min(100, Math.round(score)));
+
+    return {
+        score: finalScore,
+        categories: [...categories],
+        reasonsArr: finalReasons,
+        reasonText: finalReasons.join(' + ') || 'Phong Thủy Khá',
+        highlight: highlight
+    };
+}
+
+function finalizeReasons(reasons) {
+    const unique = Array.from(new Set(reasons));
+    if (unique.length <= 4) return unique;
+    const lowPriorityTags = ['Nút 7', 'Nút 8', 'Nút 9', 'Rẻ & Đẹp', 'Rẻ & Siêu Đẹp', 'Dễ Nhớ', 'Siêu Dễ Nhớ', 'Không 4, 7', 'Gánh'];
+    const keepTags = unique.filter(tag => !lowPriorityTags.includes(tag));
+    const dropTags = unique.filter(tag => lowPriorityTags.includes(tag));
+    if (keepTags.length >= 4) return keepTags.slice(0, 4);
+    return keepTags.concat(dropTags.slice(0, 4 - keepTags.length));
+}
