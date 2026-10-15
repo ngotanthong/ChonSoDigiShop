@@ -1828,20 +1828,48 @@
                 "*4078*", "*0404*", "*1102*", "*1368*", "*8668*", "*8386*", "*8683*", "*168*"
             ];
             const tasks = [];
+            const silentTaskKeys = new Set();
+            function pushSilentTask(pref, commit, search, depth = 0) {
+                const key = `${pref}|${commit}|${String(search || '').trim()}`;
+                if (silentTaskKeys.has(key)) return;
+                silentTaskKeys.add(key);
+                tasks.push({ pref, c: commit, search: String(search || '').trim(), depth: depth });
+            }
 
             for (const pref of PREFIXES) {
                 for (const c of COMMITS) {
                     // Random 3 mẫu từ database
                     for (let i = 0; i < 3; i++) {
                         const randomSearch = wildcardDB[Math.floor(Math.random() * wildcardDB.length)];
-                        tasks.push({ pref, c, search: randomSearch });
+                        pushSilentTask(pref, c, randomSearch, 0);
                     }
                     // Đầu nào đuôi nấy 4 số (Strategy 2)
                     const basePrefix = '0' + pref.slice(2);
                     const randomDigit = Math.floor(Math.random() * 10);
                     const prefix4 = basePrefix + randomDigit;
-                    tasks.push({ pref, c, search: `*${prefix4}*` });
+                    pushSilentTask(pref, c, `*${prefix4}*`, 0);
+                    // Deterministic: toàn bộ cụm 2 số trong silent scan (chỉ cam kết 0đ để giữ nền nhẹ)
+                    if (c === '0') {
+                        for (let i = 0; i <= 99; i++) {
+                            pushSilentTask(pref, c, `*${i.toString().padStart(2, '0')}*`, 0);
+                        }
+                    }
                 }
+            }
+
+            function enqueueSilentShards(pref, commit, search, depth) {
+                if (depth >= 1) return;
+                const core = String(search || '').replace(/\*/g, '');
+                const seeds = new Set();
+                if (core === '') {
+                    for (let d = 0; d <= 9; d++) seeds.add(`*${d}*`);
+                } else {
+                    for (let d = 0; d <= 9; d++) {
+                        seeds.add(`*${d}${core}*`);
+                        seeds.add(`*${core}${d}*`);
+                    }
+                }
+                seeds.forEach(shard => pushSilentTask(pref, commit, shard, depth + 1));
             }
 
             const CONCURRENCY = 10;
@@ -1849,7 +1877,7 @@
 
             async function worker() {
                 while (tasks.length > 0) {
-                    const { pref, c, search } = tasks.shift();
+                    const { pref, c, search, depth } = tasks.shift();
                     const url = `${BASE_API}?search=${encodeURIComponent(search)}&prefix=${pref}&commit=${c}`;
                     try {
                         const res = await fetch(url);
@@ -1862,6 +1890,9 @@
                             if (freshData.length > 0) {
                                 rawData = rawData.concat(freshData);
                                 newDataCount += freshData.length;
+                            }
+                            if (Array.isArray(json.data) && json.data.length >= 50) {
+                                enqueueSilentShards(pref, c, search, depth || 0);
                             }
                         }
                     } catch (e) {
@@ -2017,34 +2048,84 @@
                         }
                     }
                 }
+            // ---- Bổ sung quét deterministic toàn bộ cụm 2 số, tam hoa, tiến ----
+            // Mục tiêu: tránh lệ thuộc random và giảm tình trạng bỏ lỡ số do API trả tối đa 50 kết quả.
+            for (const pref of PREFIXES) {
+                for (const c of COMMITS) {
+                    for (let i = 0; i <= 99; i++) {
+                        const twoDigits = i.toString().padStart(2, '0');
+                        rawTasks.push({ pref, c, search: `*${twoDigits}*`, depth: 0 });
+                    }
+                    for (let d = 0; d <= 9; d++) {
+                        rawTasks.push({ pref, c, search: `*${d}${d}${d}*`, depth: 0 });
+                    }
+                    const extraProgression = ['*0123*', '*1234*', '*2345*', '*3456*', '*4567*', '*5678*', '*6789*', '*7890*', '*987*', '*876*', '*765*', '*654*', '*543*', '*432*', '*321*', '*210*'];
+                    extraProgression.forEach(tail => rawTasks.push({ pref, c, search: tail, depth: 0 }));
+                }
+            }
+
+            // ---- Dedupe task trước khi chạy (mục 5) ----
+            const taskKeys = new Set();
+            const dedupedTasks = [];
+            rawTasks.forEach(t => {
+                const search = String(t.search || '').trim();
+                const key = `${t.pref}|${t.c}|${search}`;
+                if (taskKeys.has(key)) return;
+                taskKeys.add(key);
+                dedupedTasks.push({ pref: t.pref, c: t.c, search: search, depth: t.depth || 0 });
+            });
+
+            // ---- Hàm tách truy vấn khi API trả đầy 50 số (mục 3) ----
+            function enqueueShards(pref, commit, search, depth) {
+                if (depth >= 2) return; // Giới hạn độ sâu để tránh bùng nổ request
+                const core = String(search || '').replace(/\*/g, '');
+                const seeds = new Set();
+                if (core === '') {
+                    for (let d = 0; d <= 9; d++) seeds.add(`*${d}*`);
+                } else {
+                    for (let d = 0; d <= 9; d++) {
+                        seeds.add(`*${d}${core}*`);
+                        seeds.add(`*${core}${d}*`);
+                    }
+                }
+                seeds.forEach(shard => {
+                    const key = `${pref}|${commit}|${shard}`;
+                    if (taskKeys.has(key)) return;
+                    taskKeys.add(key);
+                    tasks.push({ pref, c: commit, search: shard, depth: depth + 1 });
+                });
             }
 
             // Xáo trộn toàn bộ các yêu cầu để thanh tiến trình hiện đều các đầu số
-            const tasks = localShuffle(rawTasks);
+            const tasks = localShuffle(dedupedTasks);
 
-            const totalRequests = tasks.length;
             let completedRequests = 0;
             const CONCURRENCY = 15; // Gọi song song 15 request
 
             async function fetchWorker() {
                 while (tasks.length > 0) {
-                    const { pref, c, search } = tasks.shift();
+                    const { pref, c, search, depth } = tasks.shift();
                     const url = `${BASE_API}?search=${encodeURIComponent(search)}&prefix=${pref}&commit=${c}`;
 
-                    statusTxt.textContent = `Quét: ${completedRequests}/${totalRequests} (0${pref.slice(2)} - ${c === '0' ? 'Trả trước 0đ' : (c / 1000 + 'k cam kết')})`;
+                    statusTxt.textContent = `Quét: ${completedRequests} đã xong, ${tasks.length} còn lại (0${pref.slice(2)} - ${c === '0' ? 'Trả trước 0đ' : (c / 1000 + 'k cam kết')})`;
 
                     try {
                         const res = await fetch(url);
                         const json = await res.json();
                         if (json.errorCode === 0 && json.data) {
                             rawData = rawData.concat(json.data);
+                            // Nếu API trả đầy 50 số, tách truy vấn để lấy thêm beyond limit
+                            if (Array.isArray(json.data) && json.data.length >= 50) {
+                                enqueueShards(pref, c, search, depth || 0);
+                            }
                         }
                     } catch (e) {
                         console.error("Fetch error:", url);
                     }
 
                     completedRequests++;
-                    progBar.style.width = `${(completedRequests / totalRequests) * 100}%`;
+                    const denominator = completedRequests + tasks.length || 1;
+                    progBar.style.width = `${(completedRequests / denominator) * 100}%`;
 
                     // Cập nhật UI theo từng mốc nhỏ
                     if (completedRequests === 40 || completedRequests === 100 || completedRequests === 160 || completedRequests === 250) {
