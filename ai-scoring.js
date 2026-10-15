@@ -169,8 +169,10 @@ function analyzeSIM(numStr, monthlyFee = 0) {
             (g1[1] === g2[1] || g1[0] === g2[0] || (g1[0] === g2[1] && g1[1] === g2[0]))) {
             addReason('Gánh Kép', 26, 'soganh');
             highlight = highlight || last6g;
-        } else if (matchGanhCap && Math.abs(parseInt(matchGanhCap[1], 10) - parseInt(matchGanhCap[2], 10)) <= 2) {
-            addReason('Gánh Cặp', 30, 'soganh');
+        } else if (matchGanhCap) {
+            const ganhDiff = Math.abs(parseInt(matchGanhCap[1], 10) - parseInt(matchGanhCap[2], 10));
+            const ganhPoint = ganhDiff <= 2 ? 30 : (ganhDiff <= 9 ? 22 : 16);
+            addReason('Gánh Cặp', ganhPoint, 'soganh');
             highlight = highlight || numStr.slice(-6);
         } else if (hasABBA) {
             addReason('Gánh Đảo', 24, 'soganh');
@@ -252,6 +254,24 @@ function analyzeSIM(numStr, monthlyFee = 0) {
     } else if (/(024|246|468)$/.test(numStr)) {
         addReason('Sảnh Tiến Chẵn', 14, 'sotien');
         highlight = highlight || numStr.slice(-3);
+    }
+
+    // Sảnh giữa: dãy 3-4 số liên tiếp xuất hiện ở giữa số, không chỉ ở đuôi.
+    const hasSuffixSodo = reasons.some(r => /^Sảnh|^Sảnh Tiến|^Tiến/.test(r));
+    if (!hasSuffixSodo) {
+        for (let len = 4; len >= 3; len--) {
+            for (let i = 1; i + len <= numStr.length - 1; i++) {
+                const win = numStr.slice(i, i + len);
+                const asc = win.split('').every((d, idx) => idx === 0 || parseInt(win[idx], 10) - parseInt(win[idx - 1], 10) === 1);
+                const desc = win.split('').every((d, idx) => idx === 0 || parseInt(win[idx - 1], 10) - parseInt(win[idx], 10) === 1);
+                if (asc || desc) {
+                    addReason('Sảnh Giữa', len === 4 ? 22 : 16, 'sotien');
+                    highlight = highlight || win;
+                    break;
+                }
+            }
+            if (reasons.includes('Sảnh Giữa')) break;
+        }
     }
 
     // -------------------------------------------------------------------------
