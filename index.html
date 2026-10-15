@@ -24855,7 +24855,7 @@
                 card.className = `${cardClass} ${priorityTag === rawTagName ? 'highlight-card' : ''}`;
 
                 let displayPrice = Number(item.price || 0);
-                if (displayPrice === 33500) displayPrice = 170000;
+                if (displayPrice === 33500) displayPrice = 250000;
                 const monthlyVal = isFree ? displayPrice.toLocaleString() + ' đ' : price.toLocaleString() + ' đ';
                 const monthlySub = isFree ? 'LH nhân viên' : '(cước cam kết/ tháng)';
                 const commitTime = (item.commitment && item.commitment > 0) ? `<span>${item.commitment}</span> tháng` : 'Không có';
@@ -24912,7 +24912,7 @@
                     const isFree = !item.monthly || Number(item.monthly) === 0;
                     if (isFree) {
                         let p = Number(item.price || 0);
-                        if (p === 33500) return 170000;
+                        if (p === 33500) return 250000;
                         return p;
                     }
                     return Number(item.monthly);
@@ -25641,7 +25641,7 @@
                 const isFree = (!item.monthly || item.monthly == 0 || item.monthly === "0") && !hasCommitment;
                 const price = Number(item.monthly) || 0;
                 let displayPrice = Number(item.price || 0);
-                if (displayPrice === 33500) displayPrice = 170000;
+                if (displayPrice === 33500) displayPrice = 250000;
                 
                 let tagsHtml = '';
                 if (showTag && item.kieuso_name) {
