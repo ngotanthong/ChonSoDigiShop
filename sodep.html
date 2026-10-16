@@ -1490,9 +1490,19 @@
             });
         }
 
+        function isTraTruocSim(item) {
+            // Trả trước 0đ: không cước cam kết/tháng và không thời hạn cam kết
+            return (!item.monthly || item.monthly == 0 || item.monthly === "0") && (!item.commitment || item.commitment == 0 || item.commitment === "0");
+        }
+
+        function isTraSauSim(item) {
+            // Trả sau: cước cam kết/tháng = 0đ nhưng có thời hạn cam kết > 0
+            return (!item.monthly || item.monthly == 0 || item.monthly === "0") && (item.commitment && Number(item.commitment) > 0);
+        }
+
+        // Giữ tương thích với code cũ
         function isFreeSim(item) {
-            // Cam kết 0đ = cước cam kết/tháng là 0 (commitment 6 tháng vẫn là sim trả trước 0đ)
-            return (!item.monthly || item.monthly == 0 || item.monthly === "0" || item.monthly === "0.0");
+            return isTraTruocSim(item);
         }
 
         let deviceId = localStorage.getItem('simso_device_id');
@@ -2654,12 +2664,21 @@
             pinBtn.onclick = (e) => filterCategory('pinned', e);
             filterTabs.appendChild(pinBtn);
 
-            const hasFreeSims = scoredData.some(item => isFreeSim(item));
+            const hasFreeSims = scoredData.some(item => isTraTruocSim(item));
             if (hasFreeSims) {
                 const btn = document.createElement('button');
                 btn.className = `tab-btn ${currentCategory === 'free' ? 'active' : ''}`;
-                btn.textContent = '🎁 Cam Kết 0đ';
+                btn.textContent = '🎁 Trả trước 0đ';
                 btn.onclick = (e) => filterCategory('free', e);
+                filterTabs.appendChild(btn);
+            }
+
+            const hasPostpaidSims = scoredData.some(item => isTraSauSim(item));
+            if (hasPostpaidSims) {
+                const btn = document.createElement('button');
+                btn.className = `tab-btn ${currentCategory === 'postpaid' ? 'active' : ''}`;
+                btn.textContent = '💳 Trả sau 0đ';
+                btn.onclick = (e) => filterCategory('postpaid', e);
                 filterTabs.appendChild(btn);
             }
 
@@ -3034,7 +3053,9 @@
             // Lọc theo danh mục (chỉ áp dụng nếu không phải tab pinned)
             if (currentCategory !== 'all' && currentCategory !== 'pinned') {
                 if (currentCategory === 'free') {
-                    displayData = displayData.filter(item => isFreeSim(item));
+                    displayData = displayData.filter(item => isTraTruocSim(item));
+                } else if (currentCategory === 'postpaid') {
+                    displayData = displayData.filter(item => isTraSauSim(item));
                 } else {
                     displayData = displayData.filter(item => item.ai && item.ai.reasonsArr && item.ai.reasonsArr.includes(currentCategory));
                 }
