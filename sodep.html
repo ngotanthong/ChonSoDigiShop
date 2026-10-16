@@ -1594,6 +1594,13 @@
                 loginScreen.style.display = 'none';
                 appContainer.style.display = 'block';
                 fetchPinnedSims();
+
+                // Tự động bật quét số ngầm sau khi đăng nhập
+                const autoReloadToggleEl = document.getElementById('toggleAutoReload');
+                if (autoReloadToggleEl && !autoReloadToggleEl.checked) {
+                    autoReloadToggleEl.checked = true;
+                    if (typeof handleAutoReloadToggle === 'function') handleAutoReloadToggle();
+                }
             }, 500);
         }
 
