@@ -1842,7 +1842,7 @@
                 "*0880*", "*0990*", "*0660*", "*0770*", "*1221*", "*1331*", "*1881*", "*1661*", "*1991*",
                 "*4078*", "*0404*", "*1102*", "*1368*", "*8668*", "*8386*", "*8683*", "*168*"
             ];
-            const scanCommits = zeroOnly ? ['0'] : COMMITS;
+            const scanCommits = zeroOnly ? ['0'] : ['0', '100000'];
             const tasks = [];
             const silentTaskKeys = new Set();
             function pushSilentTask(pref, commit, search, depth = 0) {
@@ -1945,7 +1945,11 @@
             }
         }
 
+        let activeScan = null;
+
         async function startAutoScan(zeroOnly = false) {
+            if (activeScan) { alert('Đang có tác vụ quét khác chạy, vui lòng chờ hoàn tất.'); return; }
+            activeScan = zeroOnly ? 'zero' : 'main';
             const btnScan = document.getElementById('btnScan');
             const progCont = document.getElementById('progressContainer');
             const progBar = document.getElementById('progressBar');
@@ -1983,7 +1987,7 @@
                 "*0880*", "*0990*", "*0660*", "*0770*", "*1221*", "*1331*", "*1881*", "*1661*", "*1991*",
                 "*4078*", "*0404*", "*1102*", "*1368*", "*8668*", "*8386*", "*8683*", "*168*"
             ];
-            const scanCommits = zeroOnly ? ['0'] : COMMITS;
+            const scanCommits = zeroOnly ? ['0'] : ['0', '100000'];
 
             function localShuffle(array) {
                 let currentIndex = array.length, randomIndex;
@@ -2207,6 +2211,7 @@
             } finally {
                 btnScan.disabled = false;
                 btnScan.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>LÀM MỚI)';
+                activeScan = null;
             }
         }
 
@@ -2217,6 +2222,8 @@
         const globalQueryKeys = (window.__VC_QUERY_KEYS = window.__VC_QUERY_KEYS || new Set());
 
         async function runDeep3DigitScan() {
+            if (activeScan) return;
+            activeScan = 'deep';
             if (deepScanRunning) return;
             deepScanRunning = true;
 
@@ -2329,6 +2336,7 @@
                 toast.classList.add('show');
                 setTimeout(() => toast.classList.remove('show'), 5000);
             }
+            activeScan = null;
             deepScanRunning = false;
         }
 
@@ -2341,6 +2349,8 @@
         let taxiState = null; // { tasks, idx, done, total, resumeProgress }
 
         async function startTaxiScan(resume = false) {
+            if (activeScan) { alert('Đang có tác vụ quét khác chạy, vui lòng chờ hoàn tất.'); return; }
+            activeScan = 'taxi';
             const btnTaxi = document.getElementById('btnTaxiScan');
             const btnStop = document.getElementById('btnStopTaxi');
             const btnResume = document.getElementById('btnResumeTaxi');
@@ -2619,6 +2629,7 @@
                 btnTaxi.disabled = false;
                 btnTaxi.style.display = 'inline-block';
                 btnStop.style.display = 'none';
+                activeScan = null;
             }
         }
 
