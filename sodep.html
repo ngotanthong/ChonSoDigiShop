@@ -3189,12 +3189,8 @@
             }
 
             // Chuẩn bị dữ liệu mới mỗi lần render
-            let sourceData;
-            if (currentCategory === 'all') {
-                sourceData = displayData.filter(item => !isFreeSim(item));
-            } else {
-                sourceData = [...displayData];
-            }
+            // Dùng toàn bộ displayData để in ra nhiều số đẹp ở nhiều nhóm, không loại sim 0đ
+            let sourceData = [...displayData];
             if (sourceData.length === 0) sourceData = [...displayData];
 
             // Cập nhật currentExportData từ nguồn mới nhất
@@ -3268,11 +3264,13 @@
             const midSet = new Set(midPool.map(x => x.fNum));
 
             // 3) Dòng cuối: random từ số còn lại để lấp đầy bảng in (đảm bảo đủ số lượng)
-            const randPool = remaining.filter(x => !midSet.has(x.fNum));
-            const shuffled = [...randPool].sort(() => Math.random() - 0.5);
-
+            const usedSet = new Set([...top4, ...midPool].map(x => x.fNum));
             const neededForLastRows = Math.max(0, limit - top4.length - midPool.length);
-            const lastRows = shuffled.slice(0, neededForLastRows);
+            // Lấp đầy bằng các số đẹp còn lại theo điểm AI, không random để bảng in nhiều số xịn
+            const lastRows = remaining
+                .filter(x => !usedSet.has(x.fNum))
+                .sort((a, b) => (b.ai ? b.ai.score : 0) - (a.ai ? a.ai.score : 0))
+                .slice(0, neededForLastRows);
 
             const selectedForPrint = [...top4, ...midPool, ...lastRows].slice(0, limit);
 
