@@ -2948,8 +2948,8 @@
 
             const sortedReasons = Array.from(allReasons).sort();
             sortedReasons.forEach(reason => {
-                // Chỉ chấm điểm, không tạo filter cho Gánh và Dễ Nhớ
-                if (reason === 'Gánh' || reason === 'Dễ Nhớ' || reason === 'Siêu Dễ Nhớ' || reason === 'Cặp Tiến Nhỏ' || reason === 'Rẻ & Đẹp' || reason === 'Rẻ & Siêu Đẹp') return;
+                // Chỉ chấm điểm, không tạo filter cho Gánh, Dễ Nhớ, Cặp Tiến Nhỏ, Rẻ & Đẹp, Hợp Khách
+                if (reason === 'Gánh' || reason === 'Dễ Nhớ' || reason === 'Siêu Dễ Nhớ' || reason === 'Cặp Tiến Nhỏ' || reason === 'Rẻ & Đẹp' || reason === 'Rẻ & Siêu Đẹp' || String(reason).indexOf('Hợp Khách') === 0) return;
 
                 const btn = document.createElement('button');
                 btn.className = `tab-btn ${currentCategory === reason ? 'active' : ''}`;
