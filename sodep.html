@@ -1983,7 +1983,7 @@
                 "*0880*", "*0990*", "*0660*", "*0770*", "*1221*", "*1331*", "*1881*", "*1661*", "*1991*",
                 "*4078*", "*0404*", "*1102*", "*1368*", "*8668*", "*8386*", "*8683*", "*168*"
             ];
-            const scanCommits = zeroOnly ? ['0'] : ['0', '100000'];
+            const scanCommits = ['0'];
 
             function localShuffle(array) {
                 let currentIndex = array.length, randomIndex;
@@ -2097,7 +2097,7 @@
             function enqueueShards(pref, commit, search, depth) {
                 return; // Quét chính cơ bản: không shard, deep nền sẽ chạy sau
                 if (depth >= 3) return; // Quét thường: shard tối đa 3 cấp
-                if (zeroOnly && tasks.length > 1200) return; // Giới hạn tổng request để không bị đơ
+                if (false) return;
                 const core = String(search || '').replace(/\*/g, '');
                 const seeds = new Set();
                 if (core === '') {
