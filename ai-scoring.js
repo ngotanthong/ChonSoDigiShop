@@ -484,12 +484,14 @@ function analyzeSIM(numStr, monthlyFee = 0) {
             const luckyEnding = cp.goalEndings || [];
             if (luckyEnding.some(e => numStr.endsWith(String(e)))) customerBonus += 16;
             const hasAvoidDigit = cp.avoidDigits && cp.avoidDigits.some(d => numStr.includes(String(d)));
+            const luckyNonZero = (cp.luckyDigits || []).map(d => Number(d)).filter(d => d !== 0 && !isNaN(d));
+            const luckyPresentCount = luckyNonZero.filter(d => numStr.includes(String(d))).length;
             if (hasAvoidDigit) {
                 // Strict: chỉ số không chứa digit kỵ mới được gắn Hợp Khách
                 score -= 6;
             }
             const customerTag = `Hợp Khách ${cp.year || ''}`.trim();
-            if (!hasAvoidDigit && customerBonus > 0) {
+            if (!hasAvoidDigit && luckyPresentCount >= 2) {
                 addReason(customerTag, Math.min(20, customerBonus), 'phongthuy');
             } else if (hasAvoidDigit) {
                 score -= 6;
