@@ -1441,6 +1441,8 @@
         <div style="background:#fff; border-radius:16px; width:min(1100px, 96vw); max-height:92vh; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
             <div id="customerPrintContent" style="padding:20px; overflow:auto; background:#fff;"></div>
             <div style="display:flex; justify-content:center; gap:10px; padding:14px; border-top:1px solid #e2e8f0; flex-wrap:wrap;">
+                <button class="btn-scan" style="margin:0; max-width:120px; background:#64748b;" onclick="setCustomerPrintOrientation('portrait')">📄 Dọc</button>
+                <button class="btn-scan" style="margin:0; max-width:120px; background:#64748b;" onclick="setCustomerPrintOrientation('landscape')">🖥 Ngang</button>
                 <button class="btn-scan" style="margin:0; max-width:180px; background:#10b981;" onclick="downloadCustomerPrintJPG()">⬇️ Tải ảnh JPG</button>
                 <button class="btn-scan" style="margin:0; max-width:180px; background:#005baa;" onclick="printCustomerList()">🖨️ In trực tiếp</button>
                 <button class="btn-scan" style="margin:0; max-width:150px; background:#6b7280;" onclick="closeCustomerPrintModal()">Đóng</button>
@@ -2034,6 +2036,14 @@
             }).join('');
         }
 
+        let customerPrintOrientation = 'landscape';
+        function setCustomerPrintOrientation(orientation) {
+            customerPrintOrientation = orientation === 'portrait' ? 'portrait' : 'landscape';
+            const cp = window.customerProfile;
+            if (!cp || getCustomerMatchingItems().length === 0) return;
+            document.getElementById('customerPrintContent').innerHTML = buildCustomerPrintHtml();
+        }
+
         function buildCustomerPrintHtml() {
             const cp = window.customerProfile;
             const items = getCustomerMatchingItems();
@@ -2053,16 +2063,19 @@
                 </div>`;
             }).join('');
 
+            const isLandscape = customerPrintOrientation === 'landscape';
+            const columns = isLandscape ? 6 : 4;
+            const maxSheetWidth = isLandscape ? '277mm' : '190mm';
             return `
             <style>
-                @page { size: A4 portrait; margin: 10mm; }
-                .cp-sheet { width: 100%; max-width: 190mm; margin: 0 auto; }
+                @page { size: A4 ${isLandscape ? 'landscape' : 'portrait'}; margin: 8mm; }
+                .cp-sheet { width: 100%; max-width: ${maxSheetWidth}; margin: 0 auto; }
                 .cp-title { text-align:center; margin: 0 0 4px; font-size:18px; color:#005baa; }
                 .cp-sub { text-align:center; color:#6b7280; font-size:11px; margin-bottom:8px; }
                 .cp-info { border:1px solid #cbd5e1; border-radius:6px; padding:8px 10px; margin-bottom:10px; background:#f8fafc; break-inside: avoid; page-break-inside: avoid; }
                 .cp-grid-info { display:grid; grid-template-columns: repeat(3, 1fr); gap:4px 10px; font-size:11px; }
                 .cp-grid-info strong { color:#005baa; }
-                .cp-grid { display:grid; grid-template-columns: repeat(4, 1fr); gap:4px; }
+                .cp-grid { display:grid; grid-template-columns: repeat(${columns}, 1fr); gap:4px; }
                 .cp-card { border:1px solid #d1d5db; border-radius:5px; padding:6px; text-align:center; break-inside: avoid; page-break-inside: avoid; }
                 .cp-card .num { font-weight:700; font-size:13px; letter-spacing:0.3px; color:#005baa; }
                 .cp-card .score { font-size:10px; color:#b45309; margin-top:1px; }
