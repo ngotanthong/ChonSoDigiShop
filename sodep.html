@@ -1980,11 +1980,25 @@
                 return;
             }
 
+            const cp = window.customerProfile || {};
+            const elementTheme = {
+                'Kim': { bg: 'linear-gradient(135deg, #f8fafc, #e2e8f0)', accent: '#64748b', glow: '#94a3b8' },
+                'Mộc': { bg: 'linear-gradient(135deg, #ecfdf5, #d1fae5)', accent: '#059669', glow: '#34d399' },
+                'Thủy': { bg: 'linear-gradient(135deg, #eff6ff, #dbeafe)', accent: '#1d4ed8', glow: '#60a5fa' },
+                'Hỏa': { bg: 'linear-gradient(135deg, #fef2f2, #fee2e2)', accent: '#dc2626', glow: '#f87171' },
+                'Thổ': { bg: 'linear-gradient(135deg, #fffbeb, #fef3c7)', accent: '#d97706', glow: '#fbbf24' }
+            }[cp.element || 'Thổ'] || { bg: '#ffffff', accent: '#005baa', glow: '#60a5fa' };
+
             grid.innerHTML = items.map(item => `
-                <div class="sim-card" style="cursor:pointer;" onclick="copyToClipboard('${item.fNum}')">
-                    <div style="font-size:16px; font-weight:800; color:var(--primary);">${item.fNum}</div>
-                    <div style="font-size:12px; color:#64748b; margin-top:4px;">⭐ ${item.ai.score} • ${item.ai.reasonsArr.join(', ')}</div>
-                    <div style="font-size:12px; color:#166534; margin-top:4px;">Hợp khách: ${window.customerProfile.year}</div>
+                <div class="sim-card" style="cursor:pointer; background:${elementTheme.bg}; border:1px solid ${elementTheme.glow}; box-shadow: 0 4px 14px ${elementTheme.glow}33;" onclick="copyToClipboard('${item.fNum}')">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <div style="font-size:18px; font-weight:800; color:${elementTheme.accent}; letter-spacing:1px;">${item.fNum}</div>
+                        <div style="font-size:11px; font-weight:700; color:white; background:${elementTheme.accent}; padding:3px 8px; border-radius:999px;">Hợp ${cp.element || 'Khách'}</div>
+                    </div>
+                    <div style="font-size:12px; color:#334155; margin-top:4px;">⭐ ${item.ai.score} • ${item.ai.reasonsArr.join(', ')}</div>
+                    <div style="font-size:12px; color:#166534; margin-top:4px;">Năm ${cp.year || ''} • digit hợp: ${(cp.luckyDigits || []).join(', ')}</div>
+                    <div style="font-size:11px; color:#475569; margin-top:4px;">Màu hợp: ${(cp.colors || []).join(', ')}</div>
+                    <div style="font-size:11px; color:#475569;">Màu kiêng: ${(cp.avoidColors || []).join(', ')}</div>
                 </div>
             `).join('');
         }
