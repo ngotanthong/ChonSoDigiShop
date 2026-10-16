@@ -1929,7 +1929,7 @@
                     <div><strong>Gợi ý đuôi:</strong> ${goalEndings.length ? goalEndings.join(', ') : 'Theo tag AI'}</div>
                 </div>
                 <div style="margin-top: 10px; font-size: 13px; color: #475569;">
-                    Năm sinh ${year}. Mệnh tính theo Lục Thập Hoa Giáp/Nạp Âm, mang tính tham khảo.
+                    Năm sinh ${year}. Mệnh tính theo Lục Thập Hoa Giáp/Nạp Âm. Tiêu chí strict: chỉ hiện số không chứa digit kỵ.
                 </div>
             `;
             document.getElementById('customerSummary').innerHTML = summaryHtml;
@@ -1971,8 +1971,10 @@
                 return;
             }
             const profileTagPrefix = 'Hợp Khách';
+            const avoidSet = new Set(((window.customerProfile || {}).avoidDigits || []).map(d => String(d)));
             const items = scoredData
                 .filter(i => i.ai && i.ai.reasonsArr && i.ai.reasonsArr.some(r => r.indexOf(profileTagPrefix) === 0))
+                .filter(i => !Array.from(avoidSet).some(d => i.fNum.includes(d)))
                 .sort((a, b) => (b.ai ? b.ai.score : 0) - (a.ai ? a.ai.score : 0));
 
             if (items.length === 0) {

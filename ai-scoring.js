@@ -483,11 +483,15 @@ function analyzeSIM(numStr, monthlyFee = 0) {
             }
             const luckyEnding = cp.goalEndings || [];
             if (luckyEnding.some(e => numStr.endsWith(String(e)))) customerBonus += 16;
-            if (cp.avoidDigits && cp.avoidDigits.some(d => numStr.slice(-2).includes(String(d)))) customerBonus -= 8;
+            const hasAvoidDigit = cp.avoidDigits && cp.avoidDigits.some(d => numStr.includes(String(d)));
+            if (hasAvoidDigit) {
+                // Strict: chỉ số không chứa digit kỵ mới được gắn Hợp Khách
+                score -= 6;
+            }
             const customerTag = `Hợp Khách ${cp.year || ''}`.trim();
-            if (customerBonus > 0) {
+            if (!hasAvoidDigit && customerBonus > 0) {
                 addReason(customerTag, Math.min(20, customerBonus), 'phongthuy');
-            } else if (customerBonus < -4) {
+            } else if (hasAvoidDigit) {
                 score -= 6;
             }
         }
