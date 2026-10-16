@@ -484,8 +484,9 @@ function analyzeSIM(numStr, monthlyFee = 0) {
             const luckyEnding = cp.goalEndings || [];
             if (luckyEnding.some(e => numStr.endsWith(String(e)))) customerBonus += 16;
             if (cp.avoidDigits && cp.avoidDigits.some(d => numStr.slice(-2).includes(String(d)))) customerBonus -= 8;
+            const customerTag = `Hợp Khách ${cp.year || ''}`.trim();
             if (customerBonus > 0) {
-                addReason('Hợp Khách', Math.min(20, customerBonus), 'phongthuy');
+                addReason(customerTag, Math.min(20, customerBonus), 'phongthuy');
             } else if (customerBonus < -4) {
                 score -= 6;
             }

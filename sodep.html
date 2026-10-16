@@ -1933,6 +1933,9 @@
                 year, gender: genderInput.value, goal, element, luckyDigits, avoidDigits, colors: data.colors, goalEndings
             };
             localStorage.setItem('customerProfile', JSON.stringify(window.customerProfile));
+
+            // Nếu đã có kết quả quét, lập tức re-tag theo tiêu chí mới, không cần load lại
+            if (typeof reprocessWithCustomerProfile === 'function') reprocessWithCustomerProfile();
         }
 
         function applyCustomerProfileAndScan() {
@@ -1947,6 +1950,26 @@
             localStorage.removeItem('customerProfile');
             const summary = document.getElementById('customerSummary');
             if (summary) summary.style.display = 'none';
+            if (typeof reprocessWithCustomerProfile === 'function') reprocessWithCustomerProfile();
+        }
+
+        function reprocessWithCustomerProfile() {
+            if (!rawData || rawData.length === 0) return;
+            if (currentCategory && String(currentCategory).startsWith('Hợp Khách')) {
+                currentCategory = 'all';
+            }
+            try {
+                processAIScores();
+                if (scoredData.length > 0) {
+                    const toolbar = document.getElementById('toolbar');
+                    const emptyState = document.getElementById('emptyState');
+                    if (toolbar) toolbar.style.display = 'flex';
+                    if (emptyState) emptyState.style.display = 'none';
+                    renderResults();
+                }
+            } catch (e) {
+                console.error('Lỗi reprocess profile:', e);
+            }
         }
 
         // --- AUTO SCAN ENGINE ---
