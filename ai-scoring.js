@@ -315,13 +315,13 @@ function analyzeSIM(numStr, monthlyFee = 0) {
     // Sảnh giữa: dãy 3-4 số liên tiếp xuất hiện ở giữa số, không chỉ ở đuôi.
     const hasSuffixSodo = reasons.some(r => /^Sảnh|^Sảnh Tiến|^Tiến/.test(r));
     if (!hasSuffixSodo) {
-        for (let len = 4; len >= 3; len--) {
+        for (let len = 5; len >= 3; len--) {
             for (let i = 1; i + len <= numStr.length - 1; i++) {
                 const win = numStr.slice(i, i + len);
                 const asc = win.split('').every((d, idx) => idx === 0 || parseInt(win[idx], 10) - parseInt(win[idx - 1], 10) === 1);
-                const desc = win.split('').every((d, idx) => idx === 0 || parseInt(win[idx - 1], 10) - parseInt(win[idx], 10) === 1);
-                if (asc || desc) {
-                    addReason('Sảnh Giữa', len === 4 ? 22 : 16, 'sotien');
+                if (asc) {
+                    const point = len === 5 ? 28 : (len === 4 ? 22 : 16);
+                    addReason('Sảnh Giữa', point, 'sotien');
                     highlight = highlight || win;
                     if (lastTag && !tagHighlights[lastTag]) tagHighlights[lastTag] = win;
                     break;
