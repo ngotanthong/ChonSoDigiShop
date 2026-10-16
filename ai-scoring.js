@@ -9,12 +9,40 @@ function analyzeSIM(numStr, monthlyFee = 0) {
     let score = 0;
     const categories = new Set();
     const reasons = [];
+    const reasonDetails = [];
+    const tagHighlights = {};
+    let lastTag = null;
     let highlight = '';
 
-    const addReason = (tag, points, category = null) => {
+    function primaryFromDetails() {
+        const scores = {};
+        for (const entry of reasonDetails) {
+            scores[entry.tag] = (scores[entry.tag] || 0) + (entry.points || 0);
+            if (entry.highlight && !tagHighlights[entry.tag]) tagHighlights[entry.tag] = entry.highlight;
+        }
+        let bestTag = null;
+        let bestScore = -Infinity;
+        for (const tag in scores) {
+            if (scores[tag] > bestScore) {
+                bestScore = scores[tag];
+                bestTag = tag;
+            }
+        }
+        const bestHighlight = bestTag && tagHighlights[bestTag] ? tagHighlights[bestTag] : highlight;
+        return {
+            tag: bestTag,
+            score: bestScore === -Infinity ? 0 : bestScore,
+            highlight: bestHighlight
+        };
+    }
+
+    const addReason = (tag, points, category = null, hi = null) => {
         if (!reasons.includes(tag)) reasons.push(tag);
         if (category) categories.add(category);
         score += points;
+        reasonDetails.push({ tag, points, category, highlight: hi });
+        lastTag = tag;
+        if (hi && !tagHighlights[tag]) tagHighlights[tag] = hi;
     };
 
     // -------------------------------------------------------------------------
@@ -47,9 +75,11 @@ function analyzeSIM(numStr, monthlyFee = 0) {
         if (/(79|39)$/.test(numStr)) {
             addReason('Thần Tài', 18, 'phongthuy');
             highlight = highlight || numStr.slice(-2);
+            if (lastTag && !tagHighlights[lastTag]) tagHighlights[lastTag] = numStr.slice(-2);
         } else if (/(38|78)$/.test(numStr)) {
             addReason('Ông Địa', 14, 'phongthuy');
             highlight = highlight || numStr.slice(-2);
+            if (lastTag && !tagHighlights[lastTag]) tagHighlights[lastTag] = numStr.slice(-2);
         }
 
         // Clean ending improves memory/readability even in phong thủy mode.
@@ -59,13 +89,20 @@ function analyzeSIM(numStr, monthlyFee = 0) {
         }
 
         const finalScore = Math.max(0, Math.min(100, Math.round(score)));
-        const finalReasons = finalizeReasons(reasons);
+        const primary = primaryFromDetails();
+        let finalReasons = finalizeReasons(reasons);
+        if (primary.tag && finalReasons.includes(primary.tag)) {
+            finalReasons = [primary.tag, ...finalReasons.filter(t => t !== primary.tag)];
+        }
         return {
             score: finalScore,
             categories: [...categories],
             reasonsArr: finalReasons,
             reasonText: finalReasons.join(' + ') || 'Phong Thủy Khá',
-            highlight: highlight
+            highlight: primary.highlight || highlight,
+            primaryTag: primary.tag,
+            primaryScore: primary.score,
+            primaryHighlight: primary.highlight || highlight
         };
     }
 
@@ -84,14 +121,17 @@ function analyzeSIM(numStr, monthlyFee = 0) {
         structuralScoreAwarded = true;
         addReason('Ngũ Quý', 58, 'tuquy');
         highlight = highlight || quintupleMatch[0];
+        if (lastTag && !tagHighlights[lastTag]) tagHighlights[lastTag] = quintupleMatch[0];
     } else if (suffixQuadMatch) {
         structuralScoreAwarded = true;
         addReason('Tứ Quý', 52, 'tuquy');
         highlight = highlight || numStr.slice(-4);
+        if (lastTag && !tagHighlights[lastTag]) tagHighlights[lastTag] = numStr.slice(-4);
     } else if (middleQuadMatch) {
         structuralScoreAwarded = true;
         addReason('Tứ Quý', 44, 'tuquy');
         highlight = highlight || middleQuadMatch[0];
+        if (lastTag && !tagHighlights[lastTag]) tagHighlights[lastTag] = middleQuadMatch[0];
     }
 
     // Tam Hoa: only if no quad-level pattern already owns the suffix.
@@ -99,24 +139,29 @@ function analyzeSIM(numStr, monthlyFee = 0) {
         structuralScoreAwarded = true;
         addReason('Tam Hoa', 32, 'tamhoa');
         highlight = highlight || numStr.slice(-3);
+        if (lastTag && !tagHighlights[lastTag]) tagHighlights[lastTag] = numStr.slice(-3);
     }
 
     // Lộc Phát
     if (/(168|868)$/.test(numStr)) {
         addReason('Phát Lộc Phát', 34, 'locphat');
         highlight = highlight || numStr.slice(-3);
+        if (lastTag && !tagHighlights[lastTag]) tagHighlights[lastTag] = numStr.slice(-3);
     } else if (/(68|86)$/.test(numStr)) {
         addReason('Lộc Phát', 24, 'locphat');
         highlight = highlight || numStr.slice(-2);
+        if (lastTag && !tagHighlights[lastTag]) tagHighlights[lastTag] = numStr.slice(-2);
     }
 
     // Số Tiến
     if (/(0123|1234|2345|3456|4567|5678|6789)$/.test(numStr)) {
         addReason('Sảnh Tiến Lớn', 34, 'sotien');
         highlight = highlight || numStr.slice(-4);
+        if (lastTag && !tagHighlights[lastTag]) tagHighlights[lastTag] = numStr.slice(-4);
     } else if (/(012|123|234|345|456|567|678|789)$/.test(numStr)) {
         addReason('Sảnh Tiến', 18, 'sotien');
         highlight = highlight || numStr.slice(-3);
+        if (lastTag && !tagHighlights[lastTag]) tagHighlights[lastTag] = numStr.slice(-3);
     }
 
     // Taxi / lap. Prefer the highest match within this lap sub-group.
@@ -124,20 +169,24 @@ function analyzeSIM(numStr, monthlyFee = 0) {
     if (/(\d{2})\1\1$/.test(numStr)) {
         addReason('Taxi Đẹp', 58, 'solap');
         highlight = highlight || numStr.slice(-6);
+        if (lastTag && !tagHighlights[lastTag]) tagHighlights[lastTag] = numStr.slice(-6);
         taxiAwarded = true;
         isLap = true;
     } else if (/(\d{3})\1$/.test(numStr)) {
         addReason('Taxi Đẹp', 54, 'solap');
         highlight = highlight || numStr.slice(-6);
+        if (lastTag && !tagHighlights[lastTag]) tagHighlights[lastTag] = numStr.slice(-6);
         taxiAwarded = true;
         isLap = true;
     } else if (/(\d)\1(\d)\2$/.test(numStr) && numStr.slice(-2, -1) !== numStr.slice(-1)) {
         addReason('Lặp Kép', 24, 'solap');
         highlight = highlight || numStr.slice(-4);
+        if (lastTag && !tagHighlights[lastTag]) tagHighlights[lastTag] = numStr.slice(-4);
         isLap = true;
     } else if (/(\d{2})\1$/.test(numStr)) {
         addReason('Lặp Cặp', 18, 'solap');
         highlight = highlight || numStr.slice(-4);
+        if (lastTag && !tagHighlights[lastTag]) tagHighlights[lastTag] = numStr.slice(-4);
         isLap = true;
     }
 
@@ -148,6 +197,7 @@ function analyzeSIM(numStr, monthlyFee = 0) {
             addReason(`Taxi Đuôi ${taxiVarMatch[2]}`, 42, 'phongthuy');
             addReason(`Taxi Đuôi ${taxiVarMatch[2]}`, 0, 'solap');
             highlight = highlight || numStr.slice(-6);
+            if (lastTag && !tagHighlights[lastTag]) tagHighlights[lastTag] = numStr.slice(-6);
             isLap = true;
         }
     }
@@ -169,14 +219,17 @@ function analyzeSIM(numStr, monthlyFee = 0) {
             (g1[1] === g2[1] || g1[0] === g2[0] || (g1[0] === g2[1] && g1[1] === g2[0]))) {
             addReason('Gánh Kép', 26, 'soganh');
             highlight = highlight || last6g;
+            if (lastTag && !tagHighlights[lastTag]) tagHighlights[lastTag] = last6g;
         } else if (matchGanhCap) {
             const ganhDiff = Math.abs(parseInt(matchGanhCap[1], 10) - parseInt(matchGanhCap[2], 10));
             const ganhPoint = ganhDiff <= 2 ? 30 : (ganhDiff <= 9 ? 22 : 16);
             addReason('Gánh Cặp', ganhPoint, 'soganh');
             highlight = highlight || numStr.slice(-6);
+            if (lastTag && !tagHighlights[lastTag]) tagHighlights[lastTag] = numStr.slice(-6);
         } else if (hasABBA) {
             addReason('Gánh Đảo', 24, 'soganh');
             highlight = highlight || numStr.slice(-4);
+            if (lastTag && !tagHighlights[lastTag]) tagHighlights[lastTag] = numStr.slice(-4);
         }
     }
 
@@ -187,10 +240,12 @@ function analyzeSIM(numStr, monthlyFee = 0) {
         addReason('Thần Tài', 22, 'duoidep');
         addReason('Thần Tài', 0, 'phongthuy');
         highlight = highlight || numStr.slice(-2);
+        if (lastTag && !tagHighlights[lastTag]) tagHighlights[lastTag] = numStr.slice(-2);
     } else if (/(38|78)$/.test(numStr)) {
         addReason('Ông Địa', 17, 'duoidep');
         addReason('Ông Địa', 0, 'phongthuy');
         highlight = highlight || numStr.slice(-2);
+        if (lastTag && !tagHighlights[lastTag]) tagHighlights[lastTag] = numStr.slice(-2);
     }
 
     // -------------------------------------------------------------------------
@@ -242,15 +297,19 @@ function analyzeSIM(numStr, monthlyFee = 0) {
     if (/(1357|3579)$/.test(numStr)) {
         addReason('Tiến Lẻ Đều', 18, 'sotien');
         highlight = highlight || numStr.slice(-4);
+        if (lastTag && !tagHighlights[lastTag]) tagHighlights[lastTag] = numStr.slice(-4);
     } else if (/(135|357|579)$/.test(numStr)) {
         addReason('Sảnh Tiến Lẻ', 14, 'sotien');
         highlight = highlight || numStr.slice(-3);
+        if (lastTag && !tagHighlights[lastTag]) tagHighlights[lastTag] = numStr.slice(-3);
     } else if (/(2468|0246)$/.test(numStr)) {
         addReason('Tiến Chẵn Đều', 18, 'sotien');
         highlight = highlight || numStr.slice(-4);
+        if (lastTag && !tagHighlights[lastTag]) tagHighlights[lastTag] = numStr.slice(-4);
     } else if (/(024|246|468)$/.test(numStr)) {
         addReason('Sảnh Tiến Chẵn', 14, 'sotien');
         highlight = highlight || numStr.slice(-3);
+        if (lastTag && !tagHighlights[lastTag]) tagHighlights[lastTag] = numStr.slice(-3);
     }
 
     // Sảnh giữa: dãy 3-4 số liên tiếp xuất hiện ở giữa số, không chỉ ở đuôi.
@@ -264,6 +323,7 @@ function analyzeSIM(numStr, monthlyFee = 0) {
                 if (asc || desc) {
                     addReason('Sảnh Giữa', len === 4 ? 22 : 16, 'sotien');
                     highlight = highlight || win;
+                    if (lastTag && !tagHighlights[lastTag]) tagHighlights[lastTag] = win;
                     break;
                 }
             }
@@ -286,27 +346,32 @@ function analyzeSIM(numStr, monthlyFee = 0) {
             addReason(diff > 0 ? 'Cụm 4 Tiến' : 'Lặp Cụm 4', diff > 0 ? 30 : 24, 'denho');
             addReason(diff > 0 ? 'Cụm 4 Tiến' : 'Lặp Cụm 4', 0, 'solap');
             highlight = highlight || numStr.slice(-8);
+            if (lastTag && !tagHighlights[lastTag]) tagHighlights[lastTag] = numStr.slice(-8);
         } else if (matchDongDau4 && parseInt(matchDongDau4[3], 10) >= parseInt(matchDongDau4[2], 10)) {
             const diff = parseInt(matchDongDau4[3], 10) - parseInt(matchDongDau4[2], 10);
             addReason(diff > 0 ? 'Cụm 4 Tiến' : 'Lặp Cụm 4', diff > 0 ? 30 : 24, 'denho');
             addReason(diff > 0 ? 'Cụm 4 Tiến' : 'Lặp Cụm 4', 0, 'solap');
             highlight = highlight || numStr.slice(-8);
+            if (lastTag && !tagHighlights[lastTag]) tagHighlights[lastTag] = numStr.slice(-8);
         } else if (matchDongDuoi3 && parseInt(matchDongDuoi3[3], 10) >= parseInt(matchDongDuoi3[1], 10)) {
             const diff = parseInt(matchDongDuoi3[3], 10) - parseInt(matchDongDuoi3[1], 10);
             addReason(diff > 0 ? 'Lặp Cụm Tiến' : 'Lặp Cụm', diff > 0 ? 20 : 16, 'denho');
             addReason(diff > 0 ? 'Lặp Cụm Tiến' : 'Lặp Cụm', 0, 'solap');
             highlight = highlight || numStr.slice(-6);
+            if (lastTag && !tagHighlights[lastTag]) tagHighlights[lastTag] = numStr.slice(-6);
         } else if (matchDongDau3 && parseInt(matchDongDau3[3], 10) >= parseInt(matchDongDau3[2], 10)) {
             const diff = parseInt(matchDongDau3[3], 10) - parseInt(matchDongDau3[2], 10);
             addReason(diff > 0 ? 'Lặp Cụm Tiến' : 'Lặp Cụm', diff > 0 ? 20 : 16, 'denho');
             addReason(diff > 0 ? 'Lặp Cụm Tiến' : 'Lặp Cụm', 0, 'solap');
             highlight = highlight || numStr.slice(-6);
+            if (lastTag && !tagHighlights[lastTag]) tagHighlights[lastTag] = numStr.slice(-6);
         } else if (matchDongGiua3 && parseInt(matchDongGiua3[4], 10) >= parseInt(matchDongGiua3[2], 10)) {
             const diff = parseInt(matchDongGiua3[4], 10) - parseInt(matchDongGiua3[2], 10);
             const point = diff === 1 ? 28 : (diff > 1 ? 20 : 14);
             addReason(diff > 0 ? 'Đồng Kẹp Tiến' : 'Đồng Kẹp Bằng', point, 'denho');
             addReason(diff > 0 ? 'Đồng Kẹp Tiến' : 'Đồng Kẹp Bằng', 0, 'solap');
             highlight = highlight || numStr.slice(-6);
+            if (lastTag && !tagHighlights[lastTag]) tagHighlights[lastTag] = numStr.slice(-6);
         }
     }
 
@@ -324,9 +389,11 @@ function analyzeSIM(numStr, monthlyFee = 0) {
             if (diff1 === 10 && diff1 === diff2) {
                 addReason('Cặp Tiến 3 Bậc', 30, 'captien');
                 highlight = highlight || last6;
+                if (lastTag && !tagHighlights[lastTag]) tagHighlights[lastTag] = last6;
             } else if (diff1 >= 1 && diff1 <= 3 && diff1 === diff2) {
                 addReason('Cặp Tiến Nhỏ', diff1 === 1 ? 26 : (diff1 === 2 ? 24 : 22), 'captien');
                 highlight = highlight || last6;
+                if (lastTag && !tagHighlights[lastTag]) tagHighlights[lastTag] = last6;
             }
         }
 
@@ -337,6 +404,7 @@ function analyzeSIM(numStr, monthlyFee = 0) {
         if (!(pairDiff === 10 && pair1 >= 10 && reasons.includes('Cặp Tiến 3 Bậc')) && pairDiff === 10 && pair1 >= 10) {
             addReason('Cặp Tiến', 14, 'captien');
             highlight = highlight || last4;
+            if (lastTag && !tagHighlights[lastTag]) tagHighlights[lastTag] = last4;
         }
     }
 
@@ -350,6 +418,7 @@ function analyzeSIM(numStr, monthlyFee = 0) {
             parseInt(matchCap3[3], 10) <= parseInt(matchCap3[4], 10)) {
             addReason('Số Cặp', 20, 'denho');
             highlight = highlight || numStr.slice(-6);
+            if (lastTag && !tagHighlights[lastTag]) tagHighlights[lastTag] = numStr.slice(-6);
             isCap3 = true;
         }
     }
@@ -359,6 +428,7 @@ function analyzeSIM(numStr, monthlyFee = 0) {
             if (parseInt(matchCap2[2], 10) <= parseInt(matchCap2[3], 10)) {
                 addReason('Số Cặp', 13, 'denho');
                 highlight = highlight || numStr.slice(-4);
+                if (lastTag && !tagHighlights[lastTag]) tagHighlights[lastTag] = numStr.slice(-4);
             }
         }
     }
@@ -370,6 +440,7 @@ function analyzeSIM(numStr, monthlyFee = 0) {
     if (numStr.endsWith(prefix4)) {
         addReason('Đầu Đuôi Tương Phùng', 24, 'denho');
         highlight = highlight || prefix4;
+        if (lastTag && !tagHighlights[lastTag]) tagHighlights[lastTag] = prefix4;
     }
 
     // -------------------------------------------------------------------------
@@ -420,13 +491,20 @@ function analyzeSIM(numStr, monthlyFee = 0) {
     }
 
     const finalScore = Math.max(0, Math.min(100, Math.round(score)));
+    const primary = primaryFromDetails();
+    if (primary.tag && finalReasons.includes(primary.tag)) {
+        finalReasons = [primary.tag, ...finalReasons.filter(t => t !== primary.tag)];
+    }
 
     return {
         score: finalScore,
         categories: [...categories],
         reasonsArr: finalReasons,
         reasonText: finalReasons.join(' + ') || 'Phong Thủy Khá',
-        highlight: highlight
+        highlight: primary.highlight || highlight,
+        primaryTag: primary.tag,
+        primaryScore: primary.score,
+        primaryHighlight: primary.highlight || highlight
     };
 }
 

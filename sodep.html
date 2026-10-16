@@ -2759,7 +2759,7 @@
             }
         }
 
-        function highlightHTML(numStr, matchStr, reasonText = '') {
+        function highlightHTML(numStr, matchStr, reasonText = '', primaryTag = '') {
             if (!numStr || numStr.length !== 10) {
                 if (!matchStr) return numStr;
                 return numStr.replace(matchStr, `<span class="hi">${matchStr}</span>`);
@@ -2783,8 +2783,16 @@
             const isLapCumTien = /Lặp Cụm Tiến/.test(reasonText || '');
             const isLapXenKe = /Lặp Xen Kẽ/.test(reasonText || '');
             const isGanhCap = /Gánh Cặp/.test(reasonText || '');
+            const isPrimarySanhGiua = primaryTag === 'Sảnh Giữa';
 
-            if (isDongKepTien || isLapCumTien || isGanhCap) {
+            if (isPrimarySanhGiua) {
+                const sanhIdx = matchStr ? numStr.indexOf(matchStr) : -1;
+                if (sanhIdx >= 0 && sanhIdx + (matchStr ? matchStr.length : 0) <= numStr.length && sanhIdx !== 0) {
+                    dotIndexes = [sanhIdx, sanhIdx + (matchStr ? matchStr.length : 0)];
+                } else {
+                    dotIndexes = [4, 7];
+                }
+            } else if (isDongKepTien || isLapCumTien || isGanhCap) {
                 dotIndexes = [4, 7]; // Nhịp 4-3-3 cho Đồng Kẹp Tiến / Lặp Cụm Tiến / Gánh Cặp
             } else if (isLapXenKe) {
                 dotIndexes = [4, 6, 8]; // Nhịp 4-2-2-2 cho Lặp Xen Kẽ
@@ -3049,7 +3057,7 @@
                     ? '<span class="price-desktop">0 đ/tháng</span><span class="price-mobile">0đ/tháng</span>'
                     : `<span class="price-desktop">${price.toLocaleString()} đ/tháng</span><span class="price-mobile">${price / 1000}k/tháng</span>`;
                 const commitText = (item.commitment && item.commitment > 0) ? `Cam kết ${item.commitment}T` : 'Không cam kết';
-                const hlNum = highlightHTML(item.fNum, item.ai ? item.ai.highlight : '', item.ai ? item.ai.reasonText : '');
+                const hlNum = highlightHTML(item.fNum, item.ai ? (item.ai.primaryHighlight || item.ai.highlight) : '', item.ai ? item.ai.reasonText : '', item.ai ? item.ai.primaryTag : '');
 
                 const card = document.createElement('div');
                 card.className = 'sim-card';
@@ -3224,7 +3232,7 @@
 
             // --- Render HTML ---
             const renderItem = (item) => {
-                const formatNum = highlightHTML(item.fNum, item.ai ? item.ai.highlight : '');
+                const formatNum = highlightHTML(item.fNum, item.ai ? (item.ai.primaryHighlight || item.ai.highlight) : '', item.ai ? item.ai.reasonText : '', item.ai ? item.ai.primaryTag : '');
                 const price = Number(item.monthly) || 0;
 
                 let tagsHtml = '';
