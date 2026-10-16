@@ -2665,7 +2665,7 @@
             const sortedReasons = Array.from(allReasons).sort();
             sortedReasons.forEach(reason => {
                 // Chỉ chấm điểm, không tạo filter cho Gánh và Dễ Nhớ
-                if (reason === 'Gánh' || reason === 'Dễ Nhớ' || reason === 'Siêu Dễ Nhớ') return;
+                if (reason === 'Gánh' || reason === 'Dễ Nhớ' || reason === 'Siêu Dễ Nhớ' || reason === 'Cặp Tiến Nhỏ' || reason === 'Rẻ & Đẹp' || reason === 'Rẻ & Siêu Đẹp') return;
 
                 const btn = document.createElement('button');
                 btn.className = `tab-btn ${currentCategory === reason ? 'active' : ''}`;
@@ -2784,8 +2784,10 @@
             const isLapXenKe = /Lặp Xen Kẽ/.test(reasonText || '');
             const isGanhCap = /Gánh Cặp/.test(reasonText || '');
 
-            if (isDongKepTien || isLapCumTien || isLapXenKe || isGanhCap) {
-                dotIndexes = [4, 7]; // Nhịp 4-3-3 cho Đồng Kẹp Tiến / Lặp Cụm Tiến / Lặp Xen Kẽ / Gánh Cặp
+            if (isDongKepTien || isLapCumTien || isGanhCap) {
+                dotIndexes = [4, 7]; // Nhịp 4-3-3 cho Đồng Kẹp Tiến / Lặp Cụm Tiến / Gánh Cặp
+            } else if (isLapXenKe) {
+                dotIndexes = [4, 6, 8]; // Nhịp 4-2-2-2 cho Lặp Xen Kẽ
             } else if (isLapCum4) {
                 dotIndexes = [2, 6]; // Nhịp 2-4-4
             } else if (isLapCum) {

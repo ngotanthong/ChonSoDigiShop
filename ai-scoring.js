@@ -177,9 +177,6 @@ function analyzeSIM(numStr, monthlyFee = 0) {
         } else if (hasABBA) {
             addReason('Gánh Đảo', 24, 'soganh');
             highlight = highlight || numStr.slice(-4);
-        } else if (hasABA) {
-            addReason('Gánh', 8, 'soganh');
-            highlight = highlight || numStr.slice(-3);
         }
     }
 
@@ -324,12 +321,8 @@ function analyzeSIM(numStr, monthlyFee = 0) {
             const p3 = parseInt(last6.slice(4, 6), 10);
             const diff1 = p2 - p1;
             const diff2 = p3 - p2;
-            if (diff1 > 0 && diff1 <= 10 && diff1 === diff2) {
-                if (diff1 === 10) {
-                    addReason('Cặp Tiến 3 Bậc', 30, 'captien');
-                } else {
-                    addReason('Cặp Tiến Nhỏ', 22, 'captien');
-                }
+            if (diff1 === 10 && diff1 === diff2) {
+                addReason('Cặp Tiến 3 Bậc', 30, 'captien');
                 highlight = highlight || last6;
             }
         }
@@ -400,12 +393,7 @@ function analyzeSIM(numStr, monthlyFee = 0) {
     // -------------------------------------------------------------------------
     // Rẻ & đẹp: bonus gated by category count, not inflated tag count.
     // -------------------------------------------------------------------------
-    const richCategoryCount = categories.size;
-    if (fee <= 100000 && richCategoryCount >= 4) {
-        addReason('Rẻ & Siêu Đẹp', 18, 'phongthuy');
-    } else if (fee <= 100000 && richCategoryCount === 3) {
-        addReason('Rẻ & Đẹp', 10, 'phongthuy');
-    }
+    // (Rẻ & Đẹp / Rẻ & Siêu Đẹp không còn được chấm điểm hay dùng filter.)
 
     // -------------------------------------------------------------------------
     // Finalize: deduplicate reasons/tags and cap score.
