@@ -1846,10 +1846,28 @@
             if (savedProfile) window.customerProfile = JSON.parse(savedProfile);
         } catch (e) {}
 
-        const ELEMENT_BY_LAST_DIGIT = {
-            0: 'Thổ', 1: 'Thổ', 2: 'Mộc', 3: 'Mộc', 4: 'Thủy',
-            5: 'Thủy', 6: 'Hỏa', 7: 'Hỏa', 8: 'Kim', 9: 'Kim'
-        };
+        const STEMS = ['Giáp', 'Ất', 'Bính', 'Đinh', 'Mậu', 'Kỷ', 'Canh', 'Tân', 'Nhâm', 'Quý'];
+        const BRANCHES = ['Tý', 'Sửu', 'Dần', 'Mão', 'Thìn', 'Tỵ', 'Ngọ', 'Mùi', 'Thân', 'Dậu', 'Tuất', 'Hợi'];
+        const NAP_AM_NAMES = [
+            'Hải Trung Kim', 'Hải Trung Kim', 'Lư Trung Hỏa', 'Lư Trung Hỏa', 'Đại Lâm Mộc', 'Đại Lâm Mộc',
+            'Lộ Bàng Thổ', 'Lộ Bàng Thổ', 'Kiếm Phong Kim', 'Kiếm Phong Kim', 'Sơn Đầu Hỏa', 'Sơn Đầu Hỏa',
+            'Giản Hạ Thủy', 'Giản Hạ Thủy', 'Thành Đầu Thổ', 'Thành Đầu Thổ', 'Bạch Lạp Kim', 'Bạch Lạp Kim',
+            'Dương Liễu Mộc', 'Dương Liễu Mộc', 'Tuyền Trung Thủy', 'Tuyền Trung Thủy', 'Ốc Thượng Thổ', 'Ốc Thượng Thổ',
+            'Tích Lịch Hỏa', 'Tích Lịch Hỏa', 'Tùng Bách Mộc', 'Tùng Bách Mộc', 'Trường Lưu Thủy', 'Trường Lưu Thủy',
+            'Sa Trung Kim', 'Sa Trung Kim', 'Sơn Hạ Hỏa', 'Sơn Hạ Hỏa', 'Bình Địa Mộc', 'Bình Địa Mộc',
+            'Bích Thượng Thổ', 'Bích Thượng Thổ', 'Kim Bạch Kim', 'Kim Bạch Kim', 'Phúc Đăng Hỏa', 'Phúc Đăng Hỏa',
+            'Thiên Hà Thủy', 'Thiên Hà Thủy', 'Đại Trạch Thổ', 'Đại Trạch Thổ', 'Thoa Xuyến Kim', 'Thoa Xuyến Kim',
+            'Tang Đố Mộc', 'Tang Đố Mộc', 'Đại Khê Thủy', 'Đại Khê Thủy', 'Sa Trung Thổ', 'Sa Trung Thổ',
+            'Thiên Thượng Hỏa', 'Thiên Thượng Hỏa', 'Thạch Lựu Mộc', 'Thạch Lựu Mộc', 'Đại Hải Thủy', 'Đại Hải Thủy'
+        ];
+        function getNapAmByYear(year) {
+            const index = ((year - 1924) % 60 + 60) % 60;
+            const name = NAP_AM_NAMES[index] || 'Hải Trung Kim';
+            const element = (name.split(' ').pop() || 'Kim');
+            const stemIndex = ((year - 4) % 10 + 10) % 10;
+            const branchIndex = ((year - 4) % 12 + 12) % 12;
+            return { name, element, hoaGiap: STEMS[stemIndex] + ' ' + BRANCHES[branchIndex] };
+        }
         const ELEMENT_DATA = {
             Kim: { lucky: [4, 9, 6], avoid: [2, 5], colors: ['Trắng', 'Bạc', 'Xám'] },
             Mộc: { lucky: [3, 8], avoid: [4, 9], colors: ['Xanh lá', 'Xanh biển'] },
@@ -1884,8 +1902,11 @@
                 alert('Vui lòng nhập năm sinh hợp lệ (1900-2100).');
                 return;
             }
-            const element = ELEMENT_BY_LAST_DIGIT[year % 10];
+            const napAmInfo = getNapAmByYear(year);
+            const element = napAmInfo.element;
             const data = ELEMENT_DATA[element];
+            const hoaGiap = napAmInfo.hoaGiap;
+            const napAmName = napAmInfo.name;
             const avoidedExtra = (avoidInput.value || '').replace(/[^0-9]/g, '').split('').map(Number).filter(n => !isNaN(n));
             const avoidDigits = Array.from(new Set([...(data.avoid || []), ...avoidedExtra])).sort();
             const goal = 'Tất cả';
@@ -1893,14 +1914,16 @@
             const goalEndings = GOAL_ENDINGS[goal] || [];
             const summaryHtml = `
                 <div style="display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: 12px;">
-                    <div><strong>Mệnh (ước tính):</strong> ${element}</div>
+                    <div><strong>Hoa Giáp:</strong> ${hoaGiap}</div>
+                    <div><strong>Nạp Âm:</strong> ${napAmName}</div>
+                    <div><strong>Bản mệnh:</strong> ${element}</div>
                     <div><strong>Digit hợp:</strong> ${luckyDigits.join(', ')}</div>
                     <div><strong>Digit kiêng:</strong> ${avoidDigits.length ? avoidDigits.join(', ') : 'Không'}</div>
                     <div><strong>Màu hợp:</strong> ${data.colors.join(', ')}</div>
                     <div><strong>Gợi ý đuôi:</strong> ${goalEndings.length ? goalEndings.join(', ') : 'Theo tag AI'}</div>
                 </div>
                 <div style="margin-top: 10px; font-size: 13px; color: #475569;">
-                    Năm sinh: ${year}. Đây là gợi ý tham khảo theo phong thủy rule-based, không phải tuyệt đối.
+                    Năm sinh ${year}. Mệnh tính theo Lục Thập Hoa Giáp/Nạp Âm, mang tính tham khảo.
                 </div>
             `;
             document.getElementById('customerSummary').innerHTML = summaryHtml;
