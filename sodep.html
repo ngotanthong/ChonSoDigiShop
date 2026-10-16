@@ -1869,11 +1869,11 @@
             return { name, element, hoaGiap: STEMS[stemIndex] + ' ' + BRANCHES[branchIndex] };
         }
         const ELEMENT_DATA = {
-            Kim: { lucky: [4, 9, 6], avoid: [2, 5], colors: ['Trắng', 'Bạc', 'Xám'] },
-            Mộc: { lucky: [3, 8], avoid: [4, 9], colors: ['Xanh lá', 'Xanh biển'] },
-            Thủy: { lucky: [1, 6], avoid: [2, 5, 8], colors: ['Đen', 'Xanh dương', 'Xám'] },
-            Hỏa: { lucky: [2, 7, 9], avoid: [1, 6], colors: ['Đỏ', 'Tím', 'Hồng'] },
-            Thổ: { lucky: [0, 5, 8], avoid: [3, 4], colors: ['Vàng', 'Nâu', 'Be'] }
+            Kim: { lucky: [4, 9, 6], avoid: [2, 5], colors: ['Trắng', 'Bạc', 'Xám'], avoidColors: ['Đỏ', 'Tím', 'Hồng', 'Vàng cam'] },
+            Mộc: { lucky: [3, 8], avoid: [4, 9], colors: ['Xanh lá', 'Xanh biển'], avoidColors: ['Trắng', 'Bạc', 'Vàng', 'Nâu'] },
+            Thủy: { lucky: [1, 6], avoid: [2, 5, 8], colors: ['Đen', 'Xanh dương', 'Xám'], avoidColors: ['Vàng', 'Nâu', 'Be'] },
+            Hỏa: { lucky: [2, 7, 9], avoid: [1, 6], colors: ['Đỏ', 'Tím', 'Hồng'], avoidColors: ['Đen', 'Xanh dương', 'Xám'] },
+            Thổ: { lucky: [0, 5, 8], avoid: [3, 4], colors: ['Vàng', 'Nâu', 'Be'], avoidColors: ['Xanh lá', 'Xanh biển', 'Đen'] }
         };
         const GOAL_ENDINGS = {
             'Tài lộc': [68, 86, 168, 868, 38, 78],
@@ -1920,7 +1920,9 @@
                     <div><strong>Digit hợp:</strong> ${luckyDigits.join(', ')}</div>
                     <div><strong>Digit kiêng:</strong> ${avoidDigits.length ? avoidDigits.join(', ') : 'Không'}</div>
                     <div><strong>Màu hợp:</strong> ${data.colors.join(', ')}</div>
+                    <div><strong>Màu kiêng:</strong> ${data.avoidColors.join(', ')}</div>
                     <div><strong>Gợi ý đuôi:</strong> ${goalEndings.length ? goalEndings.join(', ') : 'Theo tag AI'}</div>
+                    <div><strong>Kỵ digit ở đuôi:</strong> ${avoidDigits.length ? avoidDigits.join(', ') : 'Không'}</div>
                 </div>
                 <div style="margin-top: 10px; font-size: 13px; color: #475569;">
                     Năm sinh ${year}. Mệnh tính theo Lục Thập Hoa Giáp/Nạp Âm, mang tính tham khảo.
