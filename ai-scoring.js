@@ -472,6 +472,28 @@ function analyzeSIM(numStr, monthlyFee = 0) {
     // -------------------------------------------------------------------------
     // Finalize: deduplicate reasons/tags and cap score.
     // -------------------------------------------------------------------------
+    // Boost theo hồ sơ phong thủy khách (rule-based, soft boost)
+    // -------------------------------------------------------------------------
+    try {
+        const cp = (typeof window !== 'undefined') ? window.customerProfile : null;
+        if (cp && cp.luckyDigits && cp.luckyDigits.length) {
+            let customerBonus = 0;
+            for (const d of cp.luckyDigits) {
+                if (numStr.includes(String(d))) customerBonus += 4;
+            }
+            const luckyEnding = cp.goalEndings || [];
+            if (luckyEnding.some(e => numStr.endsWith(String(e)))) customerBonus += 16;
+            if (cp.avoidDigits && cp.avoidDigits.some(d => numStr.slice(-2).includes(String(d)))) customerBonus -= 8;
+            if (customerBonus > 0) {
+                addReason('Hợp Khách', Math.min(20, customerBonus), 'phongthuy');
+            } else if (customerBonus < -4) {
+                score -= 6;
+            }
+        }
+    } catch (e) {}
+
+
+    // -------------------------------------------------------------------------
     const lowPriorityTags = ['Nút 7', 'Nút 8', 'Nút 9', 'Rẻ & Đẹp', 'Rẻ & Siêu Đẹp', 'Dễ Nhớ', 'Siêu Dễ Nhớ', 'Không 4, 7', 'Gánh'];
     let finalReasons = Array.from(new Set(reasons));
 

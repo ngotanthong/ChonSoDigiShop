@@ -1178,6 +1178,51 @@
                 </div>
             </header>
 
+            <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
+                <button class="tab-btn active" id="btnViewScan" onclick="switchView('scan')">🔍 Quét SIM</button>
+                <button class="tab-btn" id="btnViewProfile" onclick="switchView('profile')">🔮 Phong Thủy Khách</button>
+            </div>
+
+            <!-- Tab giao diện Phong thủy khách -->
+            <div id="profileView" style="display: none; margin-top: 12px;">
+                <div class="scan-panel" style="background: linear-gradient(135deg, #f0f9ff, #e0f2fe);">
+                    <h2>🔮 Hồ sơ Phong Thủy Khách</h2>
+                    <p>Nhập năm sinh để ước tính mệnh, digit hợp/kỵ và màu hợp. Sau đó áp dụng để quét.</p>
+                    <div style="display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 16px;">
+                        <div style="display: flex; flex-direction: column; gap: 4px; min-width: 140px;">
+                            <label style="font-weight: 600; font-size: 13px;">Năm sinh *</label>
+                            <input type="number" id="customerYear" placeholder="vd: 1985" min="1900" max="2100"
+                                style="padding: 10px; border-radius: 10px; border: 1px solid var(--border); font-size: 15px;">
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 4px; min-width: 140px;">
+                            <label style="font-weight: 600; font-size: 13px;">Giới tính</label>
+                            <select id="customerGender" style="padding: 10px; border-radius: 10px; border: 1px solid var(--border); font-size: 15px;">
+                                <option value="">Không chọn</option>
+                                <option value="nam">Nam</option>
+                                <option value="nu">Nữ</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 4px; min-width: 180px;">
+                            <label style="font-weight: 600; font-size: 13px;">Digit kiêng thêm</label>
+                            <input type="text" id="customerAvoid" placeholder="vd: 4,7,9" maxlength="20"
+                                style="padding: 10px; border-radius: 10px; border: 1px solid var(--border); font-size: 15px;">
+                        </div>
+                        <div style="display: flex; align-items: flex-end;">
+                            <button class="btn-scan" id="btnAnalyzeCustomer" onclick="analyzeCustomerProfile()" style="margin: 0; max-width: 180px; background: linear-gradient(135deg, #8b5cf6, #6d28d9);">
+                                🔮 Phân tích
+                            </button>
+                        </div>
+                    </div>
+                    <div id="customerSummary" style="display: none; margin-top: 16px; padding: 14px; border-radius: 12px; background: white; box-shadow: var(--card-shadow); text-align: left;">
+                    </div>
+                    <div style="margin-top: 12px; display: flex; justify-content: center; gap: 10px;">
+                        <button class="tab-btn" onclick="applyCustomerProfileAndScan()">Áp dụng & Quét</button>
+                        <button class="tab-btn" onclick="clearCustomerProfile()">Xóa hồ sơ</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="scanView">
             <div class="scan-panel">
                 <h2>Quét Tự Động Toàn Kho</h2>
                 <p>Hệ thống sẽ tự động tìm kiếm các số <strong>trả trước 0đ</strong> và các số có <strong>cam kết ≤
@@ -1330,6 +1375,8 @@
                     <line x1="12" y1="16" x2="12.01" y2="16"></line>
                 </svg>
                 <p>Chưa có dữ liệu. Nhấn "Bắt đầu quét AI" để tìm số đẹp.</p>
+            </div>
+        </div>
             </div>
         </div>
     </div>
@@ -1791,6 +1838,92 @@
         }
 
         // analyzeSIM function moved to ai-scoring.js
+
+        // --- HỒ SƠ PHONG THUỶ KHÁCH ---
+        window.customerProfile = null;
+        try {
+            const savedProfile = localStorage.getItem('customerProfile');
+            if (savedProfile) window.customerProfile = JSON.parse(savedProfile);
+        } catch (e) {}
+
+        const ELEMENT_BY_LAST_DIGIT = {
+            0: 'Thổ', 1: 'Thổ', 2: 'Mộc', 3: 'Mộc', 4: 'Thủy',
+            5: 'Thủy', 6: 'Hỏa', 7: 'Hỏa', 8: 'Kim', 9: 'Kim'
+        };
+        const ELEMENT_DATA = {
+            Kim: { lucky: [4, 9, 6], avoid: [2, 5], colors: ['Trắng', 'Bạc', 'Xám'] },
+            Mộc: { lucky: [3, 8], avoid: [4, 9], colors: ['Xanh lá', 'Xanh biển'] },
+            Thủy: { lucky: [1, 6], avoid: [2, 5, 8], colors: ['Đen', 'Xanh dương', 'Xám'] },
+            Hỏa: { lucky: [2, 7, 9], avoid: [1, 6], colors: ['Đỏ', 'Tím', 'Hồng'] },
+            Thổ: { lucky: [0, 5, 8], avoid: [3, 4], colors: ['Vàng', 'Nâu', 'Be'] }
+        };
+        const GOAL_ENDINGS = {
+            'Tài lộc': [68, 86, 168, 868, 38, 78],
+            'Sức khỏe': [39, 79, 38, 78],
+            'Hôn nhân': [29, 92, 22, 99, 520],
+            'Tất cả': []
+        };
+
+        function switchView(view) {
+            const scanView = document.getElementById('scanView');
+            const profileView = document.getElementById('profileView');
+            const btnScanView = document.getElementById('btnViewScan');
+            const btnProfileView = document.getElementById('btnViewProfile');
+            if (scanView) scanView.style.display = (view === 'scan') ? 'block' : 'none';
+            if (profileView) profileView.style.display = (view === 'profile') ? 'block' : 'none';
+            if (btnScanView) btnScanView.classList.toggle('active', view === 'scan');
+            if (btnProfileView) btnProfileView.classList.toggle('active', view === 'profile');
+        }
+
+        function analyzeCustomerProfile() {
+            const yearInput = document.getElementById('customerYear');
+            const genderInput = document.getElementById('customerGender');
+            const avoidInput = document.getElementById('customerAvoid');
+            const year = parseInt(yearInput.value, 10);
+            if (!year || year < 1900 || year > 2100) {
+                alert('Vui lòng nhập năm sinh hợp lệ (1900-2100).');
+                return;
+            }
+            const element = ELEMENT_BY_LAST_DIGIT[year % 10];
+            const data = ELEMENT_DATA[element];
+            const avoidedExtra = (avoidInput.value || '').replace(/[^0-9]/g, '').split('').map(Number).filter(n => !isNaN(n));
+            const avoidDigits = Array.from(new Set([...(data.avoid || []), ...avoidedExtra])).sort();
+            const goal = 'Tất cả';
+            const luckyDigits = data.lucky;
+            const goalEndings = GOAL_ENDINGS[goal] || [];
+            const summaryHtml = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: 12px;">
+                    <div><strong>Mệnh (ước tính):</strong> ${element}</div>
+                    <div><strong>Digit hợp:</strong> ${luckyDigits.join(', ')}</div>
+                    <div><strong>Digit kiêng:</strong> ${avoidDigits.length ? avoidDigits.join(', ') : 'Không'}</div>
+                    <div><strong>Màu hợp:</strong> ${data.colors.join(', ')}</div>
+                    <div><strong>Gợi ý đuôi:</strong> ${goalEndings.length ? goalEndings.join(', ') : 'Theo tag AI'}</div>
+                </div>
+                <div style="margin-top: 10px; font-size: 13px; color: #475569;">
+                    Năm sinh: ${year}. Đây là gợi ý tham khảo theo phong thủy rule-based, không phải tuyệt đối.
+                </div>
+            `;
+            document.getElementById('customerSummary').innerHTML = summaryHtml;
+            document.getElementById('customerSummary').style.display = 'block';
+            window.customerProfile = {
+                year, gender: genderInput.value, goal, element, luckyDigits, avoidDigits, colors: data.colors, goalEndings
+            };
+            localStorage.setItem('customerProfile', JSON.stringify(window.customerProfile));
+        }
+
+        function applyCustomerProfileAndScan() {
+            if (!window.customerProfile) analyzeCustomerProfile();
+            if (!window.customerProfile) return;
+            if (typeof switchView === 'function') switchView('scan');
+            if (typeof startAutoScan === 'function') startAutoScan();
+        }
+
+        function clearCustomerProfile() {
+            window.customerProfile = null;
+            localStorage.removeItem('customerProfile');
+            const summary = document.getElementById('customerSummary');
+            if (summary) summary.style.display = 'none';
+        }
 
         // --- AUTO SCAN ENGINE ---
         let autoReloadInterval = null;
