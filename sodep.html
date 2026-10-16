@@ -1491,7 +1491,8 @@
         }
 
         function isFreeSim(item) {
-            return (!item.monthly || item.monthly == 0 || item.monthly === "0") && (!item.commitment || item.commitment == 0 || item.commitment === "0");
+            // Cam kết 0đ = cước cam kết/tháng là 0 (commitment 6 tháng vẫn là sim trả trước 0đ)
+            return (!item.monthly || item.monthly == 0 || item.monthly === "0" || item.monthly === "0.0");
         }
 
         let deviceId = localStorage.getItem('simso_device_id');
