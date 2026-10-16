@@ -1219,6 +1219,10 @@
                         <button class="tab-btn" onclick="applyCustomerProfileAndScan()">Áp dụng & Quét</button>
                         <button class="tab-btn" onclick="clearCustomerProfile()">Xóa hồ sơ</button>
                     </div>
+                    <div style="margin-top: 16px;">
+                        <h3 style="margin-bottom: 10px;">Số hợp khách</h3>
+                        <div id="customerResults" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px;"></div>
+                    </div>
                 </div>
             </div>
 
@@ -1891,6 +1895,7 @@
             if (profileView) profileView.style.display = (view === 'profile') ? 'block' : 'none';
             if (btnScanView) btnScanView.classList.toggle('active', view === 'scan');
             if (btnProfileView) btnProfileView.classList.toggle('active', view === 'profile');
+            if (view === 'profile' && typeof renderCustomerProfileResults === 'function') renderCustomerProfileResults();
         }
 
         function analyzeCustomerProfile() {
@@ -1936,6 +1941,7 @@
 
             // Nếu đã có kết quả quét, lập tức re-tag theo tiêu chí mới, không cần load lại
             if (typeof reprocessWithCustomerProfile === 'function') reprocessWithCustomerProfile();
+            if (typeof renderCustomerProfileResults === 'function') renderCustomerProfileResults();
         }
 
         function applyCustomerProfileAndScan() {
@@ -1953,6 +1959,36 @@
             if (typeof reprocessWithCustomerProfile === 'function') reprocessWithCustomerProfile();
         }
 
+        function renderCustomerProfileResults() {
+            const grid = document.getElementById('customerResults');
+            if (!grid) return;
+            if (!window.customerProfile) {
+                grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#64748b;">Chưa có hồ sơ khách. Hãy phân tích năm sinh trước.</div>';
+                return;
+            }
+            if (!scoredData || scoredData.length === 0) {
+                grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#64748b;">Chưa có dữ liệu quét. Hãy áp dụng & quét rồi xem lại.</div>';
+                return;
+            }
+            const profileTagPrefix = 'Hợp Khách';
+            const items = scoredData
+                .filter(i => i.ai && i.ai.reasonsArr && i.ai.reasonsArr.some(r => r.indexOf(profileTagPrefix) === 0))
+                .sort((a, b) => (b.ai ? b.ai.score : 0) - (a.ai ? a.ai.score : 0));
+
+            if (items.length === 0) {
+                grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#64748b;">Chưa có số nào đạt tiêu chí Hợp Khách trong kết quả hiện tại.</div>';
+                return;
+            }
+
+            grid.innerHTML = items.map(item => `
+                <div class="sim-card" style="cursor:pointer;" onclick="copyToClipboard('${item.fNum}')">
+                    <div style="font-size:16px; font-weight:800; color:var(--primary);">${item.fNum}</div>
+                    <div style="font-size:12px; color:#64748b; margin-top:4px;">⭐ ${item.ai.score} • ${item.ai.reasonsArr.join(', ')}</div>
+                    <div style="font-size:12px; color:#166534; margin-top:4px;">Hợp khách: ${window.customerProfile.year}</div>
+                </div>
+            `).join('');
+        }
+
         function reprocessWithCustomerProfile() {
             if (!rawData || rawData.length === 0) return;
             if (currentCategory && String(currentCategory).startsWith('Hợp Khách')) {
@@ -1967,6 +2003,7 @@
                     if (emptyState) emptyState.style.display = 'none';
                     renderResults();
                 }
+                if (typeof renderCustomerProfileResults === 'function') renderCustomerProfileResults();
             } catch (e) {
                 console.error('Lỗi reprocess profile:', e);
             }
@@ -2897,6 +2934,8 @@
                 btn.onclick = (e) => filterCategory(reason, e);
                 filterTabs.appendChild(btn);
             });
+
+            if (typeof renderCustomerProfileResults === 'function') renderCustomerProfileResults();
         }
 
         function sortScoredData() {
