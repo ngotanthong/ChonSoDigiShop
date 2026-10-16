@@ -1989,18 +1989,27 @@
                 'Thổ': { bg: 'linear-gradient(135deg, #fffbeb, #fef3c7)', accent: '#d97706', glow: '#fbbf24' }
             }[cp.element || 'Thổ'] || { bg: '#ffffff', accent: '#005baa', glow: '#60a5fa' };
 
-            grid.innerHTML = items.map(item => `
-                <div class="sim-card" style="cursor:pointer; background:${elementTheme.bg}; border:1px solid ${elementTheme.glow}; box-shadow: 0 4px 14px ${elementTheme.glow}33;" onclick="copyToClipboard('${item.fNum}')">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <div style="font-size:18px; font-weight:800; color:${elementTheme.accent}; letter-spacing:1px;">${item.fNum}</div>
-                        <div style="font-size:11px; font-weight:700; color:white; background:${elementTheme.accent}; padding:3px 8px; border-radius:999px;">Hợp ${cp.element || 'Khách'}</div>
+            grid.innerHTML = items.map(item => {
+                const formatted = highlightHTML(item.fNum, item.ai ? (item.ai.primaryHighlight || item.ai.highlight) : '', item.ai ? item.ai.reasonText : '', item.ai ? item.ai.primaryTag : '');
+                const isFree = isTraTruocSim(item);
+                const isPost = isTraSauSim(item);
+                const monthly = Number(item.monthly) || 0;
+                const commit = Number(item.commitment) || 0;
+                const priceText = isFree ? 'Trả trước 0đ' : (isPost ? `Trả sau 0đ · ${commit || '—'}T` : `${monthly ? (monthly / 1000 + 'k/tháng') : '0đ/tháng'} · ${commit ? commit + 'T' : '—'}`);
+                const mainReason = item.ai && item.ai.reasonsArr && item.ai.reasonsArr[0] ? item.ai.reasonsArr[0] : 'Phù hợp phong thuỷ';
+                return `
+                    <div class="sim-card" style="cursor:pointer; background:${elementTheme.bg}; border:1px solid ${elementTheme.glow}; box-shadow: 0 4px 14px ${elementTheme.glow}33;" onclick="copyToClipboard('${item.fNum}')">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <div style="font-size:19px; font-weight:800; color:${elementTheme.accent}; letter-spacing:0.5px;">${formatted}</div>
+                            <div style="font-size:12px; font-weight:800; color:#0f172a; background:#ffffffcc; padding:3px 8px; border-radius:999px;">⭐ ${item.ai.score}</div>
+                        </div>
+                        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">
+                            <span style="font-size:11px; font-weight:700; color:white; background:${elementTheme.accent}; padding:3px 8px; border-radius:999px;">${mainReason}</span>
+                            <span style="font-size:11px; color:#475569; background:#ffffffcc; padding:3px 8px; border-radius:999px;">${priceText}</span>
+                        </div>
                     </div>
-                    <div style="font-size:12px; color:#334155; margin-top:4px;">⭐ ${item.ai.score} • ${item.ai.reasonsArr.join(', ')}</div>
-                    <div style="font-size:12px; color:#166534; margin-top:4px;">Năm ${cp.year || ''} • digit hợp: ${(cp.luckyDigits || []).join(', ')}</div>
-                    <div style="font-size:11px; color:#475569; margin-top:4px;">Màu hợp: ${(cp.colors || []).join(', ')}</div>
-                    <div style="font-size:11px; color:#475569;">Màu kiêng: ${(cp.avoidColors || []).join(', ')}</div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         function reprocessWithCustomerProfile() {
