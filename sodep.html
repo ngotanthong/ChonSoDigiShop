@@ -1184,6 +1184,10 @@
                         400k/tháng</strong>, sau đó dùng AI chấm điểm và chọn ra những số đẹp nhất cho bạn.</p>
 
                 <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                    <button class="btn-scan" id="btnZeroScan" onclick="startAutoScan(true)"
+                        style="margin: 0; max-width: 230px; background: linear-gradient(135deg, #0ea5e9, #2563eb); box-shadow: 0 4px 15px rgba(37,99,235,0.4);">
+                        ⚡ QUÉT 0Đ NHANH
+                    </button>
                     <button class="btn-scan" id="btnScan" onclick="startAutoScan()"
                         style="margin: 0; max-width: 250px;">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -1838,6 +1842,7 @@
                 "*0880*", "*0990*", "*0660*", "*0770*", "*1221*", "*1331*", "*1881*", "*1661*", "*1991*",
                 "*4078*", "*0404*", "*1102*", "*1368*", "*8668*", "*8386*", "*8683*", "*168*"
             ];
+            const scanCommits = zeroOnly ? ['0'] : COMMITS;
             const tasks = [];
             const silentTaskKeys = new Set();
             function pushSilentTask(pref, commit, search, depth = 0) {
@@ -1940,7 +1945,7 @@
             }
         }
 
-        async function startAutoScan() {
+        async function startAutoScan(zeroOnly = false) {
             const btnScan = document.getElementById('btnScan');
             const progCont = document.getElementById('progressContainer');
             const progBar = document.getElementById('progressBar');
@@ -1991,7 +1996,7 @@
 
             let rawTasks = [];
             for (const pref of PREFIXES) {
-                for (const c of COMMITS) {
+                for (const c of scanCommits) {
                     // 1. Nhóm từ Wildcard Database (10 mẫu ngẫu nhiên)
                     for (let i = 0; i < 10; i++) {
                         const randomSearch = wildcardDB[Math.floor(Math.random() * wildcardDB.length)];
@@ -2063,7 +2068,7 @@
             // ---- Bổ sung quét deterministic toàn bộ cụm 2 số, tam hoa, tiến ----
             // Mục tiêu: tránh lệ thuộc random và giảm tình trạng bỏ lỡ số do API trả tối đa 50 kết quả.
             for (const pref of PREFIXES) {
-                for (const c of COMMITS) {
+                for (const c of scanCommits) {
                     for (let i = 0; i <= 99; i++) {
                         const twoDigits = i.toString().padStart(2, '0');
                         rawTasks.push({ pref, c, search: `*${twoDigits}*`, depth: 0 });
@@ -2108,6 +2113,15 @@
                 });
             }
 
+            // Bổ sung vét 3 số cho chế độ quét 0đ (chỉ commit 0, nhẹ hơn deep toàn kho)
+            if (zeroOnly) {
+                for (const pref of PREFIXES) {
+                    for (let i = 0; i <= 999; i++) {
+                        const threeDigits = i.toString().padStart(3, '0');
+                        rawTasks.push({ pref, c: '0', search: `*${threeDigits}*`, depth: 0 });
+                    }
+                }
+            }
             // Xáo trộn toàn bộ các yêu cầu để thanh tiến trình hiện đều các đầu số
             const tasks = localShuffle(dedupedTasks);
 
@@ -2209,7 +2223,7 @@
 
             const rawTasks = [];
             for (const pref of PREFIXES) {
-                for (const c of COMMITS) {
+                for (const c of scanCommits) {
                     for (let i = 0; i <= 999; i++) {
                         const threeDigits = i.toString().padStart(3, '0');
                         rawTasks.push({ pref, c, search: `*${threeDigits}*`, depth: 0 });
