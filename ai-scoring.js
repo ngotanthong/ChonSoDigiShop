@@ -227,8 +227,8 @@ function analyzeSIM(numStr, monthlyFee = 0) {
         const even3 = parseInt(window6[5], 10);
         const step1 = even2 - even1;
         const step2 = even3 - even2;
-        // Chấp nhận digit xen kẽ tăng/giảm tự nhiên, ví dụ 6 2 6 4 6 8 hoặc 8 7 8 5 8 3.
-        if (step1 !== 0 && Math.sign(step1) === Math.sign(step2)) {
+        // Lặp xen kẽ chỉ chấp nhận bước đều 1-3 đơn vị, ví dụ 6 2 6 3 6 4 hoặc 6 2 6 4 6 6.
+        if (step1 !== 0 && Math.sign(step1) === Math.sign(step2) && Math.abs(step1) >= 1 && Math.abs(step1) <= 3 && Math.abs(step1) === Math.abs(step2)) {
             addReason('Lặp Xen Kẽ', 24, 'solap');
             addReason('Lặp Xen Kẽ', 0, 'denho');
             if (!highlight || highlight.length < 6) highlight = window6;
@@ -323,6 +323,9 @@ function analyzeSIM(numStr, monthlyFee = 0) {
             const diff2 = p3 - p2;
             if (diff1 === 10 && diff1 === diff2) {
                 addReason('Cặp Tiến 3 Bậc', 30, 'captien');
+                highlight = highlight || last6;
+            } else if (diff1 >= 1 && diff1 <= 3 && diff1 === diff2) {
+                addReason('Cặp Tiến Nhỏ', diff1 === 1 ? 26 : (diff1 === 2 ? 24 : 22), 'captien');
                 highlight = highlight || last6;
             }
         }
