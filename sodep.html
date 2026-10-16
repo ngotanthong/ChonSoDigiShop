@@ -1218,6 +1218,9 @@
                     <div style="margin-top: 12px; display: flex; justify-content: center; gap: 10px;">
                         <button class="tab-btn" onclick="applyCustomerProfileAndScan()">Áp dụng & Quét</button>
                         <button class="tab-btn" onclick="clearCustomerProfile()">Xóa hồ sơ</button>
+                        <button class="btn-scan" style="margin:0; max-width:200px; background:#10b981;" onclick="generateCustomerPrintList()">
+                            🖨️ Tạo bảng in khách
+                        </button>
                     </div>
                     <div style="margin-top: 16px;">
                         <h3 style="margin-bottom: 10px;">Số hợp khách</h3>
@@ -1935,7 +1938,8 @@
             document.getElementById('customerSummary').innerHTML = summaryHtml;
             document.getElementById('customerSummary').style.display = 'block';
             window.customerProfile = {
-                year, gender: genderInput.value, goal, element, luckyDigits, avoidDigits, colors: data.colors, goalEndings
+                year, gender: genderInput.value, goal, element, hoaGiap, napAmName,
+                luckyDigits, avoidDigits, colors: data.colors, avoidColors: data.avoidColors, goalEndings
             };
             localStorage.setItem('customerProfile', JSON.stringify(window.customerProfile));
 
@@ -1959,6 +1963,18 @@
             if (typeof reprocessWithCustomerProfile === 'function') reprocessWithCustomerProfile();
         }
 
+        function getCustomerMatchingItems() {
+            if (!window.customerProfile || !scoredData || scoredData.length === 0) return [];
+            const profileTagPrefix = 'Hợp Khách';
+            const avoidSet = new Set(((window.customerProfile || {}).avoidDigits || []).map(d => String(d)));
+            const luckyNonZero = (((window.customerProfile || {}).luckyDigits || []).map(d => Number(d)).filter(d => d !== 0 && !isNaN(d)));
+            return scoredData
+                .filter(i => i.ai && i.ai.reasonsArr && i.ai.reasonsArr.some(r => r.indexOf(profileTagPrefix) === 0))
+                .filter(i => !Array.from(avoidSet).some(d => i.fNum.includes(d)))
+                .filter(i => luckyNonZero.filter(d => i.fNum.includes(String(d))).length >= 2)
+                .sort((a, b) => (b.ai ? b.ai.score : 0) - (a.ai ? a.ai.score : 0));
+        }
+
         function renderCustomerProfileResults() {
             const grid = document.getElementById('customerResults');
             if (!grid) return;
@@ -1970,14 +1986,7 @@
                 grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#64748b;">Chưa có dữ liệu quét. Hãy áp dụng & quét rồi xem lại.</div>';
                 return;
             }
-            const profileTagPrefix = 'Hợp Khách';
-            const avoidSet = new Set(((window.customerProfile || {}).avoidDigits || []).map(d => String(d)));
-            const luckyNonZero = (((window.customerProfile || {}).luckyDigits || []).map(d => Number(d)).filter(d => d !== 0 && !isNaN(d)));
-            const items = scoredData
-                .filter(i => i.ai && i.ai.reasonsArr && i.ai.reasonsArr.some(r => r.indexOf(profileTagPrefix) === 0))
-                .filter(i => !Array.from(avoidSet).some(d => i.fNum.includes(d)))
-                .filter(i => luckyNonZero.filter(d => i.fNum.includes(String(d))).length >= 2)
-                .sort((a, b) => (b.ai ? b.ai.score : 0) - (a.ai ? a.ai.score : 0));
+            const items = getCustomerMatchingItems();
 
             if (items.length === 0) {
                 grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#64748b;">Chưa có số nào đạt tiêu chí Hợp Khách trong kết quả hiện tại.</div>';
@@ -2012,6 +2021,76 @@
                     </div>
                 `;
             }).join('');
+        }
+
+        function generateCustomerPrintList() {
+            const cp = window.customerProfile;
+            if (!cp) {
+                alert('Vui lòng phân tích hồ sơ khách trước khi tạo bảng in.');
+                return;
+            }
+            const items = getCustomerMatchingItems();
+            if (items.length === 0) {
+                alert('Chưa có số nào đạt tiêu chí hợp khách để in.');
+                return;
+            }
+            const printWin = window.open('', '_blank', 'width=900,height=700');
+            if (!printWin) {
+                alert('Không mở được cửa sổ in. Vui lòng cho phép popup.');
+                return;
+            }
+            const printDate = new Date().toLocaleDateString('vi-VN');
+            const printItems = items.slice(0, 200);
+            const itemHtml = printItems.map(item => {
+                const fNum = item.fNum;
+                const display = fNum.slice(0,4) + ' ' + fNum.slice(4,7) + ' ' + fNum.slice(7);
+                const isFree = isTraTruocSim(item);
+                const isPost = isTraSauSim(item);
+                const monthly = Number(item.monthly) || 0;
+                const commit = Number(item.commitment) || 0;
+                const priceText = isFree ? 'Trả trước 0đ' : (isPost ? `Trả sau 0đ · ${commit || '—'}T` : `${monthly ? (monthly / 1000 + 'k/tháng') : '0đ/tháng'} · ${commit ? commit + 'T' : '—'}`);
+                return `<div class="print-item">
+                    <div class="num">${display}</div>
+                    <div class="score">⭐ ${item.ai.score}</div>
+                    <div class="price">${priceText}</div>
+                </div>`;
+            }).join('');
+
+            printWin.document.write(`<!DOCTYPE html>
+            <html lang="vi"><head><meta charset="utf-8">
+            <title>Danh sách số hợp khách - Năm ${cp.year || ''}</title>
+            <style>
+                @page { size: A4 portrait; margin: 0.4in; }
+                * { box-sizing: border-box; }
+                body { font-family: Arial, sans-serif; color:#111827; margin:0; }
+                h1 { text-align:center; margin: 0 0 4px; font-size:20px; color:#005baa; }
+                .sub { text-align:center; color:#6b7280; font-size:12px; margin-bottom:12px; }
+                .info { border:1px solid #cbd5e1; border-radius:8px; padding:10px 12px; margin-bottom:14px; background:#f8fafc; }
+                .info-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:6px 14px; font-size:12px; }
+                .info strong { color:#005baa; }
+                .grid { display:grid; grid-template-columns: repeat(4, 1fr); gap:8px; }
+                .print-item { border:1px solid #d1d5db; border-radius:6px; padding:8px; text-align:center; }
+                .print-item .num { font-weight:700; font-size:15px; letter-spacing:0.5px; color:#005baa; }
+                .print-item .score { font-size:11px; color:#b45309; margin-top:2px; }
+                .print-item .price { font-size:10px; color:#6b7280; margin-top:2px; }
+            </style></head>
+            <body>
+            <h1>DANH SÁCH SỐ HỢP KHÁCH</h1>
+            <div class="sub">Ngày in: ${printDate} · Năm sinh: ${cp.year || ''} · ${items.length} số hợp khách</div>
+            <div class="info">
+                <div class="info-grid">
+                    <div><strong>Hoa Giáp:</strong> ${cp.hoaGiap || ''}</div>
+                    <div><strong>Nạp Âm/Mệnh:</strong> ${cp.napAmName || ''} (${cp.element || ''})</div>
+                    <div><strong>Digit hợp:</strong> ${(cp.luckyDigits || []).join(', ') || 'Không'}</div>
+                    <div><strong>Digit kiêng:</strong> ${(cp.avoidDigits || []).join(', ') || 'Không'}</div>
+                    <div><strong>Màu hợp:</strong> ${(cp.colors || []).join(', ') || 'Không'}</div>
+                    <div><strong>Màu kiêng:</strong> ${(cp.avoidColors || []).join(', ') || 'Không'}</div>
+                </div>
+            </div>
+            <div class="grid">${itemHtml}</div>
+            </body></html>`);
+            printWin.document.close();
+            printWin.onload = function() { printWin.print(); };
         }
 
         function reprocessWithCustomerProfile() {
