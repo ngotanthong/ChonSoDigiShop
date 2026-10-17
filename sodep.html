@@ -1253,29 +1253,7 @@
                     </button>
                 </div>
 
-                <!-- Tuỳ chọn Phong Thuỷ & Tự động quét -->
-                <div style="margin-top: 20px; display: flex; justify-content: center; flex-wrap: wrap; gap: 15px;">
-                    <label
-                        style="display: flex; align-items: center; cursor: pointer; font-weight: 600; font-size: 15px; color: var(--text-main); background: #f1f5f9; padding: 10px 20px; border-radius: 30px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: all 0.2s;"
-                        onmouseover="this.style.borderColor='var(--primary)'"
-                        onmouseout="this.style.borderColor='var(--border)'">
-                        <input type="checkbox" id="togglePhongThuy"
-                            style="width: 18px; height: 18px; margin-right: 10px; accent-color: var(--primary);"
-                            onchange="handlePhongThuyToggle()">
-                        Ưu tiên Phong Thuỷ
-                    </label>
-
-                    <label
-                        style="display: flex; align-items: center; cursor: pointer; font-weight: 600; font-size: 15px; color: var(--text-main); background: #f1f5f9; padding: 10px 20px; border-radius: 30px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: all 0.2s;"
-                        onmouseover="this.style.borderColor='var(--primary)'"
-                        onmouseout="this.style.borderColor='var(--border)'">
-                        <input type="checkbox" id="toggleAutoReload"
-                            style="width: 18px; height: 18px; margin-right: 10px; accent-color: var(--primary);"
-                            onchange="handleAutoReloadToggle()">
-                        Quét số ngầm
-                    </label>
-                </div>
-
+                <!-- Quét số ngầm tự động chạy nền, không hiển thị nút -->
 
                 <div id="lastUpdateContainer"
                     style="margin-top: 15px; font-size: 13px; color: var(--text-sub); display: none; text-align: center;">
@@ -1662,11 +1640,7 @@
                 fetchPinnedSims();
 
                 // Tự động bật quét số ngầm sau khi đăng nhập
-                const autoReloadToggleEl = document.getElementById('toggleAutoReload');
-                if (autoReloadToggleEl && !autoReloadToggleEl.checked) {
-                    autoReloadToggleEl.checked = true;
-                    if (typeof handleAutoReloadToggle === 'function') handleAutoReloadToggle();
-                }
+                if (typeof enableAutoReload === 'function') enableAutoReload();
             }, 500);
         }
 
@@ -2161,33 +2135,15 @@
             }
         }
 
-        function handleAutoReloadToggle() {
-            const isChecked = document.getElementById('toggleAutoReload').checked;
-            if (isChecked) {
-                // Trình duyệt có thể giới hạn setTimeout khi ẩn tab,
-                // nhưng với file:// ta không dùng Web Worker (gây lỗi SecurityError)
-                autoReloadInterval = setInterval(silentAutoScan, 600000); // 10 phút
+        function enableAutoReload() {
+            // Quét số ngầm chạy nền tự động (không còn nút bật/tắt thủ công)
+            if (autoReloadInterval) clearInterval(autoReloadInterval);
+            // Trình duyệt có thể giới hạn setTimeout khi ẩn tab,
+            // nhưng với file:// ta không dùng Web Worker (gây lỗi SecurityError)
+            autoReloadInterval = setInterval(silentAutoScan, 600000); // 10 phút
 
-                // Chạy ngay lần đầu
-                silentAutoScan();
-
-                const toast = document.getElementById('toast');
-                if (toast) {
-                    toast.querySelector('span').textContent = 'Đã bật tự động lấy số mới ngầm (10 phút/lần)';
-                    toast.classList.add('show');
-                    setTimeout(() => toast.classList.remove('show'), 3000);
-                }
-            } else {
-                if (autoReloadInterval) clearInterval(autoReloadInterval);
-                autoReloadInterval = null;
-
-                const toast = document.getElementById('toast');
-                if (toast) {
-                    toast.querySelector('span').textContent = 'Đã tắt tự động quét ngầm';
-                    toast.classList.add('show');
-                    setTimeout(() => toast.classList.remove('show'), 3000);
-                }
-            }
+            // Chạy ngay lần đầu
+            silentAutoScan();
         }
 
         async function silentAutoScan() {
@@ -2997,9 +2953,6 @@
         }
 
         function processAIScores(minScore = 20) {
-            const isPhongThuyMode = document.getElementById('togglePhongThuy') && document.getElementById('togglePhongThuy').checked;
-            if (isPhongThuyMode) minScore = 40; // Yêu cầu điểm cao hơn trong chế độ Phong Thuỷ
-
             scoredData = [];
             // Dùng Map để loại bỏ trùng lặp số
             const uniqueSims = new Map();
@@ -3134,30 +3087,6 @@
         function loadMoreResults() {
             currentDisplayCount += 100;
             renderResults();
-        }
-
-        function handlePhongThuyToggle() {
-            if (rawData && rawData.length > 0) {
-                const statusTxt = document.getElementById('statusText');
-                statusTxt.textContent = 'Đang chấm điểm lại theo tiêu chí Phong Thuỷ...';
-                statusTxt.style.display = 'block';
-                document.getElementById('resultGrid').innerHTML = '';
-
-                setTimeout(() => {
-                    processAIScores();
-
-                    if (scoredData.length > 0) {
-                        const toolbar = document.getElementById('toolbar');
-                        if (toolbar) toolbar.style.display = 'flex';
-                        renderResults();
-                    } else {
-                        document.getElementById('emptyState').style.display = 'block';
-                        document.getElementById('emptyState').querySelector('p').textContent = 'Không tìm thấy số nào đạt tiêu chuẩn phong thuỷ (Nút 7-8-9, không 4-7, không 49-53).';
-                    }
-
-                    statusTxt.style.display = 'none';
-                }, 50);
-            }
         }
 
         function highlightHTML(numStr, matchStr, reasonText = '', primaryTag = '') {
