@@ -1288,6 +1288,11 @@
                         onclick="generatePrintList()">
                         🖨️ TẠO BẢNG IN
                     </button>
+                    <button class="btn-scan" title="Tải log tương tác để cải thiện chấm điểm"
+                        style="background: #64748b; margin: 0; max-width: 170px; font-size: 13px;"
+                        onclick="exportFeedback()">
+                        📤 Xuất feedback
+                    </button>
                 </div>
 
                 <!-- Quét số ngầm tự động chạy nền, không hiển thị nút -->
@@ -1483,6 +1488,55 @@
         let TELEGRAM_CHAT_ID = localStorage.getItem('TELEGRAM_CHAT_ID') || '';
 
         let GAS_PIN_API_URL = localStorage.getItem('CUSTOM_GAS_PIN_API_URL') || 'https://script.google.com/macros/s/AKfycbzuUk3M2D-eIxnBugn30VmUrIUok9qYj28pRlOTK0s_FDrsEknyJ-0ZfwUFBER2j3KVUQ/exec'; // Đường dẫn API cho Ghim Sim
+
+        // --- LOG FEEDBACK (ghi nhận tương tác để cải thiện chấm điểm) ---
+        // Lưu cục bộ (localStorage) + best-effort gửi lên Google Apps Script (nếu server hỗ trợ).
+        // Không ảnh hưởng luồng chính nếu mạng lỗi.
+        const FEEDBACK_STORE_KEY = 'simso_feedback_log';
+        const FEEDBACK_MAX = 1000;
+        function logFeedback(action, data) {
+            try {
+                const entry = {
+                    t: Date.now(),
+                    action: String(action || ''),
+                    user: (typeof localStorage !== 'undefined' && (localStorage.getItem('simso_auth_user') || '')) || '',
+                    ...(data || {})
+                };
+                let log = [];
+                try { log = JSON.parse(localStorage.getItem(FEEDBACK_STORE_KEY) || '[]'); } catch (e) { log = []; }
+                log.push(entry);
+                if (log.length > FEEDBACK_MAX) log = log.slice(log.length - FEEDBACK_MAX);
+                localStorage.setItem(FEEDBACK_STORE_KEY, JSON.stringify(log));
+            } catch (e) { /* bỏ qua */ }
+            // Gửi lên server (không chờ, không chặn UI). GAS sẽ bỏ qua nếu chưa hỗ trợ action này.
+            try {
+                if (GAS_API_URL) {
+                    fetch(GAS_API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify({ action: 'log_feedback', ...(data || {}), actionType: String(action || ''), user: (localStorage.getItem('simso_auth_user') || ''), t: Date.now() })
+                    }).catch(() => {});
+                }
+            } catch (e) { /* bỏ qua */ }
+        }
+
+        // Xuất log feedback ra file JSON để xem/tổng hợp thủ công
+        window.exportFeedback = function () {
+            try {
+                const log = JSON.parse(localStorage.getItem(FEEDBACK_STORE_KEY) || '[]');
+                const blob = new Blob([JSON.stringify(log, null, 2)], { type: 'application/json' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'feedback-log-' + new Date().toISOString().slice(0, 10) + '.json';
+                a.click();
+                alert('Đã xuất ' + log.length + ' bản ghi feedback.');
+            } catch (e) { alert('Không xuất được log: ' + e.message); }
+        };
+        window.clearFeedback = function () {
+            localStorage.removeItem(FEEDBACK_STORE_KEY);
+            alert('Đã xóa log feedback cục bộ.');
+        };
+
         const BASE_API = 'https://digishop.vnpt.vn/apiprod/v2/simso/num_search';
         const PREFIXES = ['8491', '8494', '8488', '8481', '8482', '8483', '8484', '8485'];
         // Cam kết cho quét AI (≤400k)
@@ -1745,6 +1799,7 @@
             }
 
             const action = isPinned ? 'unpin' : 'pin';
+            logFeedback(action, { num: fNum, score: (simObj && simObj.ai) ? simObj.ai.score : null });
             if (!isPinned && simObj) {
                 try {
                     let objToSave = Object.assign({}, simObj);
@@ -2150,6 +2205,7 @@
         function showSimAnalysis(fNum) {
             const item = (scoredData || []).find(i => i.fNum === fNum);
             if (!item || !item.ai) { alert('Không tìm thấy dữ liệu cho số này.'); return; }
+            logFeedback('view_analysis', { num: fNum, score: item.ai.score });
             const ai = item.ai;
             const n = item.fNum;
             const detailMap = {};
@@ -2270,6 +2326,7 @@
             const modal = document.getElementById('customerPrintModal');
             content.innerHTML = buildCustomerPrintHtml();
             modal.style.display = 'flex';
+            logFeedback('customer_print_open', { year: cp.year, count: getCustomerMatchingItems().length });
         }
 
         function closeCustomerPrintModal() {
@@ -2280,6 +2337,7 @@
         async function downloadCustomerPrintJPG() {
             const content = document.getElementById('customerPrintContent');
             if (!content) return;
+            logFeedback('customer_download_jpg', { year: (window.customerProfile || {}).year });
             try {
                 const canvas = await html2canvas(content, { scale: 2, backgroundColor: '#ffffff', logging: false });
                 const link = document.createElement('a');
@@ -2294,6 +2352,7 @@
         function printCustomerList() {
             const content = document.getElementById('customerPrintContent');
             if (!content) return;
+            logFeedback('customer_print', { year: (window.customerProfile || {}).year });
             const printWin = window.open('', '_blank', 'width=900,height=700');
             if (!printWin) { alert('Không mở được cửa sổ in.'); return; }
             printWin.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Danh sách số hợp khách</title></head><body>${content.innerHTML}</body></html>`);
@@ -3409,6 +3468,7 @@
         }
 
         function copyToClipboard(text) {
+            logFeedback('copy', { num: text });
             navigator.clipboard.writeText(text).then(() => {
                 const toast = document.getElementById('toast');
                 toast.classList.add('show');
@@ -3655,6 +3715,7 @@
 
             document.getElementById('printOptionsModal').style.display = 'flex';
             renderPreview(); // Hiển thị preview ngay lập tức
+            logFeedback('scan_print_open', { count: (displayData || []).length, category: currentCategory });
         }
 
         function closePrintModal() {
