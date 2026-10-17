@@ -24758,6 +24758,7 @@
                 { id: null, label: 'Tất cả cam kết' },
                 { id: '0', label: '0đ' },
                 { id: '100000', label: '100k' },
+                { id: '>=100000', label: 'Từ 100k ↑' },
                 { id: '150000', label: '150k' },
                 { id: '200000', label: '200k' },
                 { id: '300000', label: '300k' },
@@ -24766,6 +24767,7 @@
                 { id: '>500000', label: 'Trên 500k' }
             ].filter(opt => {
                 if (opt.id === null) return true;
+                if (opt.id === '>=100000') return Array.from(availablePrices).some(p => p >= 100000);
                 if (opt.id === '>500000') return Array.from(availablePrices).some(p => p > 500000);
                 return availablePrices.has(Number(opt.id));
             });
@@ -24930,6 +24932,7 @@
                 sorted = sorted.filter(item => {
                     const price = Number(item.monthly) || 0;
                     if (priorityPrice === '0') return price === 0;
+                    if (priorityPrice === '>=100000') return price >= 100000;
                     if (priorityPrice === '>500000') return price > 500000;
                     return price === Number(priorityPrice);
                 });

@@ -1241,6 +1241,7 @@
                                     <option value="all">Tất cả</option>
                                     <option value="zero">0đ (miễn phí)</option>
                                     <option value="low">Dưới 100k</option>
+                                    <option value="gte100">Từ 100k trở lên</option>
                                     <option value="mid">100k - 300k</option>
                                     <option value="high">Trên 300k</option>
                                 </select>
@@ -1374,6 +1375,7 @@
                         <option value="all">Tất cả</option>
                         <option value="0">0đ</option>
                         <option value="100000">100k</option>
+                        <option value="gte100000">Từ 100k ↑</option>
                         <option value="150000">150k</option>
                         <option value="200000">200k</option>
                         <option value="400000">400k</option>
@@ -2098,7 +2100,8 @@
                 items = items.filter(i => {
                     const monthly = Number(i.monthly) || 0;
                     if (customerFilterPrice === 'zero') return monthly === 0;
-                    if (customerFilterPrice === 'low') return monthly > 0 && monthly <= 100000;
+                    if (customerFilterPrice === 'low') return monthly > 0 && monthly < 100000;
+                    if (customerFilterPrice === 'gte100') return monthly >= 100000;
                     if (customerFilterPrice === 'mid') return monthly > 100000 && monthly <= 300000;
                     if (customerFilterPrice === 'high') return monthly > 300000;
                     return true;
@@ -3511,6 +3514,7 @@
             if (currentCommitment !== 'all') {
                 displayData = displayData.filter(item => {
                     const monthly = item.monthly ? item.monthly.toString() : "0";
+                    if (currentCommitment === 'gte100000') return Number(monthly) >= 100000;
                     return monthly === currentCommitment;
                 });
             }
