@@ -107,6 +107,36 @@ function analyzeSIM(numStr, monthlyFee = 0) {
     }
 
     // -------------------------------------------------------------------------
+    // Đo độ "nhảy loạn" của số (scattered) + cấu trúc đuôi số.
+    // Dùng để hạ điểm các số kiểu 8888 ở đầu/giữa nhưng đuôi lộn xộn.
+    // -------------------------------------------------------------------------
+    const dirFlipCount = (() => {
+        let flips = 0, dir = 0;
+        for (let i = 1; i < numStr.length; i++) {
+            const d = (parseInt(numStr[i], 10) || 0) - (parseInt(numStr[i - 1], 10) || 0);
+            if (d > 0) { if (dir < 0) flips++; dir = 1; }
+            else if (d < 0) { if (dir > 0) flips++; dir = -1; }
+        }
+        return flips;
+    })();
+
+    // Đuôi nhảy loạn: đổi hướng lên/xuống nhiều lần, nhiều chữ số khác nhau và không có cặp lặp.
+    const tailIsScattered = (s, n = 5) => {
+        const t = s.slice(-n);
+        if (t.length < 4) return false;
+        const distinct = new Set(t.split('')).size;
+        if (distinct < 4) return false;          // xen kẽ / lặp ít digit thường là số đẹp
+        if (/(\d)\1/.test(t)) return false;      // có cặp kề nhau thì không coi là loạn
+        let flips = 0, dir = 0;
+        for (let i = 1; i < t.length; i++) {
+            const d = (parseInt(t[i], 10) || 0) - (parseInt(t[i - 1], 10) || 0);
+            if (d > 0) { if (dir < 0) flips++; dir = 1; }
+            else if (d < 0) { if (dir > 0) flips++; dir = -1; }
+        }
+        return flips >= 2;
+    };
+
+    // -------------------------------------------------------------------------
     // Structural pattern group: only one dominant pattern is scored here.
     // -------------------------------------------------------------------------
     let structuralScoreAwarded = false;
@@ -119,7 +149,9 @@ function analyzeSIM(numStr, monthlyFee = 0) {
 
     if (quintupleMatch) {
         structuralScoreAwarded = true;
-        addReason('Ngũ Quý', 58, 'tuquy');
+        const atSuffix = numStr.endsWith(quintupleMatch[0]);
+        // Ngũ Quý chỉ đáng giá tối đa khi nằm ở đuôi; ở giữa/đầu + đuôi loạn thì cho điểm thấp.
+        addReason('Ngũ Quý', atSuffix ? 58 : (tailIsScattered(numStr) ? 16 : 40), 'tuquy');
         highlight = highlight || quintupleMatch[0];
         if (lastTag && !tagHighlights[lastTag]) tagHighlights[lastTag] = quintupleMatch[0];
     } else if (suffixQuadMatch) {
@@ -129,7 +161,9 @@ function analyzeSIM(numStr, monthlyFee = 0) {
         if (lastTag && !tagHighlights[lastTag]) tagHighlights[lastTag] = numStr.slice(-4);
     } else if (middleQuadMatch) {
         structuralScoreAwarded = true;
-        addReason('Tứ Quý', 44, 'tuquy');
+        // Tứ Quý ở đầu/giữa số: chỉ đáng giá khi phần đuôi đẹp, nếu đuôi nhảy loạn thì điểm rất thấp.
+        const midScattered = tailIsScattered(numStr);
+        addReason('Tứ Quý', midScattered ? 14 : 44, 'tuquy');
         highlight = highlight || middleQuadMatch[0];
         if (lastTag && !tagHighlights[lastTag]) tagHighlights[lastTag] = middleQuadMatch[0];
     }
@@ -446,22 +480,28 @@ function analyzeSIM(numStr, monthlyFee = 0) {
     // -------------------------------------------------------------------------
     // Độ bằng phẳng.
     // -------------------------------------------------------------------------
-    let flipCount = 0;
-    let lastDirection = 0;
-    for (let i = 1; i < numStr.length; i++) {
-        const diff = parseInt(numStr[i], 10) - parseInt(numStr[i - 1], 10);
-        if (diff > 0) {
-            if (lastDirection === -1) flipCount++;
-            lastDirection = 1;
-        } else if (diff < 0) {
-            if (lastDirection === 1) flipCount++;
-            lastDirection = -1;
-        }
-    }
+    const flipCount = dirFlipCount;
     if (flipCount > 5) {
         score -= 8;
     } else if (flipCount <= 2 && uniqueDigitsCount >= 5) {
         score += 5;
+    }
+
+    // -------------------------------------------------------------------------
+    // Số nhảy loạn / linh tinh: đuôi số không có cấu trúc đẹp mà các chữ số còn
+    // đổi hướng lên xuống loạn xạ => không xứng đáng được chấm điểm cao.
+    // -------------------------------------------------------------------------
+    const suffixHasPattern =
+        /(\d)\1{2,}$/.test(numStr) ||                                   // tam hoa / tu quy / ngu quy o duoi
+        /(\d{2})\1$/.test(numStr) ||                                    // lap cap o duoi
+        /(\d{3})\1$/.test(numStr) ||
+        /(68|86|79|39|38|78)$/.test(numStr) ||                          // loc phat / than tai / ong dia
+        /(0123|1234|2345|3456|4567|5678|6789|012|123|234|345|456|567|678|789)$/.test(numStr) ||
+        /(1357|3579|2468|0246|135|357|579|024|246|468)$/.test(numStr) ||
+        /(\d)(\d)\1(\d)$/.test(numStr) ||                               // so cap o duoi
+        numStr.endsWith(numStr.slice(0, 4));                            // dau duoi tuong phung
+    if (!suffixHasPattern && tailIsScattered(numStr)) {
+        score -= 20;
     }
 
     // -------------------------------------------------------------------------
