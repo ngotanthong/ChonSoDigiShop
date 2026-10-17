@@ -2201,10 +2201,10 @@
                             <div style="font-size:18px; font-weight:800; color:${elementTheme.accent}; letter-spacing:0.5px; white-space:nowrap; line-height:1.2;">${formatted}</div>
                             <div style="font-size:12px; font-weight:800; color:#0f172a; background:#ffffffcc; padding:3px 8px; border-radius:999px;">⭐ ${item.ai.score}</div>
                         </div>
-                        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; align-items:center;">
-                            <span style="font-size:11px; color:#475569; background:#ffffffcc; padding:3px 8px; border-radius:999px;">${priceText}</span>
+                        <div style="display:flex; gap:4px; margin-top:6px; align-items:center; flex-wrap:nowrap;">
+                            <span style="font-size:11px; color:#475569; background:#ffffffcc; padding:3px 6px; border-radius:999px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;">${priceText}</span>
                             <button onclick="event.stopPropagation(); showSimAnalysis('${item.fNum}')"
-                                style="font-size:11px; color:#005baa; background:#ffffffdd; border:1px solid ${elementTheme.glow}; padding:3px 8px; border-radius:999px; cursor:pointer;">🔍 Phân tích</button>
+                                style="font-size:11px; color:#005baa; background:#ffffffdd; border:1px solid ${elementTheme.glow}; padding:3px 6px; border-radius:999px; cursor:pointer; white-space:nowrap; flex-shrink:0;">🔍 Phân tích</button>
                         </div>
                     </div>
                 `;
