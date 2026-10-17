@@ -1,0 +1,11 @@
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Script dev dùng một lần (đã hoàn thành việc tách analyzeSIM sang ai-scoring.js)
+fix_ai.py
+fix_analyze_sim.py
+refactor_ai.py
+
+# Dữ liệu export cục bộ, không commit
+get_pinned_admin.json

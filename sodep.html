@@ -9,7 +9,8 @@
     <link rel="icon" type="image/x-icon" href="https://vnpt.com.vn/favicon.ico">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="accounts.js"></script>
-    <script src="ai-scoring.js"></script>
+    <!-- Bump ?v= mỗi khi sửa ai-scoring.js để tránh trình duyệt dùng bản cache cũ -->
+    <script src="ai-scoring.js?v=20261017"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
@@ -1431,8 +1432,10 @@
         // --- CẤU HÌNH BẢO MẬT & API ---
         let GAS_API_URL = localStorage.getItem('CUSTOM_GAS_API_URL') || 'https://script.google.com/macros/s/AKfycbyFacGhuuIqpF7ZVo8Ezh9zYA_7XjstBG7YGF1vMg15UnKaCmb63xcpIDZ4EMpMHP6GXg/exec';
         // Cấu hình Telegram Bot trực tiếp
-        let TELEGRAM_BOT_TOKEN = localStorage.getItem('TELEGRAM_BOT_TOKEN') || '8985605068:AAHWSdxaHnGgJ9H41YFToGzgSxAJk90vIQs';
-        let TELEGRAM_CHAT_ID = localStorage.getItem('TELEGRAM_CHAT_ID') || '-5281663284';
+        // BẢO MẬT: KHÔNG nhúng token/chat_id Telegram vào source (ai xem code cũng đọc được).
+        // Cấu hình qua localStorage bằng nút "Cấu hình API" (hoặc promptCustomApi()).
+        let TELEGRAM_BOT_TOKEN = localStorage.getItem('TELEGRAM_BOT_TOKEN') || '';
+        let TELEGRAM_CHAT_ID = localStorage.getItem('TELEGRAM_CHAT_ID') || '';
 
         let GAS_PIN_API_URL = localStorage.getItem('CUSTOM_GAS_PIN_API_URL') || 'https://script.google.com/macros/s/AKfycbzuUk3M2D-eIxnBugn30VmUrIUok9qYj28pRlOTK0s_FDrsEknyJ-0ZfwUFBER2j3KVUQ/exec'; // Đường dẫn API cho Ghim Sim
         const BASE_API = 'https://digishop.vnpt.vn/apiprod/v2/simso/num_search';
@@ -1755,8 +1758,22 @@
                 else localStorage.setItem('CUSTOM_GAS_PIN_API_URL', newPinApi.trim());
             }
 
-            if (newApi !== null || newPinApi !== null) {
-                alert("Đã lưu API mới thành công!");
+            const currentTgToken = localStorage.getItem('TELEGRAM_BOT_TOKEN') || '';
+            const newTgToken = prompt("Nhập Telegram Bot Token (để nhận thông báo số đẹp):\n(Để trống nếu tắt thông báo Telegram)", currentTgToken);
+            if (newTgToken !== null) {
+                if (newTgToken.trim() === "") localStorage.removeItem('TELEGRAM_BOT_TOKEN');
+                else localStorage.setItem('TELEGRAM_BOT_TOKEN', newTgToken.trim());
+            }
+
+            const currentTgChat = localStorage.getItem('TELEGRAM_CHAT_ID') || '';
+            const newTgChat = prompt("Nhập Telegram Chat ID:", currentTgChat);
+            if (newTgChat !== null) {
+                if (newTgChat.trim() === "") localStorage.removeItem('TELEGRAM_CHAT_ID');
+                else localStorage.setItem('TELEGRAM_CHAT_ID', newTgChat.trim());
+            }
+
+            if (newApi !== null || newPinApi !== null || newTgToken !== null || newTgChat !== null) {
+                alert("Đã lưu cấu hình mới thành công!");
                 location.reload();
             }
         };
