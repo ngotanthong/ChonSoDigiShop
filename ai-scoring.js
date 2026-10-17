@@ -102,7 +102,8 @@ function analyzeSIM(numStr, monthlyFee = 0) {
             highlight: primary.highlight || highlight,
             primaryTag: primary.tag,
             primaryScore: primary.score,
-            primaryHighlight: primary.highlight || highlight
+            primaryHighlight: primary.highlight || highlight,
+            details: reasonDetails.map(d => ({ tag: d.tag, points: d.points }))
         };
     }
 
@@ -580,7 +581,8 @@ function analyzeSIM(numStr, monthlyFee = 0) {
         highlight: primary.highlight || highlight,
         primaryTag: primary.tag,
         primaryScore: primary.score,
-        primaryHighlight: primary.highlight || highlight
+        primaryHighlight: primary.highlight || highlight,
+        details: reasonDetails.map(d => ({ tag: d.tag, points: d.points }))
     };
 }
 

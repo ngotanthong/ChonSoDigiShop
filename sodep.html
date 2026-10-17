@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="accounts.js"></script>
     <!-- Bump ?v= mỗi khi sửa ai-scoring.js để tránh trình duyệt dùng bản cache cũ -->
-    <script src="ai-scoring.js?v=20261017"></script>
+    <script src="ai-scoring.js?v=20261017b"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
@@ -1224,6 +1224,42 @@
                     </div>
                     <div style="margin-top: 16px;">
                         <h3 style="margin-bottom: 10px;">Số hợp khách</h3>
+                        <div id="customerFilterBar" style="margin-bottom: 12px; display: none; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: flex-end;">
+                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                <label style="font-weight: 600; font-size: 12px;">Đầu số</label>
+                                <select id="filterCustomerPrefix" onchange="onCustomerFilterChange()"
+                                    style="padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); font-size: 14px;"></select>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                <label style="font-weight: 600; font-size: 12px;">Giá / tháng</label>
+                                <select id="filterCustomerPrice" onchange="onCustomerFilterChange()"
+                                    style="padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); font-size: 14px;">
+                                    <option value="all">Tất cả</option>
+                                    <option value="zero">0đ (miễn phí)</option>
+                                    <option value="low">Dưới 100k</option>
+                                    <option value="mid">100k - 300k</option>
+                                    <option value="high">Trên 300k</option>
+                                </select>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                <label style="font-weight: 600; font-size: 12px;">Tổng nút</label>
+                                <select id="filterCustomerNut" onchange="onCustomerFilterChange()"
+                                    style="padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); font-size: 14px;">
+                                    <option value="all">Tất cả</option>
+                                    <option value="9">9</option>
+                                    <option value="8">8</option>
+                                    <option value="7">7</option>
+                                    <option value="6">6</option>
+                                    <option value="5">5</option>
+                                    <option value="4">4</option>
+                                    <option value="3">3</option>
+                                    <option value="2">2</option>
+                                    <option value="1">1</option>
+                                    <option value="0">0</option>
+                                </select>
+                            </div>
+                            <button class="tab-btn" style="padding: 8px 14px;" onclick="resetCustomerFilters()">Xóa lọc</button>
+                        </div>
                         <div id="customerResults" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px;"></div>
                     </div>
                 </div>
@@ -1413,6 +1449,15 @@
             <polyline points="22 4 12 14.01 9 11.01"></polyline>
         </svg>
         <span>Đã sao chép số điện thoại!</span>
+    </div>
+
+    <div id="simAnalysisModal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:10001; align-items:center; justify-content:center; padding:20px;">
+        <div style="background:#fff; border-radius:16px; width:min(560px, 96vw); max-height:90vh; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+            <div id="simAnalysisContent" style="padding:20px; overflow:auto;"></div>
+            <div style="display:flex; justify-content:center; gap:10px; padding:14px; border-top:1px solid #e2e8f0;">
+                <button class="btn-scan" style="margin:0; max-width:180px; background:#6b7280;" onclick="closeSimAnalysis()">Đóng</button>
+            </div>
+        </div>
     </div>
 
     <div id="customerPrintModal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:10000; align-items:center; justify-content:center; padding:20px;">
@@ -1954,7 +1999,7 @@
             if (typeof reprocessWithCustomerProfile === 'function') reprocessWithCustomerProfile();
         }
 
-        function getCustomerMatchingItems() {
+        function getCustomerBaseItems() {
             if (!window.customerProfile || !scoredData || scoredData.length === 0) return [];
             const profileTagPrefix = 'Hợp Khách';
             const avoidSet = new Set(((window.customerProfile || {}).avoidDigits || []).map(d => String(d)));
@@ -1966,21 +2011,106 @@
                 .sort((a, b) => (b.ai ? b.ai.score : 0) - (a.ai ? a.ai.score : 0));
         }
 
+        // Bộ lọc hiển thị ở tab Phong Thủy
+        let customerFilterPrefix = 'all';
+        let customerFilterPrice = 'all';
+        let customerFilterNut = 'all';
+
+        function simNut(numStr) {
+            return String(numStr).split('').reduce((a, b) => a + (parseInt(b, 10) || 0), 0) % 10;
+        }
+
+        function getCustomerMatchingItems() {
+            let items = getCustomerBaseItems();
+            if (customerFilterPrefix !== 'all') {
+                items = items.filter(i => i.fNum.indexOf(customerFilterPrefix) === 0);
+            }
+            if (customerFilterPrice !== 'all') {
+                items = items.filter(i => {
+                    const monthly = Number(i.monthly) || 0;
+                    if (customerFilterPrice === 'zero') return monthly === 0;
+                    if (customerFilterPrice === 'low') return monthly > 0 && monthly <= 100000;
+                    if (customerFilterPrice === 'mid') return monthly > 100000 && monthly <= 300000;
+                    if (customerFilterPrice === 'high') return monthly > 300000;
+                    return true;
+                });
+            }
+            if (customerFilterNut !== 'all') {
+                items = items.filter(i => simNut(i.fNum) === Number(customerFilterNut));
+            }
+            return items;
+        }
+
+        function onCustomerFilterChange() {
+            const p = document.getElementById('filterCustomerPrefix');
+            const pr = document.getElementById('filterCustomerPrice');
+            const nt = document.getElementById('filterCustomerNut');
+            customerFilterPrefix = p ? p.value : 'all';
+            customerFilterPrice = pr ? pr.value : 'all';
+            customerFilterNut = nt ? nt.value : 'all';
+            renderCustomerProfileResults();
+        }
+
+        function resetCustomerFilters() {
+            customerFilterPrefix = 'all';
+            customerFilterPrice = 'all';
+            customerFilterNut = 'all';
+            const p = document.getElementById('filterCustomerPrefix');
+            const pr = document.getElementById('filterCustomerPrice');
+            const nt = document.getElementById('filterCustomerNut');
+            if (p) p.value = 'all';
+            if (pr) pr.value = 'all';
+            if (nt) nt.value = 'all';
+            renderCustomerProfileResults();
+        }
+
+        function populateCustomerFilterOptions(baseItems) {
+            const bar = document.getElementById('customerFilterBar');
+            const prefixSel = document.getElementById('filterCustomerPrefix');
+            if (bar) bar.style.display = baseItems.length ? 'flex' : 'none';
+            if (!prefixSel) return;
+            const prefixes = Array.from(new Set(baseItems.map(i => i.fNum.slice(0, 4)))).sort();
+            let html = '<option value="all">Tất cả</option>';
+            prefixes.forEach(p => { html += `<option value="${p}">${p}</option>`; });
+            prefixSel.innerHTML = html;
+            // Giữ lại lựa chọn nếu vẫn còn hợp lệ
+            if (customerFilterPrefix === 'all' || prefixes.indexOf(customerFilterPrefix) !== -1) {
+                prefixSel.value = customerFilterPrefix;
+            } else {
+                customerFilterPrefix = 'all';
+                prefixSel.value = 'all';
+            }
+            const priceSel = document.getElementById('filterCustomerPrice');
+            const nutSel = document.getElementById('filterCustomerNut');
+            if (priceSel) priceSel.value = customerFilterPrice;
+            if (nutSel) nutSel.value = customerFilterNut;
+        }
+
         function renderCustomerProfileResults() {
             const grid = document.getElementById('customerResults');
             if (!grid) return;
+            const bar = document.getElementById('customerFilterBar');
             if (!window.customerProfile) {
+                if (bar) bar.style.display = 'none';
                 grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#64748b;">Chưa có hồ sơ khách. Hãy phân tích năm sinh trước.</div>';
                 return;
             }
             if (!scoredData || scoredData.length === 0) {
+                if (bar) bar.style.display = 'none';
                 grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#64748b;">Chưa có dữ liệu quét. Hãy quét ở tab Quét trước rồi xem lại.</div>';
                 return;
             }
-            const items = getCustomerMatchingItems();
+            const baseItems = getCustomerBaseItems();
+            populateCustomerFilterOptions(baseItems);
 
-            if (items.length === 0) {
+            if (baseItems.length === 0) {
                 grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#64748b;">Chưa có số nào đạt tiêu chí Hợp Khách trong kết quả hiện tại.</div>';
+                return;
+            }
+
+            const items = getCustomerMatchingItems();
+            if (items.length === 0) {
+                grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#64748b;">Không có số nào khớp bộ lọc. Bấm "Xóa lọc" để xem lại tất cả.</div>';
                 return;
             }
 
@@ -2006,12 +2136,65 @@
                             <div style="font-size:18px; font-weight:800; color:${elementTheme.accent}; letter-spacing:0.5px; white-space:nowrap; line-height:1.2;">${formatted}</div>
                             <div style="font-size:12px; font-weight:800; color:#0f172a; background:#ffffffcc; padding:3px 8px; border-radius:999px;">⭐ ${item.ai.score}</div>
                         </div>
-                        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">
+                        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; align-items:center;">
                             <span style="font-size:11px; color:#475569; background:#ffffffcc; padding:3px 8px; border-radius:999px;">${priceText}</span>
+                            <button onclick="event.stopPropagation(); showSimAnalysis('${item.fNum}')"
+                                style="font-size:11px; color:#005baa; background:#ffffffdd; border:1px solid ${elementTheme.glow}; padding:3px 8px; border-radius:999px; cursor:pointer;">🔍 Phân tích</button>
                         </div>
                     </div>
                 `;
             }).join('');
+        }
+
+        // --- Phân tích chi tiết 1 số ---
+        function showSimAnalysis(fNum) {
+            const item = (scoredData || []).find(i => i.fNum === fNum);
+            if (!item || !item.ai) { alert('Không tìm thấy dữ liệu cho số này.'); return; }
+            const ai = item.ai;
+            const n = item.fNum;
+            const detailMap = {};
+            (ai.details || []).forEach(d => { detailMap[d.tag] = (detailMap[d.tag] || 0) + (d.points || 0); });
+            const detailRows = Object.keys(detailMap)
+                .filter(t => detailMap[t] !== 0)
+                .sort((a, b) => detailMap[b] - detailMap[a])
+                .map(t => {
+                    const pts = detailMap[t];
+                    const color = pts > 0 ? '#059669' : '#dc2626';
+                    return `<div style="display:flex; justify-content:space-between; padding:6px 10px; border-bottom:1px dashed #e2e8f0;">
+                        <span>${t}</span><span style="font-weight:700; color:${color};">${pts > 0 ? '+' : ''}${pts}</span></div>`;
+                }).join('') || '<div style="color:#64748b;">Không có tag nổi bật.</div>';
+
+            const monthly = Number(item.monthly) || 0;
+            const commit = Number(item.commitment) || 0;
+            const isFree = isTraTruocSim(item);
+            const isPost = isTraSauSim(item);
+            const priceText = isFree ? 'Trả trước 0đ' : (isPost ? `Trả sau 0đ · ${commit || '—'}T` : `${monthly ? (monthly / 1000 + 'k/tháng') : '0đ/tháng'} · ${commit ? commit + 'T' : '—'}`);
+            const sum10 = String(n).split('').reduce((a, b) => a + (parseInt(b, 10) || 0), 0);
+            const nut = sum10 % 10;
+            const display = n.slice(0, 4) + ' ' + n.slice(4, 7) + ' ' + n.slice(7);
+
+            document.getElementById('simAnalysisContent').innerHTML = `
+                <div style="text-align:center; margin-bottom:12px;">
+                    <div style="font-size:26px; font-weight:800; color:#005baa; letter-spacing:1px;">${display}</div>
+                    <div style="margin-top:6px; font-size:14px; color:#0f172a;">Điểm AI: <strong style="font-size:18px; color:#b45309;">⭐ ${ai.score}/100</strong></div>
+                    <div style="margin-top:4px; font-size:12px; color:#64748b;">${ai.reasonText || ''}</div>
+                </div>
+                <div style="display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:12px; font-size:12px; color:#475569;">
+                    <span style="background:#f1f5f9; padding:4px 10px; border-radius:999px;">Giá: ${priceText}</span>
+                    <span style="background:#f1f5f9; padding:4px 10px; border-radius:999px;">Đầu số: ${n.slice(0, 4)}</span>
+                    <span style="background:#f1f5f9; padding:4px 10px; border-radius:999px;">Tổng nút: ${nut}</span>
+                    <span style="background:#f1f5f9; padding:4px 10px; border-radius:999px;">Chữ số khác nhau: ${new Set(String(n).split('')).size}</span>
+                </div>
+                <h4 style="margin:10px 0 6px; color:#005baa;">Chi tiết điểm theo tiêu chí</h4>
+                <div style="border:1px solid #e2e8f0; border-radius:8px; overflow:hidden;">${detailRows}</div>
+                <div style="margin-top:10px; font-size:12px; color:#64748b;">* Điểm cuối đã làm tròn và bao gồm các điều chỉnh (thưởng/trừ) khác.</div>
+            `;
+            document.getElementById('simAnalysisModal').style.display = 'flex';
+        }
+
+        function closeSimAnalysis() {
+            const m = document.getElementById('simAnalysisModal');
+            if (m) m.style.display = 'none';
         }
 
         let customerPrintOrientation = 'landscape';
