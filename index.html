@@ -7,7 +7,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="accounts.js"></script>
-    <script src="ai-scoring.js"></script>
+    <script src="ai-scoring.js?v=20261017c"></script>
     <title>Tấn Thông xin chào! &amp; Chào mừng bạn đến với tool chọn số DigiShop</title>
     <style>
         :root {
@@ -282,7 +282,13 @@
             text-overflow: ellipsis;
         }
 
+        /* Vùng bôi đỏ (mark AI) — đồng bộ màu với sodep.html */
         .sim-number .hi {
+            color: #e11d48;
+        }
+
+        /* Chữ đang tìm (highlight từ khoá nhập tay) — giữ kiểu cam + gạch chân */
+        .sim-number .sh {
             color: var(--accent);
             border-bottom: 2px solid var(--accent);
         }
@@ -24689,7 +24695,7 @@
         function highlight(numStr, search) {
             if (!search) return numStr;
             const reg = new RegExp(`(${search})`, 'g');
-            return numStr.replace(reg, '<span class="hi">$1</span>');
+            return numStr.replace(reg, '<span class="sh">$1</span>');
         }
 
         function renderTags(data) {
@@ -24805,6 +24811,8 @@
             });
         }
 
+        // Cache hiển thị số (dùng chung cho mọi lần render lại) — key: số|cước|từ khoá
+        const _numDisplayCache = {};
         function renderCards(data) {
             window.currentDisplayData = data;
             const container = document.getElementById('results');
@@ -24827,7 +24835,27 @@
                     .map(p => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
 
                 const reg = new RegExp(`(${safeParts.join('|')})`, 'g');
-                return numStr.replace(reg, '<span class="hi">$1</span>');
+                return numStr.replace(reg, '<span class="sh">$1</span>');
+            }
+
+            // Hiển thị số giống sodep.html: chèn nhịp + bôi đỏ vùng mark theo AI.
+            // Dùng chung hàm highlightHTML (ai-scoring.js) để 2 trang không lệch nhau.
+            function numDisplayHTML(num, fee, search) {
+                const parts = (search || '').split('*').map(p => p.trim()).filter(p => p !== '');
+                const key = num + '|' + (Number(fee) || 0) + '|' + parts.join(',');
+                if (_numDisplayCache[key] !== undefined) return _numDisplayCache[key];
+                let out;
+                try {
+                    if (typeof highlightHTML === 'function' && typeof analyzeSIM === 'function') {
+                        const ai = analyzeSIM(num, Number(fee) || 0);
+                        // `parts` để highlightHTML tự tô cụm từ khoá (.sh) — không bị vỡ bởi nhịp/mark
+                        out = highlightHTML(num, ai.primaryHighlight || ai.highlight, ai.reasonText, ai.primaryTag, parts);
+                    } else {
+                        out = highlight(num, search);
+                    }
+                } catch (e) { out = highlight(num, search); }
+                _numDisplayCache[key] = out;
+                return out;
             }
 
             data.forEach(item => {
@@ -24867,7 +24895,7 @@
                 <div class="sim-tag" title="${tagName}">${tagName}</div>
                 <div class="sim-info">
                     <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
-                        <div class="sim-number" style="margin-bottom: 0;">${highlight(fmt(itemSoTb), searchVal)}</div>
+                        <div class="sim-number" style="margin-bottom: 0;">${numDisplayHTML(fmt(itemSoTb), price, searchVal)}</div>
                         <button class="${pinClass}" onclick="togglePin('${normalizedNum}', this, event, '${itemSoTb}')" title="Ghim số">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
                         </button>

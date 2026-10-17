@@ -1,25 +1,38 @@
 // tests/highlight.test.js
-// Bộ test cho hàm hiển thị số `highlightHTML` (nằm trong sodep.html).
+// Bộ test cho hàm hiển thị số `highlightHTML` và sự ĐỒNG BỘ giữa các trang.
 //
-// Mục đích: đảm bảo NHỊP (dấu cách) và MARK (vùng bôi đỏ) luôn ĐỒNG BỘ —
-// dấu cách không được cắt ngang vùng bôi đỏ, trừ những pattern cố ý chia
-// nhỏ vùng mark (Đồng Kẹp Tiến 3-3, Lặp Xen Kẽ 2-2-2, ...).
+// Mục đích:
+//   1. NHỊP (dấu cách) và MARK (vùng bôi đỏ) luôn khớp nhau — dấu cách không
+//      cắt ngang vùng mark, trừ những pattern cố ý chia nhỏ vùng mark.
+//   2. `highlightHTML` chỉ định nghĩa DUY NHẤT trong ai-scoring.js và được
+//      dùng chung cho sodep.html (Quét / Phong Thủy / bản in) + index.html
+//      (Tìm Thủ Công), tránh lệch nhau giữa các trang.
 //
 // Cách chạy:
 //   bash tests/run.sh
 //   jsc tests/highlight.test.js      (chạy từ thư mục gốc repo)
 //   node tests/highlight.test.js
 
+var IS_NODE = (function () { try { return !!require('fs'); } catch (e) { return false; } })();
+
+function readRepoFile(name) {
+    if (IS_NODE) {
+        var fs = require('fs');
+        var path = require('path');
+        return fs.readFileSync(path.join(__dirname, '..', name), 'utf8');
+    }
+    if (typeof readFile === 'function') return readFile(name);
+    throw new Error('Không đọc được ' + name + ' (cần node hoặc jsc).');
+}
+
 // ---------------------------------------------------------------------------
-// Nạp ai-scoring.js (để lấy primaryTag/primaryHighlight/reasonText thật)
+// Nạp ai-scoring.js (chứa cả analyzeSIM và highlightHTML)
 // ---------------------------------------------------------------------------
 (function loadEngine() {
-    var fs = null;
-    try { fs = require('fs'); } catch (e) { fs = null; }
-    if (fs) {
+    if (IS_NODE) {
         var path = require('path');
-        var src = fs.readFileSync(path.join(__dirname, '..', 'ai-scoring.js'), 'utf8');
-        (0, eval)(src);
+        var fs = require('fs');
+        (0, eval)(fs.readFileSync(path.join(__dirname, '..', 'ai-scoring.js'), 'utf8'));
     } else if (typeof load === 'function') {
         load('ai-scoring.js');
     } else {
@@ -27,44 +40,6 @@
     }
 })();
 
-// ---------------------------------------------------------------------------
-// Trích hàm highlightHTML ra khỏi sodep.html (đếm ngoặc để lấy trọn hàm)
-// ---------------------------------------------------------------------------
-function extractHighlightHTML() {
-    var src = null;
-    var fs = null;
-    try { fs = require('fs'); } catch (e) { fs = null; }
-    if (fs) {
-        var path = require('path');
-        src = fs.readFileSync(path.join(__dirname, '..', 'sodep.html'), 'utf8');
-    } else if (typeof readFile === 'function') {
-        src = readFile('sodep.html');
-    } else {
-        throw new Error('Không đọc được sodep.html (cần node hoặc jsc).');
-    }
-
-    var start = src.indexOf('function highlightHTML(');
-    if (start < 0) throw new Error('Không tìm thấy highlightHTML trong sodep.html.');
-
-    var open = src.indexOf('{', start);
-    var depth = 0;
-    var i = open;
-    for (; i < src.length; i++) {
-        var ch = src[i];
-        if (ch === '{') depth++;
-        else if (ch === '}') {
-            depth--;
-            if (depth === 0) { i++; break; }
-        }
-    }
-    return src.slice(start, i);
-}
-
-var highlightHTML = (0, eval)('(' + extractHighlightHTML() + ')');
-
-// ---------------------------------------------------------------------------
-// Tiện ích
-// ---------------------------------------------------------------------------
 function log(s) {
     if (typeof print === 'function') print(s);
     else console.log(s);
@@ -80,7 +55,7 @@ function ok(desc, cond) {
 
 // Hiển thị dạng dễ đọc: <span class="hi">X</span> -> [X], dấu cách giữ nguyên
 function view(html) {
-    return html.replace(/<span class="hi">/g, '[').replace(/<\/span>/g, ']');
+    return html.replace(/<span class="hi(?:[^"]*)">/g, '[').replace(/<\/span>/g, ']');
 }
 
 // Với 1 số: lấy dữ liệu thật từ engine rồi render
@@ -91,7 +66,6 @@ function render(n) {
         num: n,
         hl: hl,
         tag: r.primaryTag,
-        reason: r.reasonText,
         html: highlightHTML(n, hl, r.reasonText, r.primaryTag),
         view: view(highlightHTML(n, hl, r.reasonText, r.primaryTag))
     };
@@ -110,6 +84,19 @@ function dotPositions(html) {
     }
     return out;
 }
+
+// ===========================================================================
+// 0. highlightHTML phải tồn tại (đến từ ai-scoring.js) và là 1 nguồn duy nhất
+// ===========================================================================
+ok('highlightHTML có sẵn sau khi nạp ai-scoring.js', typeof highlightHTML === 'function');
+
+(function () {
+    var sodep = readRepoFile('sodep.html');
+    var index = readRepoFile('index.html');
+    ok('sodep.html KHÔNG định nghĩa lại highlightHTML', sodep.indexOf('function highlightHTML(') === -1);
+    ok('index.html KHÔNG định nghĩa lại highlightHTML', index.indexOf('function highlightHTML(') === -1);
+    ok('index.html có dùng highlightHTML để hiển thị số', /highlightHTML\(/.test(index));
+})();
 
 // ===========================================================================
 // 1. LỖI ĐÃ SỬA: Gánh Đảo + (Đồng Kẹp Tiến) -> nhịp KHÔNG được cắt vùng mark
@@ -165,6 +152,39 @@ var MULTI_PART = /Đồng Kẹp|Lặp Cụm|Lặp Xen Kẽ|Gánh Cặp|Gánh Ké
     var info = render(pair[0]);
     ok('Hiển thị đúng: ' + pair[0] + ' -> ' + pair[1] + '  (nhận: ' + info.view + ')', info.view === pair[1]);
 });
+
+// ===========================================================================
+// 4. Từ khoá đang tìm (.sh) — không được vỡ bởi nhịp/mark, mark luôn ưu tiên
+// ===========================================================================
+(function () {
+    var html = highlightHTML('0912345678', '5678', 'Sảnh Tiến Lớn', 'Sảnh Tiến Lớn', ['234']);
+    ok('Từ khoá đang tìm được bọc .sh: ' + html,
+        html.indexOf('<span class="sh">234</span>') !== -1);
+    ok('Từ khoá .sh không bị lồng trong .hi (mark ưu tiên)',
+        !/<span class="hi">[^<]*<span class="sh">/.test(html));
+
+    // Trùng hoàn toàn vùng mark -> chỉ còn .hi (đỏ), không có .sh
+    var html2 = highlightHTML('0912810880', '0880', 'Gánh Đảo', 'Gánh Đảo', ['880']);
+    ok('Trùng vùng mark: không sinh thêm .sh', html2.indexOf('class="sh"') === -1);
+    ok('Trùng vùng mark: nhịp vẫn không cắt mark', view(html2) === '0912 81 [0880]');
+})();
+
+// ===========================================================================
+// 5. Đồng bộ CSS: mark phải đỏ ở CẢ HAI trang
+// ===========================================================================
+(function () {
+    var sodep = readRepoFile('sodep.html');
+    var index = readRepoFile('index.html');
+
+    // sodep.html: có rule .hi toàn cục (không chỉ scope trong .sim-number)
+    ok('sodep.html: rule .hi được áp toàn cục (mark đỏ cả card Phong Thủy/bản in)',
+        /(^|\n)\s*\.hi\s*[,{]/.test(sodep));
+
+    // index.html: mark .hi đỏ, chữ tìm kiếm chuyển sang .sh
+    var hiBlock = index.match(/\.sim-number\s+\.hi\s*\{[^}]*\}/);
+    ok('index.html: .sim-number .hi là màu đỏ', !!hiBlock && /#e11d48/.test(hiBlock[0]));
+    ok('index.html: chữ đang tìm dùng class .sh', /\.sim-number\s+\.sh\s*\{/.test(index));
+})();
 
 // ===========================================================================
 // Tổng kết

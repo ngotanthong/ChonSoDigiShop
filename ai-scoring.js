@@ -595,3 +595,173 @@ function finalizeReasons(reasons) {
     if (keepTags.length >= 4) return keepTags.slice(0, 4);
     return keepTags.concat(dropTags.slice(0, 4 - keepTags.length));
 }
+
+// --- HIỂN THỊ SỐ (nhịp + vùng bôi đỏ) ---
+// Dùng CHUNG cho sodep.html (Quét SIM / Phong Thủy / bản in) và index.html
+// (Tìm Thủ Công) để nhịp và mark không bao giờ lệch nhau giữa các trang.
+//
+// numStr        : số 10 chữ số
+// matchStr      : đoạn cần bôi đỏ (thường là primaryHighlight của analyzeSIM)
+// reasonText    : chuỗi tag, ví dụ "Gánh Đảo + Đồng Kẹp Tiến"
+// primaryTag    : tag chính (dùng để chọn nhịp)
+// searchParts   : (tuỳ chọn) mảng cụm từ khoá đang tìm, ví dụ ['880'] — các cụm
+//                 này được bọc <span class="sh"> (để không vỡ khi đã chèn nhịp)
+//
+// Trả về HTML: số được chèn dấu cách theo nhịp, đoạn matchStr bọc trong
+// <span class="hi"> (CSS tô đỏ ở cả 2 trang). Mark luôn ưu tiên hơn từ khoá.
+function highlightHTML(numStr, matchStr, reasonText = '', primaryTag = '', searchParts = null) {
+    if (!numStr || numStr.length !== 10) {
+        if (!matchStr) return numStr;
+        return numStr.replace(matchStr, `<span class="hi">${matchStr}</span>`);
+    }
+
+    let dotIndexes = [];
+
+    // Ưu tiên hiển thị cho Lặp Cụm 4 (8 số) và Lặp Cụm (6 số) lên hàng đầu
+    const isLapCum4 = matchStr && matchStr.length === 8 && numStr.endsWith(matchStr) && (
+        /(\d)(\d{3})(\d)\2$/.test(matchStr) ||
+        /(\d{3})(\d)\1(\d)$/.test(matchStr)
+    );
+
+    const isLapCum = matchStr && matchStr.length === 6 && numStr.endsWith(matchStr) && (
+        /(\d)(\d{2})(\d)\2$/.test(matchStr) ||
+        /(\d{2})(\d)\1(\d)$/.test(matchStr) ||
+        /(\d)(\d)(\d)\1(\d)\3$/.test(matchStr)
+    );
+
+    const isDongKepTien = /Đồng Kẹp Tiến/.test(reasonText || '');
+    const isLapCumTien = /Lặp Cụm Tiến/.test(reasonText || '');
+    const isLapXenKe = /Lặp Xen Kẽ/.test(reasonText || '');
+    const isGanhCap = /Gánh Cặp/.test(reasonText || '');
+    const isPrimarySanhGiua = primaryTag === 'Sảnh Giữa';
+
+    // ĐỒNG BỘ NHỊP & MARK: các nhánh theo reasonText bên dưới chỉ đúng khi
+    // vùng bôi đỏ (matchStr) chính là 6 số cuối. Nếu mark là nhóm khác
+    // (vd Gánh Đảo 4 số "0880") thì bỏ qua, để rơi xuống nhánh theo đúng
+    // cấu trúc số -> dấu cách không cắt ngang vùng bôi đỏ.
+    const hlIsTail6 = !matchStr || (matchStr.length === 6 && numStr.endsWith(matchStr));
+
+    if (isPrimarySanhGiua) {
+        const sanhIdx = matchStr ? numStr.indexOf(matchStr) : -1;
+        if (sanhIdx >= 0 && sanhIdx + (matchStr ? matchStr.length : 0) <= numStr.length && sanhIdx !== 0) {
+            dotIndexes = [sanhIdx, sanhIdx + (matchStr ? matchStr.length : 0)];
+        } else {
+            dotIndexes = [4, 7];
+        }
+    } else if ((isDongKepTien || isLapCumTien || isGanhCap) && hlIsTail6) {
+        dotIndexes = [4, 7]; // Nhịp 4-3-3 cho Đồng Kẹp Tiến / Lặp Cụm Tiến / Gánh Cặp
+    } else if (isLapXenKe && hlIsTail6) {
+        dotIndexes = [4, 6, 8]; // Nhịp 4-2-2-2 cho Lặp Xen Kẽ
+    } else if (isLapCum4) {
+        dotIndexes = [2, 6]; // Nhịp 2-4-4
+    } else if (isLapCum) {
+        dotIndexes = [4, 7]; // Nhịp 4-3-3
+    } else if (/^(\d{4})\d{2}\1$/.test(numStr)) { // Đầu đuôi tương phùng 4 số (VD: 0886 12 0886)
+        dotIndexes = [4, 6]; // Chia nhịp 4-2-4
+    } else if (/(\d{3})\1$/.test(numStr) || /(\d)(79|39|68|86|38|78)(\d)\2$/.test(numStr)) { // Taxi 3 cụm ABC ABC hoặc Taxi biến thể (VD: 0812 078 778)
+        dotIndexes = [4, 7]; // Chia nhịp 4-3-3
+    } else if (/(.)\1{4}$/.test(numStr)) { // Ngũ quý (VD: 091 23 88888)
+        dotIndexes = [3, 5];
+    } else if (/(.)\1{3}$/.test(numStr)) { // Tứ quý (VD: 091 234 8888)
+        dotIndexes = [3, 6];
+    } else if (/(.)\1{3}/.test(numStr)) { // Tứ quý / Ngũ quý giữa
+        const matchTq = (matchStr && /(.)\1{3}/.test(matchStr)) ? matchStr : numStr.match(/(.)\1{3,}/)[0];
+        const idx = numStr.indexOf(matchTq);
+        const len = matchTq.length;
+        if (idx > 0 && idx + len < 10) {
+            dotIndexes = [idx, idx + len];
+        } else if (idx === 0) {
+            dotIndexes = [len, len + 3];
+        } else {
+            dotIndexes = [3, 6];
+        }
+    } else if (/(\d{2})\1\1$/.test(numStr) || /(\d{2})\d{2}\1$/.test(numStr)) { // AB AB AB hoặc AB CD AB (VD: 0912 68 68 68)
+        dotIndexes = [4, 6, 8];
+    } else if (
+        /(\d{2})\1$/.test(numStr) || // Lặp cặp ABAB
+        /(\d)\1(\d)\2$/.test(numStr) || // Lặp kép AABB
+        /(\d)(\d)\2\1$/.test(numStr) || // Gánh đảo 4 số ABBA
+        (() => {
+            const m3 = numStr.match(/(\d)(\d)\1(\d)\1(\d)$/);
+            if (m3 && parseInt(m3[2]) <= parseInt(m3[3]) && parseInt(m3[3]) <= parseInt(m3[4])) return true;
+            const m2 = numStr.match(/(\d)(\d)\1(\d)$/);
+            return m2 && parseInt(m2[2]) <= parseInt(m2[3]);
+        })() || // Số Cặp (Đồng đầu AB AC tiến hoặc bằng)
+        (() => {
+            const l4 = numStr.slice(-4);
+            const p1 = parseInt(l4.slice(0, 2)), p2 = parseInt(l4.slice(2, 4));
+            const diff = p2 - p1;
+            return (diff === 10 || diff === 11) && p1 >= 10;
+        })() // Cặp Tiến (VD: 6878, 1223)
+    ) { // Tất cả các thể loại Số Cặp 4 số ở đuôi
+        dotIndexes = [4, 6]; // Chia nhịp 4-2-4 (VD: 0912 34 6868)
+    } else if (matchStr && numStr.endsWith(matchStr)) {
+        const isSanh = /(012|123|234|345|456|567|678|789|135|357|579|024|246|468|987|876|765|654|543|432|321|210|975|753|531|864|642|420)/.test(matchStr);
+        const isGanh3 = matchStr.length === 3 && matchStr[0] === matchStr[2] && matchStr[0] !== matchStr[1]; // ABA
+        const isGanh4 = matchStr.length === 4 && matchStr[0] === matchStr[3] && matchStr[1] === matchStr[2] && matchStr[0] !== matchStr[1]; // ABBA
+        const isGanhKep = matchStr.length === 6 && matchStr[0] === matchStr[2] && matchStr[0] !== matchStr[1] && matchStr[3] === matchStr[5] && matchStr[3] !== matchStr[4]; // ABA+ABA
+        const isCaptien3Bac = matchStr.length === 6 && (() => { const p1 = parseInt(matchStr.slice(0, 2)), p2 = parseInt(matchStr.slice(2, 4)), p3 = parseInt(matchStr.slice(4, 6)); return (p2 - p1) > 0 && (p2 - p1) <= 20 && (p2 - p1) === (p3 - p2); })();
+
+        if (matchStr.length === 3 && isSanh) {
+            dotIndexes = [3, 5, 7]; // Sảnh 3 số cuối: nhịp 3-2-2-3
+        } else if (matchStr.length === 5 && isSanh) {
+            dotIndexes = [3, 5]; // Sảnh 5 số cuối
+        } else if (isCaptien3Bac) {
+            dotIndexes = [4, 6, 8]; // Cặp Tiến 3 Bậc: nhịp 4-2-2-2 (VD: 0912 50 60 70)
+        } else if (isGanhKep) {
+            dotIndexes = [4, 7]; // Gánh Kép: nhịp 4-3-3 (VD: 0812 323 262)
+        } else if (isGanh3 || isGanh4) {
+            dotIndexes = [4, 7]; // Gánh ABA/ABBA: nhịp 4-3-3 (VD: 0911 056 070)
+        } else {
+            dotIndexes = [3, 6]; // Mặc định 3-3-4
+        }
+    } else {
+        dotIndexes = [3, 6]; // Mặc định 3-3-4 (VD: 091 234 5678)
+    }
+
+    const idx = matchStr ? numStr.lastIndexOf(matchStr) : -1;
+
+    // Tập chỉ số thuộc vùng mark (đỏ) và thuộc cụm từ khoá đang tìm
+    const markSet = new Set();
+    if (idx >= 0) {
+        for (let k = idx; k < idx + matchStr.length; k++) markSet.add(k);
+    }
+    const searchSet = new Set();
+    if (searchParts && searchParts.length) {
+        searchParts.forEach(part => {
+            if (!part) return;
+            let from = 0, at;
+            while ((at = numStr.indexOf(part, from)) !== -1) {
+                for (let k = at; k < at + part.length; k++) searchSet.add(k);
+                from = at + 1;
+            }
+        });
+    }
+
+    let html = '';
+    let openClass = null;
+    for (let i = 0; i < numStr.length; i++) {
+        // Mark (.hi, đỏ) ưu tiên hơn cụm từ khoá đang tìm (.sh)
+        const cls = markSet.has(i) ? 'hi' : (searchSet.has(i) ? 'sh' : null);
+
+        // Dấu cách nhịp: nằm TRONG span nếu ký tự kế tiếp vẫn cùng vùng (giữ
+        // mark liền khối), ngược lại đóng span rồi mới chèn dấu cách ra ngoài.
+        if (dotIndexes.includes(i)) {
+            if (openClass && cls !== openClass) {
+                html += '</span>';
+                openClass = null;
+            }
+            html += ' '; // Dùng dấu cách để dễ nhìn
+        }
+
+        if (cls !== openClass) {
+            if (openClass) html += '</span>';
+            if (cls) html += `<span class="${cls}">`;
+            openClass = cls;
+        }
+
+        html += numStr[i];
+    }
+    if (openClass) html += '</span>';
+    return html;
+}
