@@ -61,6 +61,28 @@ function doGet(e) {
       var user = e.parameter.user;
       var deviceId = e.parameter.deviceId;
       var userAgent = e.parameter.userAgent || "";
+
+      // === GHI LOG FEEDBACK (copy / ghim / in / phân tích...) vào tab "FeedbackLog" ===
+      if (action === "log_feedback") {
+        try {
+          var ss = SpreadsheetApp.getActiveSpreadsheet();
+          var logSheet = ss.getSheetByName("FeedbackLog");
+          if (!logSheet) {
+            logSheet = ss.insertSheet("FeedbackLog");
+            logSheet.appendRow(["Thời gian", "User", "Hành động", "Số", "Điểm", "Thông tin thêm"]);
+            logSheet.setFrozenRows(1);
+          }
+          logSheet.appendRow([
+            new Date(),
+            e.parameter.user || "",
+            e.parameter.type || "",
+            "'" + (e.parameter.num || ""),
+            e.parameter.score || "",
+            e.parameter.extra || ""
+          ]);
+        } catch (err) {}
+        return makeResponse({ status: "ok" });
+      }
       
       if (!user) {
         return makeResponse({ status: "error", message: "Missing user" });
@@ -182,6 +204,12 @@ function doGet(e) {
 ```
 
 4. Nhấn biểu tượng **Lưu dự án (Save project)** (hình đĩa mềm) hoặc bấm `Cmd + S` / `Ctrl + S`.
+
+> 📝 **Ghi log tương tác về Sheet (mới):** Mã trên đã có thêm action `log_feedback`. Khi nhân viên **copy số / ghim / mở phân tích / in bảng / tải ảnh**, tool sẽ tự gửi về và ghi vào một tab tên **FeedbackLog** (các cột: Thời gian · User · Hành động · Số · Điểm · Thông tin thêm). Tab này **tự tạo** ở lần ghi đầu tiên, không cần tạo tay.
+
+> 🔁 **Sau khi dán mã mới, phải cập nhật bản triển khai (giữ nguyên link cũ):** *Deploy* → **Quản lý các bản triển khai (Manage deployments)** → bấm bút chì ✏️ ở bản đang dùng → mục **Phiên bản (Version)** chọn **Phiên bản mới (New version)** → **Triển khai (Deploy)**. Làm vậy URL `/exec` giữ nguyên, không cần sửa lại trong `sodep.html` / `index.html`.
+
+> ⚠️ Nếu anh **không muốn ghi log**, chỉ cần **bỏ qua** đoạn `if (action === "log_feedback") { ... }` trong mã — tool vẫn chạy bình thường.
 
 ---
 

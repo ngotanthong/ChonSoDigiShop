@@ -1490,17 +1490,23 @@
         let GAS_PIN_API_URL = localStorage.getItem('CUSTOM_GAS_PIN_API_URL') || 'https://script.google.com/macros/s/AKfycbzuUk3M2D-eIxnBugn30VmUrIUok9qYj28pRlOTK0s_FDrsEknyJ-0ZfwUFBER2j3KVUQ/exec'; // Đường dẫn API cho Ghim Sim
 
         // --- LOG FEEDBACK (ghi nhận tương tác để cải thiện chấm điểm) ---
-        // Lưu cục bộ (localStorage) + best-effort gửi lên Google Apps Script (nếu server hỗ trợ).
+        // Lưu cục bộ (localStorage) + gửi lên Google Sheet qua Apps Script (tab "FeedbackLog").
         // Không ảnh hưởng luồng chính nếu mạng lỗi.
         const FEEDBACK_STORE_KEY = 'simso_feedback_log';
         const FEEDBACK_MAX = 1000;
+        function getAuthUser() {
+            try {
+                return localStorage.getItem('simso_auth_user') || sessionStorage.getItem('simso_auth_user') || '';
+            } catch (e) { return ''; }
+        }
         function logFeedback(action, data) {
+            data = data || {};
             try {
                 const entry = {
                     t: Date.now(),
                     action: String(action || ''),
-                    user: (typeof localStorage !== 'undefined' && (localStorage.getItem('simso_auth_user') || '')) || '',
-                    ...(data || {})
+                    user: getAuthUser(),
+                    ...data
                 };
                 let log = [];
                 try { log = JSON.parse(localStorage.getItem(FEEDBACK_STORE_KEY) || '[]'); } catch (e) { log = []; }
@@ -1508,14 +1514,21 @@
                 if (log.length > FEEDBACK_MAX) log = log.slice(log.length - FEEDBACK_MAX);
                 localStorage.setItem(FEEDBACK_STORE_KEY, JSON.stringify(log));
             } catch (e) { /* bỏ qua */ }
-            // Gửi lên server (không chờ, không chặn UI). GAS sẽ bỏ qua nếu chưa hỗ trợ action này.
+            // Gửi lên Google Apps Script bằng GET (GAS đọc qua e.parameter). no-cors để không chặn/không báo lỗi.
             try {
                 if (GAS_API_URL) {
-                    fetch(GAS_API_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                        body: JSON.stringify({ action: 'log_feedback', ...(data || {}), actionType: String(action || ''), user: (localStorage.getItem('simso_auth_user') || ''), t: Date.now() })
-                    }).catch(() => {});
+                    const extra = Object.assign({}, data);
+                    delete extra.num;
+                    delete extra.score;
+                    const qs = new URLSearchParams();
+                    qs.set('action', 'log_feedback');
+                    qs.set('user', getAuthUser());
+                    qs.set('type', String(action || ''));
+                    qs.set('num', data.num != null ? String(data.num) : '');
+                    qs.set('score', data.score != null ? String(data.score) : '');
+                    qs.set('extra', JSON.stringify(extra));
+                    qs.set('t', String(Date.now()));
+                    fetch(GAS_API_URL + '?' + qs.toString(), { method: 'GET', mode: 'no-cors' }).catch(() => {});
                 }
             } catch (e) { /* bỏ qua */ }
         }
