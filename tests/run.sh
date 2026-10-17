@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Chạy bộ test chấm điểm SIM.
+# Chạy toàn bộ bộ test (chấm điểm SIM + hiển thị nhịp/mark).
 #   bash tests/run.sh
 set -uo pipefail
 
@@ -8,18 +8,21 @@ cd "$(dirname "$0")/.."
 JSC="/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpers/jsc"
 
 if command -v node >/dev/null 2>&1; then
-    OUT="$(node tests/ai-scoring.test.js 2>&1)"
+    RUNNER="node"
 elif [ -x "$JSC" ]; then
-    OUT="$("$JSC" tests/ai-scoring.test.js 2>&1)"
+    RUNNER="$JSC"
 else
     echo "Cần node hoặc jsc để chạy test." >&2
     exit 2
 fi
 
-echo "$OUT"
+STATUS=0
+for t in tests/*.test.js; do
+    OUT="$("$RUNNER" "$t" 2>&1)"
+    echo "$OUT"
+    if ! echo "$OUT" | grep -q "ALL PASSED"; then
+        STATUS=1
+    fi
+done
 
-if echo "$OUT" | grep -q "ALL PASSED"; then
-    exit 0
-else
-    exit 1
-fi
+exit $STATUS

@@ -3384,6 +3384,12 @@
             const isGanhCap = /Gánh Cặp/.test(reasonText || '');
             const isPrimarySanhGiua = primaryTag === 'Sảnh Giữa';
 
+            // ĐỒNG BỘ NHỊP & MARK: các nhánh theo reasonText bên dưới chỉ đúng khi
+            // vùng bôi đỏ (matchStr) chính là 6 số cuối. Nếu mark là nhóm khác
+            // (vd Gánh Đảo 4 số "0880") thì bỏ qua, để rơi xuống nhánh theo đúng
+            // cấu trúc số -> dấu cách không cắt ngang vùng bôi đỏ.
+            const hlIsTail6 = !matchStr || (matchStr.length === 6 && numStr.endsWith(matchStr));
+
             if (isPrimarySanhGiua) {
                 const sanhIdx = matchStr ? numStr.indexOf(matchStr) : -1;
                 if (sanhIdx >= 0 && sanhIdx + (matchStr ? matchStr.length : 0) <= numStr.length && sanhIdx !== 0) {
@@ -3391,9 +3397,9 @@
                 } else {
                     dotIndexes = [4, 7];
                 }
-            } else if (isDongKepTien || isLapCumTien || isGanhCap) {
+            } else if ((isDongKepTien || isLapCumTien || isGanhCap) && hlIsTail6) {
                 dotIndexes = [4, 7]; // Nhịp 4-3-3 cho Đồng Kẹp Tiến / Lặp Cụm Tiến / Gánh Cặp
-            } else if (isLapXenKe) {
+            } else if (isLapXenKe && hlIsTail6) {
                 dotIndexes = [4, 6, 8]; // Nhịp 4-2-2-2 cho Lặp Xen Kẽ
             } else if (isLapCum4) {
                 dotIndexes = [2, 6]; // Nhịp 2-4-4
