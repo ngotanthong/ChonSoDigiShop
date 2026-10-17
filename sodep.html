@@ -1187,7 +1187,7 @@
             <div id="profileView" style="display: none; margin-top: 12px;">
                 <div class="scan-panel" style="background: linear-gradient(135deg, #f0f9ff, #e0f2fe);">
                     <h2>🔮 Hồ sơ Phong Thủy Khách</h2>
-                    <p>Nhập năm sinh để ước tính mệnh, digit hợp/kỵ và màu hợp. Sau đó áp dụng để quét.</p>
+                    <p>Nhập năm sinh để ước tính mệnh, digit hợp/kỵ và màu hợp. Bấm 🔮 Phân tích để lọc số hợp khách từ kết quả đã quét.</p>
                     <div style="display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 16px;">
                         <div style="display: flex; flex-direction: column; gap: 4px; min-width: 140px;">
                             <label style="font-weight: 600; font-size: 13px;">Năm sinh *</label>
@@ -1216,10 +1216,9 @@
                     <div id="customerSummary" style="display: none; margin-top: 16px; padding: 14px; border-radius: 12px; background: white; box-shadow: var(--card-shadow); text-align: left;">
                     </div>
                     <div style="margin-top: 12px; display: flex; justify-content: center; gap: 10px;">
-                        <button class="tab-btn" onclick="applyCustomerProfileAndScan()">Áp dụng & Quét</button>
                         <button class="tab-btn" onclick="clearCustomerProfile()">Xóa hồ sơ</button>
                         <button class="btn-scan" style="margin:0; max-width:200px; background:#10b981;" onclick="generateCustomerPrintList()">
-                            🖨️ Tạo bảng in khách
+                            🖨️ Print
                         </button>
                     </div>
                     <div style="margin-top: 16px;">
@@ -1860,11 +1859,8 @@
         // analyzeSIM function moved to ai-scoring.js
 
         // --- HỒ SƠ PHONG THUỶ KHÁCH ---
+        // Không lưu hồ sơ: mặc định chưa có khách, chỉ phân tích khi có nhu cầu.
         window.customerProfile = null;
-        try {
-            const savedProfile = localStorage.getItem('customerProfile');
-            if (savedProfile) window.customerProfile = JSON.parse(savedProfile);
-        } catch (e) {}
 
         const STEMS = ['Giáp', 'Ất', 'Bính', 'Đinh', 'Mậu', 'Kỷ', 'Canh', 'Tân', 'Nhâm', 'Quý'];
         const BRANCHES = ['Tý', 'Sửu', 'Dần', 'Mão', 'Thìn', 'Tỵ', 'Ngọ', 'Mùi', 'Thân', 'Dậu', 'Tuất', 'Hợi'];
@@ -1954,23 +1950,14 @@
                 year, gender: genderInput.value, goal, element, hoaGiap, napAmName,
                 luckyDigits, avoidDigits, colors: data.colors, avoidColors: data.avoidColors, goalEndings
             };
-            localStorage.setItem('customerProfile', JSON.stringify(window.customerProfile));
 
             // Nếu đã có kết quả quét, lập tức re-tag theo tiêu chí mới, không cần load lại
             if (typeof reprocessWithCustomerProfile === 'function') reprocessWithCustomerProfile();
             if (typeof renderCustomerProfileResults === 'function') renderCustomerProfileResults();
         }
 
-        function applyCustomerProfileAndScan() {
-            if (!window.customerProfile) analyzeCustomerProfile();
-            if (!window.customerProfile) return;
-            if (typeof switchView === 'function') switchView('scan');
-            if (typeof startAutoScan === 'function') startAutoScan();
-        }
-
         function clearCustomerProfile() {
             window.customerProfile = null;
-            localStorage.removeItem('customerProfile');
             const summary = document.getElementById('customerSummary');
             if (summary) summary.style.display = 'none';
             if (typeof reprocessWithCustomerProfile === 'function') reprocessWithCustomerProfile();
@@ -1996,7 +1983,7 @@
                 return;
             }
             if (!scoredData || scoredData.length === 0) {
-                grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#64748b;">Chưa có dữ liệu quét. Hãy áp dụng & quét rồi xem lại.</div>';
+                grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#64748b;">Chưa có dữ liệu quét. Hãy quét ở tab Quét trước rồi xem lại.</div>';
                 return;
             }
             const items = getCustomerMatchingItems();
