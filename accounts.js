@@ -14,7 +14,7 @@ window.MULTI_DEVICE_USERS = [
 
 window.ALLOWED_USERS = {
     // "tên_đăng_nhập": "mã_băm_sha256_mật_khẩu"
-    "thong": "89aa1e580023722db67646e8149eb246c748e180e34a1cf679ab0b41a416d904", // mật khẩu: 121
+    "thong": "89aa1e580023722db67646e8149eb246c748e180e34a1cf679ab0b41a416d904",
     "admin": "0883fb27fe5c0a7721a78a406a86d4296b117d0e6527a6b5347996936526de92",
     "nhanvien1": "0883fb27fe5c0a7721a78a406a86d4296b117d0e6527a6b5347996936526de92",
     "doantrungduc": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
