@@ -1515,8 +1515,10 @@
                 localStorage.setItem(FEEDBACK_STORE_KEY, JSON.stringify(log));
             } catch (e) { /* bỏ qua */ }
             // Gửi lên Google Apps Script bằng GET (GAS đọc qua e.parameter). no-cors để không chặn/không báo lỗi.
+            // Log được gửi về project GHIM SIM (GAS_PIN_API_URL) — nơi có action log_feedback.
             try {
-                if (GAS_API_URL) {
+                const endpoint = GAS_PIN_API_URL || GAS_API_URL;
+                if (endpoint) {
                     const extra = Object.assign({}, data);
                     delete extra.num;
                     delete extra.score;
@@ -1528,7 +1530,7 @@
                     qs.set('score', data.score != null ? String(data.score) : '');
                     qs.set('extra', JSON.stringify(extra));
                     qs.set('t', String(Date.now()));
-                    fetch(GAS_API_URL + '?' + qs.toString(), { method: 'GET', mode: 'no-cors' }).catch(() => {});
+                    fetch(endpoint + '?' + qs.toString(), { method: 'GET', mode: 'no-cors' }).catch(() => {});
                 }
             } catch (e) { /* bỏ qua */ }
         }

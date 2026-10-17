@@ -207,7 +207,7 @@ function doGet(e) {
 
 4. Nhấn biểu tượng **Lưu dự án (Save project)** (hình đĩa mềm) hoặc bấm `Cmd + S` / `Ctrl + S`.
 
-> 📝 **Ghi log tương tác về Sheet (mới):** Mã trên đã có thêm action `log_feedback`. Khi nhân viên **copy số / ghim / mở phân tích / in bảng / tải ảnh**, tool sẽ tự gửi về và ghi vào một tab tên **FeedbackLog** (các cột: Thời gian · User · Hành động · Số · Điểm · Thông tin thêm). Tab này **tự tạo** ở lần ghi đầu tiên, không cần tạo tay.
+> 📝 **Ghi log tương tác về Sheet:** Tool gửi log về **project GHIM SIM** (link `GAS_PIN_API_URL`), **không phải** project này. Xem hướng dẫn tại [`apps-script/HUONG_DAN_GHIM_LOG.md`](apps-script/HUONG_DAN_GHIM_LOG.md). (`Ma.gs` vẫn có sẵn action `log_feedback` nếu sau này anh muốn chuyển lại về project đăng nhập.)
 
 > 🔁 **Sau khi dán mã mới, phải cập nhật bản triển khai (giữ nguyên link cũ):** *Deploy* → **Quản lý các bản triển khai (Manage deployments)** → bấm bút chì ✏️ ở bản đang dùng → mục **Phiên bản (Version)** chọn **Phiên bản mới (New version)** → **Triển khai (Deploy)**. Làm vậy URL `/exec` giữ nguyên, không cần sửa lại trong `sodep.html` / `index.html`.
 
