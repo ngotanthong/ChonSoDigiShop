@@ -22,6 +22,8 @@
 2. Xóa sạch mọi mã mặc định trong khung soạn thái `Mã.gs` (nếu có).
 3. Copy toàn bộ đoạn mã bên dưới và dán vào:
 
+> 📄 **Bản đầy đủ, sạch, dễ copy:** xem file [`apps-script/Ma.gs`](apps-script/Ma.gs) trong repo (đã bao gồm action `log_feedback`).
+
 ```javascript
 // ==========================================
 // CẤU HÌNH BOT TELEGRAM (BỎ TRỐNG NẾU KHÔNG DÙNG)
