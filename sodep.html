@@ -2048,7 +2048,7 @@
             const cp = window.customerProfile;
             const items = getCustomerMatchingItems();
             const printDate = new Date().toLocaleDateString('vi-VN');
-            const itemHtml = items.slice(0, 200).map(item => {
+            const itemHtml = items.slice(0, 200).map((item, idx) => {
                 const fNum = item.fNum;
                 const display = fNum.slice(0, 4) + ' ' + fNum.slice(4, 7) + ' ' + fNum.slice(7);
                 const isFree = isTraTruocSim(item);
@@ -2057,6 +2057,7 @@
                 const commit = Number(item.commitment) || 0;
                 const priceText = isFree ? 'Trả trước 0đ' : (isPost ? `Trả sau 0đ · ${commit || '—'}T` : `${monthly ? (monthly / 1000 + 'k/tháng') : '0đ/tháng'} · ${commit ? commit + 'T' : '—'}`);
                 return `<div class="cp-card">
+                    <div class="stt">${idx + 1}</div>
                     <div class="num">${display}</div>
                     <div class="score">⭐ ${item.ai.score}</div>
                     <div class="price">${priceText}</div>
@@ -2076,7 +2077,8 @@
                 .cp-grid-info { display:grid; grid-template-columns: repeat(3, 1fr); gap:4px 10px; font-size:11px; }
                 .cp-grid-info strong { color:#005baa; }
                 .cp-grid { display:grid; grid-template-columns: repeat(${columns}, 1fr); gap:4px; }
-                .cp-card { border:1px solid #d1d5db; border-radius:5px; padding:6px; text-align:center; break-inside: avoid; page-break-inside: avoid; }
+                .cp-card { position:relative; border:1px solid #d1d5db; border-radius:5px; padding:6px; text-align:center; break-inside: avoid; page-break-inside: avoid; }
+                .cp-card .stt { position:absolute; top:3px; left:5px; font-size:9px; font-weight:700; color:#94a3b8; }
                 .cp-card .num { font-weight:700; font-size:13px; letter-spacing:0.3px; color:#005baa; }
                 .cp-card .score { font-size:10px; color:#b45309; margin-top:1px; }
                 .cp-card .price { font-size:9px; color:#6b7280; margin-top:1px; }
