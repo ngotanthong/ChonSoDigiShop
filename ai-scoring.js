@@ -306,22 +306,23 @@ function analyzeSIM(numStr, monthlyFee = 0) {
         addReason('Dễ Nhớ', 14, 'denho');
     }
 
-    // Lặp xen kẽ: digit cố định ở các vị trí chẵn/lẻ xen kẽ, ví dụ 626468 = 6 2 6 4 6 8.
-    for (let start = 0; start + 6 <= numStr.length; start++) {
-        const window6 = numStr.slice(start, start + 6);
-        const fixed = window6[0];
-        if (window6[0] !== window6[2] || window6[0] !== window6[4]) continue;
-        const even1 = parseInt(window6[1], 10);
-        const even2 = parseInt(window6[3], 10);
-        const even3 = parseInt(window6[5], 10);
-        const step1 = even2 - even1;
-        const step2 = even3 - even2;
-        // Lặp xen kẽ chỉ chấp nhận bước đều 1-3 đơn vị, ví dụ 6 2 6 3 6 4 hoặc 6 2 6 4 6 6.
-        if (step1 !== 0 && Math.sign(step1) === Math.sign(step2) && Math.abs(step1) >= 1 && Math.abs(step1) <= 3 && Math.abs(step1) === Math.abs(step2)) {
-            addReason('Lặp Xen Kẽ', 24, 'solap');
-            addReason('Lặp Xen Kẽ', 0, 'denho');
-            if (!highlight || highlight.length < 6) highlight = window6;
-            break;
+    // Lặp xen kẽ: một digit cố định ở các vị trí xen kẽ, các digit còn lại TĂNG đều.
+    // Chỉ xét 6 số CUỐI (lặp cuối + lặp tăng). Không tính lặp ở giữa và lặp giảm.
+    // Ví dụ: 626466 = 6 2 6 4 6 6 (các digit xen kẽ 2-4-6 tăng đều).
+    if (numStr.length >= 6) {
+        const window6 = numStr.slice(-6);
+        if (window6[0] === window6[2] && window6[0] === window6[4]) {
+            const even1 = parseInt(window6[1], 10);
+            const even2 = parseInt(window6[3], 10);
+            const even3 = parseInt(window6[5], 10);
+            const step1 = even2 - even1;
+            const step2 = even3 - even2;
+            // Chỉ nhận bước đều 1-3 đơn vị và phải TĂNG dần (step > 0).
+            if (step1 >= 1 && step1 <= 3 && step1 === step2) {
+                addReason('Lặp Xen Kẽ', 24, 'solap');
+                addReason('Lặp Xen Kẽ', 0, 'denho');
+                if (!highlight || highlight.length < 6) highlight = window6;
+            }
         }
     }
 
