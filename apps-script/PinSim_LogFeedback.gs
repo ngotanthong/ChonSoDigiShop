@@ -158,6 +158,10 @@ function doGet(e) {
       var isAdmin = (user.toLowerCase() === "admin");
       for (var i = 1; i < pData.length; i++) {
         var rowUser = pData[i][0].toString();
+        var rowPhone = pData[i][1] ? pData[i][1].toString().trim() : "";
+        // Bỏ qua dòng trống: getDataRange() có thể kéo dài tới hàng trăm dòng
+        // rỗng (do định dạng / công thức ở các cột phụ), gây "dòng ma" số rỗng.
+        if (!rowPhone && !pData[i][2]) continue;
         if (isAdmin || rowUser.toLowerCase() === user.toLowerCase()) {
           try {
             var simObj = pData[i][2] ? JSON.parse(pData[i][2]) : null;

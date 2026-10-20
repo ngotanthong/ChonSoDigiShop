@@ -45,6 +45,18 @@ Mở tool, copy 1 số → mở Sheet → tab `FeedbackLog` sẽ có 1 dòng m�
 
 ## Lỗi: "Telegram vẫn báo nhưng không thấy dòng trong Sheet"
 
+### Kiểm tra trước tiên (90% trường hợp là do cái này)
+
+Dòng ghim mới **luôn được thêm ở CUỐI bảng** của tab `PinnedSIMs`
+(không chèn lên đầu, không tự sắp xếp).
+
+1. Mở tab `PinnedSIMs`.
+2. Bấm **`Cmd + ↓`** (Mac) / **`Ctrl + End`** (Windows) để nhảy xuống dòng cuối.
+3. Nếu tab đang bật **bộ lọc (Filter)** hoặc **sắp xếp theo khoảng**, dòng mới
+   có thể bị ẩn → menu **Dữ liệu (Data)** → **Tắt bộ lọc**.
+
+### Nếu vẫn không thấy
+
 Nguyên nhân: script đang ghi vào **một file Sheet khác** với file anh đang mở
 (hoặc vào tab khác tên). Ghim vẫn lưu thật, chỉ là lưu nhầm file.
 
