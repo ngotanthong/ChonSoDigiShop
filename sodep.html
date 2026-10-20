@@ -1452,6 +1452,23 @@
         </div>
     </div>
 
+    <!-- Bảng trạng thái quét ngầm: tự cập nhật theo từng đợt -->
+    <div id="bgScanPanel"
+        style="display: none; position: fixed; left: 16px; bottom: 16px; z-index: 9999; min-width: 240px; max-width: 340px; background: rgba(15, 23, 42, 0.96); color: #e2e8f0; border-radius: 12px; padding: 10px 14px; font-size: 13px; line-height: 1.55; box-shadow: 0 12px 30px rgba(0,0,0,.28);">
+        <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; color: #7dd3fc;">
+            <span id="bgScanSpinner" class="login-spinner"
+                style="width: 12px; height: 12px; border-width: 2px; display: inline-block;"></span>
+            <span id="bgScanTitle">Đang quét ngầm</span>
+            <button id="bgScanStop" onclick="stopAutoScan()"
+                style="margin-left: auto; background: rgba(255,255,255,.14); color: #e2e8f0; border: 0; border-radius: 6px; padding: 2px 9px; font-size: 11px; font-weight: 600; cursor: pointer;">Dừng</button>
+        </div>
+        <div id="bgScanLine1" style="margin-top: 4px;"></div>
+        <div id="bgScanLine2" style="opacity: .8;"></div>
+        <div id="bgScanLog"
+            style="margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,.15); font-size: 12px; opacity: .9;">
+        </div>
+    </div>
+
     <div class="toast" id="toast">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
@@ -2404,7 +2421,11 @@
         }
 
         // --- AUTO SCAN ENGINE ---
-        let autoReloadInterval = null;
+        let autoReloadInterval = null;  // timer hẹn lượt quét ngầm kế tiếp
+        let autoScanRunning = false;    // chặn 2 lượt quét ngầm chồng nhau
+        let autoScanAbort = false;      // bật lên khi bấm nút "Dừng"
+        let bgRenderLast = 0;           // throttle cập nhật UI (tránh vẽ quá nhiều)
+        let bgHideTimer = null;
         let bgWorker = null; // Web Worker chạy ngầm không bị browser throttle
 
         function updateLastFetchTime() {
@@ -2417,18 +2438,98 @@
             }
         }
 
-        function enableAutoReload() {
-            // Quét số ngầm chạy nền tự động (không còn nút bật/tắt thủ công)
-            if (autoReloadInterval) clearInterval(autoReloadInterval);
-            // Trình duyệt có thể giới hạn setTimeout khi ẩn tab,
-            // nhưng với file:// ta không dùng Web Worker (gây lỗi SecurityError)
-            autoReloadInterval = setInterval(silentAutoScan, 600000); // 10 phút
+        const AUTO_SCAN_INTERVAL = 600000; // 10 phút, tính từ lúc lượt trước KẾT THÚC
 
-            // Chạy ngay lần đầu
-            silentAutoScan();
+        function enableAutoReload() {
+            // Chuỗi quét ngầm: chạy -> xong -> hẹn 10 phút sau chạy lượt tiếp.
+            // Dùng setTimeout nối tiếp (KHÔNG dùng setInterval) để 2 lượt
+            // không bao giờ chồng lên nhau khi lượt trước chạy lâu.
+            if (autoReloadInterval) clearTimeout(autoReloadInterval);
+            autoReloadInterval = setTimeout(runAutoScanLoop, 1000);
+        }
+
+        async function runAutoScanLoop() {
+            try { await silentAutoScan(); } catch (e) { console.error(e); }
+            autoReloadInterval = setTimeout(runAutoScanLoop, AUTO_SCAN_INTERVAL);
+        }
+
+        // ---------- Bảng trạng thái quét ngầm ----------
+        function bgFmtDuration(ms) {
+            const total = Math.max(0, Math.floor((ms || 0) / 1000));
+            if (total < 60) return total + 's';
+            const m = Math.floor(total / 60);
+            return m + 'm' + String(total % 60).padStart(2, '0') + 's';
+        }
+
+        function bgShow() {
+            const panel = document.getElementById('bgScanPanel');
+            if (!panel) return;
+            if (bgHideTimer) { clearTimeout(bgHideTimer); bgHideTimer = null; }
+            panel.style.display = 'block';
+        }
+
+        function bgLogBatch(stats) {
+            const log = document.getElementById('bgScanLog');
+            if (!log) return;
+            const lines = stats.batches.slice(-3).map(function (b) {
+                const added = b.added > 0 ? '+' + b.added + ' số' : 'không thêm số';
+                return 'Đợt ' + b.n + ': ' + added + ' (' + bgFmtDuration(b.ms) + ')';
+            });
+            log.innerHTML = lines.map(function (l) { return '• ' + l; }).join('<br>');
+        }
+
+        function bgRender(stats, state) {
+            const now = Date.now();
+            if (state === 'running' && now - bgRenderLast < 300) return; // throttle 300ms
+            bgRenderLast = now;
+            const elapsed = now - stats.startedAt;
+            const title = document.getElementById('bgScanTitle');
+            const spinner = document.getElementById('bgScanSpinner');
+            const stopBtn = document.getElementById('bgScanStop');
+            const l1 = document.getElementById('bgScanLine1');
+            const l2 = document.getElementById('bgScanLine2');
+            if (title) {
+                title.textContent = state === 'running' ? 'Đang quét ngầm'
+                    : (state === 'stopped' ? 'Đã dừng quét ngầm' : 'Quét ngầm xong');
+            }
+            if (spinner) spinner.style.display = state === 'running' ? 'inline-block' : 'none';
+            if (stopBtn) stopBtn.style.display = state === 'running' ? 'inline-block' : 'none';
+            if (l1) l1.textContent = 'Đợt ' + stats.batch + ' · ' + stats.done + '/' + stats.total + ' lượt · +' + stats.added + ' số';
+            if (l2) l2.textContent = '⏱ ' + bgFmtDuration(elapsed) + (state === 'running' ? '' : ' · tổng cộng +' + stats.added + ' số');
+        }
+
+        // Bấm "Dừng": các worker dừng sau khi xong request đang chạy
+        function stopAutoScan() {
+            if (!autoScanRunning) return;
+            autoScanAbort = true;
+            const title = document.getElementById('bgScanTitle');
+            if (title) title.textContent = 'Đang dừng…';
+            console.log('[quét ngầm] người dùng bấm dừng');
         }
 
         async function silentAutoScan() {
+            // Không cho 2 lượt quét ngầm chạy chồng nhau (trước đây setInterval
+            // 10 phút vẫn bắn lượt mới dù lượt cũ chưa xong -> nghẽn, không bao
+            // giờ chạy tới cuối nên không cập nhật giờ + không báo số mới).
+            if (autoScanRunning) {
+                console.warn('[quét ngầm] bỏ qua lượt mới: lượt trước chưa chạy xong');
+                return;
+            }
+            if (typeof activeScan !== 'undefined' && activeScan) {
+                console.warn('[quét ngầm] hoãn: đang có lượt quét tay chạy');
+                return;
+            }
+            autoScanRunning = true;
+            autoScanAbort = false;
+
+            const stats = { startedAt: Date.now(), total: 0, done: 0, added: 0, batch: 0, batches: [] };
+            let lastBatchAt = Date.now();
+            let lastBatchAdded = 0;
+            const BATCH_SIZE = 50; // mỗi 50 lượt gọi API = 1 "đợt", báo tiến độ 1 lần
+
+            bgShow();
+            bgRender(stats, 'running');
+
             const wildcardDB = [
                 "*666*", "*888*", "*999*", "*333*", "*777*", "*555*", "*222*", "*111*", "*444*",
                 "*6666*", "*8888*", "*9999*", "*3333*", "*7777*",
@@ -2445,6 +2546,7 @@
                 const key = `${pref}|${commit}|${String(search || '').trim()}`;
                 if (silentTaskKeys.has(key)) return;
                 silentTaskKeys.add(key);
+                stats.total++; // tổng lượt tăng lên khi chia nhỏ thêm (sharding)
                 tasks.push({ pref, c: commit, search: String(search || '').trim(), depth: depth });
             }
 
@@ -2485,10 +2587,26 @@
             }
 
             const CONCURRENCY = 10;
-            let newDataCount = 0;
+            // Danh sách số đã có (tạo 1 lần thay vì map lại toàn bộ rawData mỗi request)
+            const knownPhones = new Set(rawData.map(d => String(d.so_tb || d.fNum)));
+
+            function finishBatch() {
+                if (stats.done === 0) return;
+                stats.batch++;
+                stats.batches.push({
+                    n: stats.batch,
+                    added: stats.added - lastBatchAdded,
+                    ms: Date.now() - lastBatchAt
+                });
+                lastBatchAdded = stats.added;
+                lastBatchAt = Date.now();
+                bgLogBatch(stats);
+                console.log('[quét ngầm] đợt ' + stats.batch + ': +' + stats.batches[stats.batches.length - 1].added + ' số, '
+                    + stats.done + '/' + stats.total + ' lượt');
+            }
 
             async function worker() {
-                while (tasks.length > 0) {
+                while (tasks.length > 0 && !autoScanAbort) {
                     const { pref, c, search, depth } = tasks.shift();
                     const url = `${BASE_API}?search=${encodeURIComponent(search)}&prefix=${pref}&commit=${c}`;
                     try {
@@ -2496,12 +2614,12 @@
                         const json = await res.json();
                         if (json.errorCode === 0 && json.data && json.data.length > 0) {
                             // Lọc các số chưa có trong kho
-                            const existingPhones = new Set(rawData.map(d => String(d.so_tb || d.fNum)));
-                            const freshData = json.data.filter(d => !existingPhones.has(String(d.so_tb || d.fNum)));
+                            const freshData = json.data.filter(d => !knownPhones.has(String(d.so_tb || d.fNum)));
 
                             if (freshData.length > 0) {
+                                freshData.forEach(d => knownPhones.add(String(d.so_tb || d.fNum)));
                                 rawData = rawData.concat(freshData);
-                                newDataCount += freshData.length;
+                                stats.added += freshData.length;
                             }
                             if (Array.isArray(json.data) && json.data.length >= 50) {
                                 enqueueSilentShards(pref, c, search, depth || 0);
@@ -2510,6 +2628,9 @@
                     } catch (e) {
                         console.error("Silent fetch error:", url);
                     }
+                    stats.done++;
+                    if (stats.done % BATCH_SIZE === 0) finishBatch();
+                    bgRender(stats, 'running');
                 }
             }
 
@@ -2518,7 +2639,10 @@
                 for (let i = 0; i < CONCURRENCY; i++) workers.push(worker());
                 await Promise.all(workers);
 
-                if (newDataCount > 0) {
+                // Chốt đợt cuối nếu chưa tròn BATCH_SIZE
+                if (stats.done % BATCH_SIZE !== 0) finishBatch();
+
+                if (stats.added > 0) {
                     processAIScores();
 
                     const toolbar = document.getElementById('toolbar');
@@ -2527,17 +2651,35 @@
                         document.getElementById('emptyState').style.display = 'none';
                         renderResults();
                     }
+                }
 
-                    const toast = document.getElementById('toast');
-                    if (toast) {
-                        toast.querySelector('span').textContent = `Tự động quét ngầm hoàn tất: Thêm ${newDataCount} số mới!`;
-                        toast.classList.add('show');
-                        setTimeout(() => toast.classList.remove('show'), 4000);
-                    }
+                const totalMs = Date.now() - stats.startedAt;
+                const durText = bgFmtDuration(totalMs);
+                console.log('[quét ngầm] ' + (autoScanAbort ? 'đã dừng' : 'hoàn tất') + ': +' + stats.added
+                    + ' số / ' + stats.done + ' lượt trong ' + durText);
+
+                const toast = document.getElementById('toast');
+                if (toast) {
+                    toast.querySelector('span').textContent = autoScanAbort
+                        ? `Đã dừng quét ngầm: +${stats.added} số (${durText})`
+                        : (stats.added > 0
+                            ? `Quét ngầm xong: thêm ${stats.added} số mới (${durText})`
+                            : `Quét ngầm xong: không có số mới (${durText})`);
+                    toast.classList.add('show');
+                    setTimeout(() => toast.classList.remove('show'), 5000);
                 }
                 updateLastFetchTime();
             } catch (err) {
                 console.error("Lỗi silent auto scan", err);
+            } finally {
+                autoScanRunning = false;
+                bgRender(stats, autoScanAbort ? 'stopped' : 'done');
+                bgLogBatch(stats);
+                if (bgHideTimer) clearTimeout(bgHideTimer);
+                bgHideTimer = setTimeout(function () {
+                    const p = document.getElementById('bgScanPanel');
+                    if (p) p.style.display = 'none';
+                }, 15000);
             }
         }
 
