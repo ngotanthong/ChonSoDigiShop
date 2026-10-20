@@ -1573,6 +1573,7 @@
                             &lt;br&gt;(phong thủy, ngày tháng năm sinh)</button><button class="filter-tag ">10 số đầu
                             094 theo sở thích &lt;br&gt;(phong thủy, ngày tháng năm sinh)</button><button
                             class="filter-tag ">Số theo sở thích (phong thủy, ngày tháng năm sinh…)</button></div>
+                    <div class="tag-cloud" id="beautyCloud"></div>
                 </div>
             </div>
 
@@ -24553,6 +24554,7 @@
         let priorityPrice = null;
         let priorityPrefix = null;
         let sortPrice = null;
+        let filterBeauty = null; // lọc theo "nét đẹp" (tag phân tích, giống sodep)
         let isFilterVisible = true;
 
         function toggleFilter() {
@@ -24611,6 +24613,7 @@
             priorityPrice = null;
             priorityPrefix = null;
             sortPrice = null;
+            filterBeauty = null;
             renderTags(currentData);
             applySort();
 
@@ -24711,17 +24714,52 @@
             return m === 0 && c > 0;
         }
 
+        // Tên "kiểu số" đã làm sạch: bỏ tiền tố đầu số, bỏ thẻ <br> lẫn trong dữ liệu VNPT
+        function kieuTagName(item) {
+            return String((item && item.kieuso_name) || '')
+                .replace(/^\d{3} /, '')
+                .replace(/<br\s*\/?>/gi, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        // Cache kết quả phân tích (số|cước) — dùng cho bộ lọc "nét đẹp".
+        // Phân tích là hàm thuần nên cache theo số là an toàn.
+        const _aiCache = {};
+        function getItemAI(item) {
+            const raw = String((item && (item.so_tb || item.fNum)) || '');
+            if (!raw) return null;
+            const num = fmt(raw);
+            const fee = Number(item.monthly) || 0;
+            const key = num + '|' + fee;
+            if (_aiCache[key] !== undefined) return _aiCache[key];
+            let ai = null;
+            try {
+                if (typeof analyzeSIM === 'function') ai = analyzeSIM(num, fee);
+            } catch (e) { ai = null; }
+            _aiCache[key] = ai;
+            return ai;
+        }
+
+        // Danh sách "nét đẹp" của 1 số, ví dụ: ['Lặp Cặp', 'Nút 9', ...]
+        function getItemReasons(item) {
+            const ai = getItemAI(item);
+            return (ai && Array.isArray(ai.reasonsArr)) ? ai.reasonsArr : [];
+        }
+
         function renderTags(data) {
             const tagArea = document.getElementById('tagArea');
             const tagCloud = document.getElementById('tagCloud');
             const priceCloud = document.getElementById('priceCloud');
             const prefixCloud = document.getElementById('prefixCloud');
             const sortCloud = document.getElementById('sortCloud');
+            const beautyCloud = document.getElementById('beautyCloud');
 
             tagCloud.innerHTML = '';
             if (priceCloud) priceCloud.innerHTML = '';
             if (prefixCloud) prefixCloud.innerHTML = '';
             if (sortCloud) sortCloud.innerHTML = '';
+            if (beautyCloud) { beautyCloud.innerHTML = ''; beautyCloud.style.display = 'none'; }
 
             if (!data || data.length === 0) { tagArea.style.display = 'none'; return; }
             tagArea.style.display = 'flex';
@@ -24798,8 +24836,10 @@
                 });
             }
 
-            const rawTags = data.map(item => (item.kieuso_name || '').replace(/^\d{3} /, ''));
-            const uniqueTags = [...new Set(rawTags)].sort();
+            const rawTags = data.map(item => kieuTagName(item));
+            const tagCounts = new Map();
+            rawTags.forEach(t => { if (t) tagCounts.set(t, (tagCounts.get(t) || 0) + 1); });
+            const uniqueTags = [...tagCounts.keys()].sort();
 
             const btnAll = document.createElement('button');
             btnAll.className = `filter-tag ${priorityTag === null ? 'active' : ''}`;
@@ -24823,10 +24863,48 @@
                 if (!tag) return; // Bỏ qua nếu tag rỗng (số từ nguồn khác)
                 const btn = document.createElement('button');
                 btn.className = `filter-tag ${priorityTag === tag ? 'active' : ''}`;
-                btn.textContent = tag;
+                btn.textContent = `${tag} (${tagCounts.get(tag)})`;
                 btn.onclick = () => { priorityTag = (priorityTag === tag) ? null : tag; applySort(); renderTags(data); };
                 tagCloud.appendChild(btn);
             });
+
+            // --- Bộ lọc "NÉT ĐẸP" (tag phân tích giống sodep: Lặp Cặp, Nút 9, Tam Hoa...) ---
+            if (beautyCloud) {
+                const reasonCounts = new Map();
+                data.forEach(item => {
+                    getItemReasons(item).forEach(r => {
+                        if (!r) return;
+                        reasonCounts.set(r, (reasonCounts.get(r) || 0) + 1);
+                    });
+                });
+
+                if (reasonCounts.size > 0) {
+                    beautyCloud.style.display = 'flex';
+
+                    const btnAllBeauty = document.createElement('button');
+                    btnAllBeauty.className = `filter-tag ${filterBeauty === null ? 'active' : ''}`;
+                    btnAllBeauty.textContent = '✨ Tất cả nét đẹp';
+                    btnAllBeauty.onclick = () => { filterBeauty = null; applySort(); renderTags(data); };
+                    beautyCloud.appendChild(btnAllBeauty);
+
+                    // Nhiều số trước (dễ chọn), cùng số lượng thì theo ABC
+                    const beautyOpts = [...reasonCounts.entries()]
+                        .sort((a, b) => (b[1] - a[1]) || a[0].localeCompare(b[0], 'vi'));
+
+                    beautyOpts.forEach(([tag, count]) => {
+                        const btn = document.createElement('button');
+                        btn.className = `filter-tag ${filterBeauty === tag ? 'active' : ''}`;
+                        btn.textContent = `${tag} (${count})`;
+                        btn.title = `Chỉ hiện số có nét "${tag}"`;
+                        btn.onclick = () => {
+                            filterBeauty = (filterBeauty === tag) ? null : tag;
+                            applySort();
+                            renderTags(data);
+                        };
+                        beautyCloud.appendChild(btn);
+                    });
+                }
+            }
         }
 
         // Cache hiển thị số (dùng chung cho mọi lần render lại) — key: số|cước|từ khoá
@@ -24881,8 +24959,7 @@
                 let normalizedNum = itemSoTb;
                 if (normalizedNum && normalizedNum.startsWith('84')) normalizedNum = '0' + normalizedNum.slice(2);
 
-                const itemKieuSo = item.kieuso_name || '';
-                const rawTagName = itemKieuSo.replace(/^\d{3} /, '');
+                const rawTagName = kieuTagName(item);
                 const tagName = escapeHTML(rawTagName);
                 const card = document.createElement('div');
 
@@ -24927,6 +25004,13 @@
             `;
                 container.appendChild(card);
             });
+
+            if (!data || data.length === 0) {
+                container.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 40px 12px; color: #64748b;">
+                    <div style="font-size: 15px; margin-bottom: 14px;">Không có số nào phù hợp bộ lọc hiện tại.</div>
+                    <button class="btn-copy" onclick="clearAllFilters()">Xoá tất cả bộ lọc</button>
+                </div>`;
+            }
         }
 
         function applySort() {
@@ -24956,6 +25040,10 @@
                 });
             }
 
+            if (filterBeauty !== null) {
+                sorted = sorted.filter(item => getItemReasons(item).indexOf(filterBeauty) !== -1);
+            }
+
             if (sortPrice === 'asc' || sortPrice === 'desc') {
                 const getSortVal = (item) => {
                     const isFree = !item.monthly || Number(item.monthly) === 0;
@@ -24974,11 +25062,20 @@
             }
 
             if (priorityTag !== null && priorityTag !== 'pinned') {
-                const matches = sorted.filter(item => (item.kieuso_name || '').replace(/^\d{3} /, '') === priorityTag);
-                const others = sorted.filter(item => (item.kieuso_name || '').replace(/^\d{3} /, '') !== priorityTag);
-                sorted = [...matches, ...others];
+                // Lọc thật theo kiểu số (trước đây chỉ đẩy lên đầu) — giống tab lọc của sodep
+                sorted = sorted.filter(item => kieuTagName(item) === priorityTag);
             }
             renderCards(sorted);
+        }
+
+        function clearAllFilters() {
+            priorityTag = null;
+            priorityPrice = null;
+            priorityPrefix = null;
+            sortPrice = null;
+            filterBeauty = null;
+            renderTags(currentData);
+            applySort();
         }
 
         document.getElementById('btnSearch').addEventListener('click', handleGlobalSearch);
