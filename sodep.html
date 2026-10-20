@@ -1239,7 +1239,9 @@
                                 <select id="filterCustomerPrice" onchange="onCustomerFilterChange()"
                                     style="padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); font-size: 14px;">
                                     <option value="all">Tất cả</option>
-                                    <option value="zero">0đ (miễn phí)</option>
+                                    <option value="zero">0đ (cả 2 loại)</option>
+                                    <option value="zero_pre">0đ trả trước</option>
+                                    <option value="zero_post">0đ trả sau</option>
                                     <option value="low">Dưới 100k</option>
                                     <option value="gte100">Từ 100k trở lên</option>
                                     <option value="mid">100k - 300k</option>
@@ -1373,7 +1375,9 @@
                     <label for="filterCommitment" class="sort-label" style="margin-left: 10px;">Cam kết:</label>
                     <select id="filterCommitment" class="sort-select" onchange="handleCommitmentFilter()">
                         <option value="all">Tất cả</option>
-                        <option value="0">0đ</option>
+                        <option value="0">0đ (cả 2 loại)</option>
+                        <option value="zero_pre">0đ trả trước</option>
+                        <option value="zero_post">0đ trả sau</option>
                         <option value="100000">100k</option>
                         <option value="gte100000">Từ 100k ↑</option>
                         <option value="150000">150k</option>
@@ -2100,6 +2104,8 @@
                 items = items.filter(i => {
                     const monthly = Number(i.monthly) || 0;
                     if (customerFilterPrice === 'zero') return monthly === 0;
+                    if (customerFilterPrice === 'zero_pre') return isTraTruocSim(i);
+                    if (customerFilterPrice === 'zero_post') return isTraSauSim(i);
                     if (customerFilterPrice === 'low') return monthly > 0 && monthly < 100000;
                     if (customerFilterPrice === 'gte100') return monthly >= 100000;
                     if (customerFilterPrice === 'mid') return monthly > 100000 && monthly <= 300000;
@@ -3515,6 +3521,10 @@
                 displayData = displayData.filter(item => {
                     const monthly = item.monthly ? item.monthly.toString() : "0";
                     if (currentCommitment === 'gte100000') return Number(monthly) >= 100000;
+                    // 0đ trả trước: cước 0đ + không cam kết
+                    // 0đ trả sau : cước 0đ + có cam kết > 0
+                    if (currentCommitment === 'zero_pre') return isTraTruocSim(item);
+                    if (currentCommitment === 'zero_post') return isTraSauSim(item);
                     return monthly === currentCommitment;
                 });
             }

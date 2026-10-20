@@ -24698,6 +24698,19 @@
             return numStr.replace(reg, '<span class="sh">$1</span>');
         }
 
+        // 0đ trả trước: cước 0đ + không cam kết
+        // 0đ trả sau : cước 0đ + có cam kết > 0
+        function isTraTruocSim(item) {
+            const m = Number(item.monthly) || 0;
+            const c = Number(item.commitment) || 0;
+            return m === 0 && c === 0;
+        }
+        function isTraSauSim(item) {
+            const m = Number(item.monthly) || 0;
+            const c = Number(item.commitment) || 0;
+            return m === 0 && c > 0;
+        }
+
         function renderTags(data) {
             const tagArea = document.getElementById('tagArea');
             const tagCloud = document.getElementById('tagCloud');
@@ -24756,7 +24769,9 @@
 
             const priceOptions = [
                 { id: null, label: 'Tất cả cam kết' },
-                { id: '0', label: '0đ' },
+                { id: '0', label: '0đ (cả 2 loại)' },
+                { id: '0pre', label: '0đ trả trước' },
+                { id: '0post', label: '0đ trả sau' },
                 { id: '100000', label: '100k' },
                 { id: '>=100000', label: 'Từ 100k ↑' },
                 { id: '150000', label: '150k' },
@@ -24769,6 +24784,7 @@
                 if (opt.id === null) return true;
                 if (opt.id === '>=100000') return Array.from(availablePrices).some(p => p >= 100000);
                 if (opt.id === '>500000') return Array.from(availablePrices).some(p => p > 500000);
+                if (opt.id === '0pre' || opt.id === '0post') return availablePrices.has(0);
                 return availablePrices.has(Number(opt.id));
             });
 
@@ -24932,6 +24948,8 @@
                 sorted = sorted.filter(item => {
                     const price = Number(item.monthly) || 0;
                     if (priorityPrice === '0') return price === 0;
+                    if (priorityPrice === '0pre') return isTraTruocSim(item);
+                    if (priorityPrice === '0post') return isTraSauSim(item);
                     if (priorityPrice === '>=100000') return price >= 100000;
                     if (priorityPrice === '>500000') return price > 500000;
                     return price === Number(priorityPrice);

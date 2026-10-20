@@ -56,6 +56,27 @@ ok('sodep: "Dưới 100k" KHÔNG bao gồm đúng 100k',
     sodep.indexOf("customerFilterPrice === 'low') return monthly > 0 && monthly < 100000;") !== -1);
 
 // ===========================================================================
+// 4. Lọc 0đ: trả trước / trả sau / cả 2 loại
+//    (trả trước = cước 0đ + không cam kết; trả sau = cước 0đ + cam kết > 0)
+// ===========================================================================
+ok('index: có nút "0đ (cả 2 loại)"', index.indexOf("label: '0đ (cả 2 loại)'") !== -1);
+ok('index: có nút "0đ trả trước"', index.indexOf("id: '0pre'") !== -1);
+ok('index: có nút "0đ trả sau"', index.indexOf("id: '0post'") !== -1);
+ok('index: có helper isTraTruocSim + isTraSauSim',
+    /function isTraTruocSim\(/.test(index) && /function isTraSauSim\(/.test(index));
+ok('index: applySort lọc "0đ trả trước"', index.indexOf("priorityPrice === '0pre'") !== -1);
+ok('index: applySort lọc "0đ trả sau"', index.indexOf("priorityPrice === '0post'") !== -1);
+ok('index: nút 0đ trả trước/sau chỉ hiện khi có số 0đ',
+    /opt\.id === '0pre' \|\| opt\.id === '0post'\) return availablePrices\.has\(0\)/.test(index));
+
+ok('sodep: Cam kết có option "0đ trả trước"', sodep.indexOf('value="zero_pre"') !== -1);
+ok('sodep: Cam kết có option "0đ trả sau"', sodep.indexOf('value="zero_post"') !== -1);
+ok('sodep: renderResults lọc "0đ trả trước"', sodep.indexOf("currentCommitment === 'zero_pre'") !== -1);
+ok('sodep: renderResults lọc "0đ trả sau"', sodep.indexOf("currentCommitment === 'zero_post'") !== -1);
+ok('sodep: Phong Thủy lọc "0đ trả trước"', sodep.indexOf("customerFilterPrice === 'zero_pre'") !== -1);
+ok('sodep: Phong Thủy lọc "0đ trả sau"', sodep.indexOf("customerFilterPrice === 'zero_post'") !== -1);
+
+// ===========================================================================
 // Tổng kết
 // ===========================================================================
 log('');
