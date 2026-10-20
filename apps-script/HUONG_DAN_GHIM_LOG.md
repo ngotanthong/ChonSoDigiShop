@@ -40,3 +40,69 @@ vừa ghi được log feedback vào cùng file Google Sheet của project đó.
 
 Mở tool, copy 1 số → mở Sheet → tab `FeedbackLog` sẽ có 1 dòng mới.
 (Nếu thấy dòng test `User = __ping__`, xóa đi là được.)
+
+---
+
+## Lỗi: "Telegram vẫn báo nhưng không thấy dòng trong Sheet"
+
+Nguyên nhân: script đang ghi vào **một file Sheet khác** với file anh đang mở
+(hoặc vào tab khác tên). Ghim vẫn lưu thật, chỉ là lưu nhầm file.
+
+### Bước 1 — Xem script đang ghi vào file nào
+
+Mở trình duyệt, dán link sau (thay `<URL_GAS_PIN>` bằng link Ghim ở trên):
+
+```
+<URL_GAS_PIN>?action=diag
+```
+
+Kết quả trả về dạng:
+
+```json
+{
+  "status": "ok",
+  "spreadsheetName": "Data Ghim Sim",
+  "spreadsheetIdTail": "aBcD1234",
+  "explicitId": false,
+  "tabs": [
+    { "name": "PinnedSIMs", "lastRow": 400 },
+    { "name": "FeedbackLog", "lastRow": 812 }
+  ]
+}
+```
+
+- `spreadsheetName` / `spreadsheetIdTail`: file thật mà script đang ghi.
+- `tabs`: danh sách tab + số dòng cuối của từng tab.
+- So `spreadsheetIdTail` với 8 ký tự cuối trong URL file Sheet anh đang mở:
+  `.../spreadsheets/d/<ID>/edit` → 8 ký tự cuối của `<ID>`.
+
+Nếu 2 mã **khác nhau** → đúng là ghi nhầm file, làm bước 2.
+
+### Bước 2 — Chỉ định đúng file Sheet
+
+1. Mở file Sheet **đúng** (file anh muốn lưu ghim).
+2. Copy ID trên URL: `.../spreadsheets/d/`**`<ID>`**`/edit`.
+3. Trong Apps Script, đầu file có dòng:
+
+   ```js
+   var SPREADSHEET_ID = "";
+   ```
+
+   Dán ID vào giữa 2 dấu ngoặc kép:
+
+   ```js
+   var SPREADSHEET_ID = "1AbCdEf...";
+   ```
+
+4. **Lưu** → **Deploy** → **Manage deployments** → ✏️ → **New version** → **Deploy**.
+5. Gọi lại `?action=diag` để chắc chắn `spreadsheetName` đã là file đúng.
+6. Bấm ghim thử 1 số → mở Sheet → tab `PinnedSIMs` sẽ có dòng mới.
+
+> Lưu ý: tài khoản chạy script (chủ project) phải có quyền **Sửa** file Sheet đó.
+> Nếu file đúng chưa có tab `PinnedSIMs` / `FeedbackLog`, script sẽ tự tạo.
+
+### Nếu 2 mã giống nhau mà vẫn không thấy dòng
+
+- Kiểm tra tab đang xem có đúng tên **`PinnedSIMs`** không (không phải tab khác).
+- Bỏ bộ lọc/sắp xếp đang bật trên tab đó — dòng mới được thêm ở **cuối bảng**,
+  nên nếu đang lọc thì có thể bị ẩn.
