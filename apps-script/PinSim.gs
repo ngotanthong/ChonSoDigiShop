@@ -23,6 +23,15 @@ function sendPinTelegramMessage(text) {
   } catch (e) {}
 }
 
+// Account trong danh sách này được coi như admin:
+//   - Xem được số đã ghim của TẤT CẢ mọi người (không chỉ của mình)
+//   - Bỏ ghim được số của mọi người
+var ADMIN_USERS = ["admin", "thong"];
+
+function isAdminUser_(u) {
+  return ADMIN_USERS.indexOf(String(u || "").trim().toLowerCase()) !== -1;
+}
+
 function getPinnedSheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var pSheet = ss.getSheetByName("PinnedSIMs");
@@ -77,7 +86,7 @@ function doGet(e) {
       var phone = e.parameter.phone;
       var pinSheet = getPinnedSheet();
       var pData = pinSheet.getDataRange().getValues();
-      var isAdmin = (user.toLowerCase() === "admin");
+      var isAdmin = isAdminUser_(user);
       for (var i = pData.length - 1; i >= 1; i--) {
         var sheetPhone = pData[i][1].toString().trim();
         if (!sheetPhone.startsWith("0")) sheetPhone = "0" + sheetPhone;
@@ -93,7 +102,7 @@ function doGet(e) {
       var pinSheet = getPinnedSheet();
       var pData = pinSheet.getDataRange().getValues();
       var results = [];
-      var isAdmin = (user.toLowerCase() === "admin");
+      var isAdmin = isAdminUser_(user);
       for (var i = 1; i < pData.length; i++) {
         var rowUser = pData[i][0].toString();
         if (isAdmin || rowUser.toLowerCase() === user.toLowerCase()) {

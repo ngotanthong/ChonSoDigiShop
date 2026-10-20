@@ -30,6 +30,23 @@ vừa ghi được log feedback vào cùng file Google Sheet của project đó.
   nhân viên **copy số / ghim / mở phân tích / in bảng / tải ảnh**.
   Các cột: `Thời gian · User · Hành động · Số · Điểm · Thông tin thêm`.
 
+## Phân quyền admin (xem/bỏ ghim số của mọi người)
+
+Đầu file có danh sách:
+
+```js
+var ADMIN_USERS = ["admin", "thong"];
+```
+
+- Account **nằm trong danh sách** → thấy số đã ghim của **tất cả** nhân viên
+  (kèm tên người ghim), và bỏ ghim được số của người khác.
+- Account **không nằm trong danh sách** → chỉ thấy số của chính mình.
+
+Muốn thêm/bớt người có quyền này: sửa mảng `ADMIN_USERS` rồi **Deploy → New version**.
+
+> Đây là quyền phía server (Apps Script). Còn quyền đăng nhập nhiều thiết bị /
+> bỏ qua hạn dùng nằm ở `accounts.js` (`MULTI_DEVICE_USERS`).
+
 ## Link API (không đổi)
 
 - Link Ghim (đã có trong `sodep.html` / `index.html` dưới tên `GAS_PIN_API_URL`):

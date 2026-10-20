@@ -5,6 +5,18 @@ var PIN_TELEGRAM_BOT_TOKEN = "8985605068:AAHWSdxaHnGgJ9H41YFToGzgSxAJk90vIQs";
 var PIN_TELEGRAM_CHAT_ID = "7007784178";
 
 // ==========================================
+// QUYỀN ADMIN
+// ==========================================
+// Account trong danh sách này được coi như admin:
+//   - Xem được số đã ghim của TẤT CẢ mọi người (không chỉ của mình)
+//   - Bỏ ghim được số của mọi người
+var ADMIN_USERS = ["admin", "thong"];
+
+function isAdminUser_(u) {
+  return ADMIN_USERS.indexOf(String(u || "").trim().toLowerCase()) !== -1;
+}
+
+// ==========================================
 // FILE SHEET ĐÍCH
 // ==========================================
 // Để trống "" = ghi vào file mà project này đang gắn (bound spreadsheet).
@@ -139,7 +151,7 @@ function doGet(e) {
       var phone = e.parameter.phone;
       var pinSheet = getPinnedSheet();
       var pData = pinSheet.getDataRange().getValues();
-      var isAdmin = (user.toLowerCase() === "admin");
+      var isAdmin = isAdminUser_(user);
       for (var i = pData.length - 1; i >= 1; i--) {
         var sheetPhone = pData[i][1].toString().trim();
         if (!sheetPhone.startsWith("0")) sheetPhone = "0" + sheetPhone;
@@ -155,7 +167,7 @@ function doGet(e) {
       var pinSheet = getPinnedSheet();
       var pData = pinSheet.getDataRange().getValues();
       var results = [];
-      var isAdmin = (user.toLowerCase() === "admin");
+      var isAdmin = isAdminUser_(user);
       for (var i = 1; i < pData.length; i++) {
         var rowUser = pData[i][0].toString();
         var rowPhone = pData[i][1] ? pData[i][1].toString().trim() : "";
