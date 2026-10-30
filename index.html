@@ -287,6 +287,12 @@
             color: #e11d48;
         }
 
+        /* Bản in: mark đỏ trong .p-num (index dùng highlightHTML) */
+        #jpgExportArea .p-num .hi,
+        .p-num .hi {
+            color: #e11d48;
+        }
+
         /* Chữ đang tìm (highlight từ khoá nhập tay) — giữ kiểu cam + gạch chân */
         .sim-number .sh {
             color: var(--accent);
@@ -25710,6 +25716,11 @@
                 <!-- Nội dung ảnh sẽ được render vào đây -->
             </div>
 
+            <!-- Cơ cấu kiểu số của bảng in (không in vào ảnh) -->
+            <div id="printMixSummary"
+                style="display:none; text-align:left; font-size:12.5px; color:#334155; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:8px; padding:8px 10px; margin-bottom:12px;">
+            </div>
+
             <div style="display: flex; gap: 10px; justify-content: flex-end;">
                 <button class="btn-copy" style="background: #94a3b8; padding: 12px; margin: 0; width: 120px;"
                     onclick="closePrintModal()">Hủy</button>
@@ -25730,33 +25741,31 @@
                 return;
             }
 
-            // Shuffle function
-            function shuffle(array) {
-                let currentIndex = array.length, randomIndex;
-                while (currentIndex > 0) {
-                    randomIndex = Math.floor(Math.random() * currentIndex);
-                    currentIndex--;
-                    [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
-                }
-                return array;
-            }
-
-            // Chia suất theo kiểu số (Thần Tài, Ông Địa, Sảnh Giữa...) thay vì
-            // random thuần: kiểu điểm cao trước, mỗi kiểu đều có mặt, trong
-            // kiểu thì điểm cao trước.
-            const pool = [...window.currentDisplayData].map(it => (it && it.ai) ? it : Object.assign({}, it, { ai: getItemAI(it) }));
-            const plan = (typeof buildPrintPlan === 'function')
-                ? buildPrintPlan(pool, 40, { maxPerSignature: 3 })
-                : { items: shuffle(pool).slice(0, 40) };
-
-            currentExportData = plan.items;
-
             document.getElementById('printOptionsModal').style.display = 'flex';
             renderPreview();
         }
 
         function closePrintModal() {
             document.getElementById('printOptionsModal').style.display = 'none';
+        }
+
+        function renderPrintMixSummary(groups, total) {
+            const el = document.getElementById('printMixSummary');
+            if (!el) return;
+            const chosen = (groups || []).filter(g => (g.count || 0) > 0);
+            if (!chosen.length) {
+                el.style.display = 'none';
+                el.innerHTML = '';
+                return;
+            }
+            const parts = chosen.map(g => '<span style=\"display:inline-block;margin:0 12px 4px 0;white-space:nowrap;\">'
+                + '<b>' + g.name + '</b>: ' + g.count + ' số '
+                + '<span style=\"color:#64748b;\">(cao nhất ' + g.top + ' điểm'
+                + (g.available > g.count ? ' · có ' + g.available : '') + ')</span></span>');
+            el.style.display = 'block';
+            el.innerHTML = '<div style=\"font-weight:700;color:#0f172a;margin-bottom:4px;\">Cơ cấu '
+                + total + ' số theo kiểu:</div><div style=\"line-height:1.75;\">'
+                + parts.join('') + '</div>';
         }
 
         function renderPreview(isPrint = false, returnHtml = false) {
@@ -25766,18 +25775,32 @@
             let rows = 12;
             if (showTag) rows -= 1;
             if (showContact) rows -= 1;
-
             let limit = rows * 4;
-            const selectedForPrint = currentExportData.slice(0, limit);
 
-            // Dòng 1 điểm AI cao nhất, từ dòng 2 mỗi dòng 1 kiểu số
-            // (dùng chung logic với sodep.html)
+            // Nguồn dữ liệu mới nhất
+            const pool = [...(window.currentDisplayData || [])]
+                .map(it => (it && it.ai) ? it : Object.assign({}, it, { ai: getItemAI(it) }));
+
+            if (pool.length === 0) {
+                alert("Không có số nào để in! Vui lòng chọn danh mục có số.");
+                return;
+            }
+
+            // Chia suất theo kiểu số (Thần Tài, Ông Địa, Sảnh Giữa...) + bố cục
+            // dòng 1 điểm AI cao nhất, dòng 2+ mỗi dòng 1 kiểu số.
+            const plan = (typeof buildPrintPlan === 'function')
+                ? buildPrintPlan(pool, limit, { maxPerSignature: 3 })
+                : { items: pool.slice(0, limit), groups: [], total: Math.min(limit, pool.length) };
             const arrangedForPrint = (typeof layoutPrintRows === 'function')
-                ? layoutPrintRows(selectedForPrint.map(it => {
+                ? layoutPrintRows(plan.items.map(it => {
                     if (!it || it.ai) return it;
                     return Object.assign({}, it, { ai: getItemAI(it) });
                 }), 4)
-                : selectedForPrint;
+                : plan.items;
+
+            currentExportData = plan.items;
+
+            renderPrintMixSummary(plan.groups, plan.total);
 
             let html = `
             <div id="jpgExportArea" style="zoom: 0.65; margin: 0 auto;">
@@ -25791,21 +25814,28 @@
             arrangedForPrint.forEach(item => {
                 let normalizedNum = String(item.so_tb || item.fNum || "");
                 if (normalizedNum && normalizedNum.startsWith('84')) normalizedNum = '0' + normalizedNum.slice(2);
-                
-                // Định dạng số điện thoại đẹp hơn trên bảng in (VD: 081.476.8332)
-                let formatNum = normalizedNum;
-                if (formatNum.length === 10) {
-                    formatNum = formatNum.replace(/(\d{3})(\d{3})(\d{4})/, '$1.$2.$3');
-                }
+
+                const ai = item.ai || getItemAI(item);
+                // Nhịp + mark theo AI (đồng bộ với sodep.html)
+                const numHtml = (typeof highlightHTML === 'function')
+                    ? highlightHTML(normalizedNum, ai ? (ai.primaryHighlight || ai.highlight) : '', ai ? ai.reasonText : '', ai ? ai.primaryTag : '')
+                    : normalizedNum;
+
                 const hasCommitment = item.commitment && Number(item.commitment) > 0;
                 const isFree = (!item.monthly || item.monthly == 0 || item.monthly === "0") && !hasCommitment;
                 const price = Number(item.monthly) || 0;
                 let displayPrice = Number(item.price || 0);
                 if (displayPrice === 33500) displayPrice = 250000;
-                
+
                 let tagsHtml = '';
-                if (showTag && item.kieuso_name) {
-                    tagsHtml = `<div class="p-tags-container"><span class="p-tag">${String(item.kieuso_name).split('(')[0].trim()}</span></div>`;
+                if (showTag) {
+                    const reasons = (ai && Array.isArray(ai.reasonsArr) && ai.reasonsArr.length)
+                        ? ai.reasonsArr
+                        : (item.kieuso_name ? [item.kieuso_name] : []);
+                    const parts = reasons.slice(0, 2);
+                    if (parts.length) {
+                        tagsHtml = `<div class="p-tags-container">${parts.map(t => `<span class="p-tag">${String(t).split('(')[0].trim()}</span>`).join('')}</div>`;
+                    }
                 }
 
                 let infoHtml = '';
@@ -25828,7 +25858,7 @@
 
                 html += `
                     <div class="print-item">
-                        <div class="p-num">${formatNum}</div>
+                        <div class="p-num">${numHtml}</div>
                         ${tagsHtml}
                         ${infoHtml}
                     </div>
