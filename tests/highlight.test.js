@@ -147,11 +147,25 @@ var MULTI_PART = /Đồng Kẹp|Lặp Cụm|Lặp Xen Kẽ|Gánh Cặp|Gánh Ké
     ['0912346666', '091 234 [6666]'],   // Tứ Quý
     ['0999626466', '0999 [62 64 66]'],  // Lặp Xen Kẽ 2-2-2
     ['0912506070', '0912 [50 6070]'],   // Cặp Tiến 3 Bậc
+    ['0822488048', '0822 [48 80 48]'],  // Gánh Cặp: nhịp 4-2-2-2
+    ['0812804880', '0812 [80 48 80]'],  // Gánh Cặp: nhịp 4-2-2-2
+    ['0911945994', '0911 [94 59 94]'],  // Gánh Cặp: nhịp 4-2-2-2
     ['0812323262', '08 [123] 23262']    // Sảnh Giữa
 ].forEach(function (pair) {
     var info = render(pair[0]);
     ok('Hiển thị đúng: ' + pair[0] + ' -> ' + pair[1] + '  (nhận: ' + info.view + ')', info.view === pair[1]);
 });
+
+// Gánh Cặp: dấu cách phải rơi đúng 4-2-2-2 (không phải 4-3-3 như trước)
+(function () {
+    ['0822488048', '0812804880', '0911945994', '0842288128', '0842209920', '0886239723', '0822537953']
+        .forEach(function (n) {
+            var info = render(n);
+            ok('Gánh Cặp chia nhịp 4-2-2-2: ' + n + ' -> ' + info.view,
+                info.hl && info.hl.length === 6 &&
+                dotPositions(info.html).join(',') === '4,6,8');
+        });
+})();
 
 // ===========================================================================
 // 4. Từ khoá đang tìm (.sh) — không được vỡ bởi nhịp/mark, mark luôn ưu tiên

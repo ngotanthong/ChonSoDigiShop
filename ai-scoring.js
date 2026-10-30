@@ -648,8 +648,10 @@ function highlightHTML(numStr, matchStr, reasonText = '', primaryTag = '', searc
         } else {
             dotIndexes = [4, 7];
         }
-    } else if ((isDongKepTien || isLapCumTien || isGanhCap) && hlIsTail6) {
-        dotIndexes = [4, 7]; // Nhịp 4-3-3 cho Đồng Kẹp Tiến / Lặp Cụm Tiến / Gánh Cặp
+    } else if (isGanhCap && hlIsTail6) {
+        dotIndexes = [4, 6, 8]; // Gánh Cặp: nhịp 4-2-2-2 (VD: 0822 48 80 48)
+    } else if ((isDongKepTien || isLapCumTien) && hlIsTail6) {
+        dotIndexes = [4, 7]; // Nhịp 4-3-3 cho Đồng Kẹp Tiến / Lặp Cụm Tiến
     } else if (isLapXenKe && hlIsTail6) {
         dotIndexes = [4, 6, 8]; // Nhịp 4-2-2-2 cho Lặp Xen Kẽ
     } else if (isLapCum4) {
