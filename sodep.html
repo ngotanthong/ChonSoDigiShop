@@ -2729,7 +2729,7 @@
                                     try {
                                         const n = formatNumber(d.so_tb || d.fNum || '');
                                         const ai = (typeof analyzeSIM === 'function') ? analyzeSIM(n, Number(d.monthly) || 0) : null;
-                                        if (ai && ai.score >= 35 && !notifiedTelegramSims.has(n)) {
+                                        if (ai && ai.score >= 40 && !notifiedTelegramSims.has(n)) {
                                             notifiedTelegramSims.add(n);
                                             telegramQueue.push(Object.assign({}, d, { fNum: n, ai: ai }));
                                             if (typeof processTelegramQueue === 'function') processTelegramQueue();
@@ -3516,8 +3516,8 @@
                         uniqueSims.set(fNum, simData);
                         aiResult.reasonsArr.forEach(r => allReasons.add(r));
 
-                        // Gửi thông báo Telegram nếu điểm >= 35
-                        if (aiResult.score >= 35 && !notifiedTelegramSims.has(fNum)) {
+                        // Gửi thông báo Telegram nếu điểm >= 40
+                        if (aiResult.score >= 40 && !notifiedTelegramSims.has(fNum)) {
                             notifiedTelegramSims.add(fNum);
                             telegramQueue.push(simData);
                             processTelegramQueue(); // Gây kích hoạt hàng đợi
