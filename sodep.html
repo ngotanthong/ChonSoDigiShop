@@ -2846,8 +2846,9 @@
             document.getElementById('resultGrid').innerHTML = '';
             document.getElementById('emptyState').style.display = 'none';
 
-            rawData = [];
-            scoredData = [];
+            // Tối ưu: KHÔNG xoá dữ liệu cũ — giữ rawData/scoredData, chỉ thêm số mới.
+            // Xoá bộ nhớ các truy vấn đã chạy để có thể quét lại và tìm số mới,
+            // nhưng dedup theo số điện thoại sẽ tránh thêm trùng.
             currentCategory = 'all';
             currentDisplayCount = 100;
             currentSort = 'score-desc';
@@ -2859,6 +2860,11 @@
                 document.getElementById('filterPrefix').value = 'all';
             }
             document.getElementById('btnLoadMore').style.display = 'none';
+
+            // Giữ lại số đã có; chỉ thêm số mới
+            const knownPhones = new Set(rawData.map(d => String(d.so_tb || d.fNum)));
+            if (window.__VC_QUERY_KEYS) window.__VC_QUERY_KEYS.clear();
+            const globalQueryKeys = (window.__VC_QUERY_KEYS = window.__VC_QUERY_KEYS || new Set());
 
             const wildcardDB = [
                 "*666*", "*888*", "*999*", "*333*", "*777*", "*555*", "*222*", "*111*", "*444*",
@@ -3026,7 +3032,11 @@
                         const res = await fetch(url);
                         const json = await res.json();
                         if (json.errorCode === 0 && json.data) {
-                            rawData = rawData.concat(json.data);
+                            // Chỉ thêm số chưa có (tránh trùng + tiết kiệm tài nguyên)
+                            const fresh = json.data.filter(d => !knownPhones.has(String(d.so_tb || d.fNum)));
+                            fresh.forEach(d => knownPhones.add(String(d.so_tb || d.fNum)));
+                            rawData = rawData.concat(fresh);
+                            newDataCount += fresh.length;
                             // Nếu API trả đầy 50 số, tách truy vấn để lấy thêm beyond limit
                             if (Array.isArray(json.data) && json.data.length >= 50) {
                                 enqueueShards(pref, c, search, depth || 0);
@@ -3100,6 +3110,8 @@
             if (deepScanRunning) return;
             deepScanRunning = true;
 
+            const knownPhones = new Set(rawData.map(d => String(d.so_tb || d.fNum)));
+
             const toast = document.getElementById('toast');
             if (toast) {
                 toast.querySelector('span').textContent = 'Đang vét sâu cụm 3 số trong kho ngầm...';
@@ -3165,9 +3177,11 @@
                         const res = await fetch(url);
                         const json = await res.json();
                         if (json.errorCode === 0 && json.data) {
+                            const fresh = json.data.filter(d => !knownPhones.has(String(d.so_tb || d.fNum)));
+                            fresh.forEach(d => knownPhones.add(String(d.so_tb || d.fNum)));
                             const before = rawData.length;
-                            rawData = rawData.concat(json.data);
-                            newDataCount += Math.max(0, rawData.length - before);
+                            rawData = rawData.concat(fresh);
+                            newDataCount += fresh.length;
                             if (Array.isArray(json.data) && json.data.length >= 50) {
                                 enqueueShards(pref, c, search, depth || 0);
                             }
