@@ -7,7 +7,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="accounts.js"></script>
-    <script src="ai-scoring.js?v=20261017c"></script>
+    <script src="ai-scoring.js?v=20261030a"></script>
     <title>Tấn Thông xin chào! &amp; Chào mừng bạn đến với tool chọn số DigiShop</title>
     <style>
         :root {
@@ -25765,6 +25765,14 @@
             let limit = rows * 4;
             const selectedForPrint = currentExportData.slice(0, limit);
 
+            // Mỗi dòng 4 ô không dồn 1 kiểu số (dùng chung logic với sodep.html)
+            const arrangedForPrint = (typeof arrangeGridDiverse === 'function')
+                ? arrangeGridDiverse(selectedForPrint.map(it => {
+                    if (!it || it.ai) return it;
+                    return Object.assign({}, it, { ai: getItemAI(it) });
+                }), 4, 2)
+                : selectedForPrint;
+
             let html = `
             <div id="jpgExportArea" style="zoom: 0.65; margin: 0 auto;">
                 <div class="print-header">
@@ -25774,7 +25782,7 @@
                 <div class="print-grid">
             `;
 
-            selectedForPrint.forEach(item => {
+            arrangedForPrint.forEach(item => {
                 let normalizedNum = String(item.so_tb || item.fNum || "");
                 if (normalizedNum && normalizedNum.startsWith('84')) normalizedNum = '0' + normalizedNum.slice(2);
                 

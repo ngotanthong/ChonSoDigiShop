@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="accounts.js"></script>
     <!-- Bump ?v= mỗi khi sửa ai-scoring.js để tránh trình duyệt dùng bản cache cũ -->
-    <script src="ai-scoring.js?v=20261017c"></script>
+    <script src="ai-scoring.js?v=20261030a"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
@@ -3871,6 +3871,12 @@
 
             const selectedForPrint = [...top4, ...midPool, ...lastRows].slice(0, limit);
 
+            // Xếp lại thành lưới 4 cột: mỗi dòng không dồn 1 kiểu số (kể cả
+            // phần số dư cuối danh sách trước đây hay bị cùng 1 kiểu).
+            const gridOrder = (typeof arrangeGridDiverse === 'function')
+                ? arrangeGridDiverse(selectedForPrint, 4, 2)
+                : selectedForPrint;
+
             // --- Render HTML ---
             const renderItem = (item) => {
                 const formatNum = highlightHTML(item.fNum, item.ai ? (item.ai.primaryHighlight || item.ai.highlight) : '', item.ai ? item.ai.reasonText : '', item.ai ? item.ai.primaryTag : '');
@@ -3907,7 +3913,7 @@
                 <div class="print-grid">
             `;
 
-            selectedForPrint.forEach(item => { html += renderItem(item); });
+            gridOrder.forEach(item => { html += renderItem(item); });
 
             html += `</div>`;
 

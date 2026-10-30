@@ -120,6 +120,45 @@ ok('danh sách rỗng trả về rỗng', diversifyScoredList([], {}).length ===
 var noAI = diversifyScoredList([{ fNum: '0912345678' }, { fNum: '0912345679' }], {});
 ok('số không có AI vẫn được giữ', noAI.length === 2);
 
+// ---------------- 12. Xếp lưới in: không dồn 1 kiểu trong 1 dòng ----------------
+// 14 "A" + 6 "B" + 5 "C" + 5 "D" = 30 số -> lưới 4 cột, tối đa 2 A/dòng
+var gridList = [];
+for (var g1 = 0; g1 < 14; g1++) gridList.push(item('081' + (2000000 + g1) + '', 50 - g1, 'A', '1' + g1 + '11'));
+for (var g2 = 0; g2 < 6; g2++) gridList.push(item('082' + (3000000 + g2) + '', 30 - g2, 'B', '2' + g2 + '22'));
+for (var g3 = 0; g3 < 5; g3++) gridList.push(item('083' + (4000000 + g3) + '', 25 - g3, 'C', '3' + g3 + '33'));
+for (var g4 = 0; g4 < 5; g4++) gridList.push(item('084' + (5000000 + g4) + '', 20 - g4, 'D', '4' + g4 + '44'));
+
+var grid = arrangeGridDiverse(gridList, 4, 2);
+ok('lưới in: giữ đủ số', grid.length === gridList.length);
+ok('lưới in: không nhân bản', new Set(grid.map(x => x.fNum)).size === gridList.length);
+
+var worstRow = 0;
+var adjacentSame = 0;
+for (var rr = 0; rr < grid.length; rr += 4) {
+    var rowItems = grid.slice(rr, rr + 4);
+    var cnt = {};
+    rowItems.forEach(function (x) {
+        var t = x.ai.reasonsArr[0];
+        cnt[t] = (cnt[t] || 0) + 1;
+    });
+    Object.keys(cnt).forEach(function (k) { if (cnt[k] > worstRow) worstRow = cnt[k]; });
+    for (var cc = 1; cc < rowItems.length; cc++) {
+        if (rowItems[cc].ai.reasonsArr[0] === rowItems[cc - 1].ai.reasonsArr[0]) adjacentSame++;
+    }
+}
+ok('lưới in: mỗi dòng tối đa 2 số cùng kiểu', worstRow <= 2);
+ok('lưới in: không để 2 số cùng kiểu sát nhau (khi còn kiểu khác)', adjacentSame === 0);
+ok('lưới in: 1 kiểu đông trải đều (dòng 1 vẫn có kiểu A)', grid.slice(0, 4).some(x => x.ai.reasonsArr[0] === 'A'));
+
+// Toàn bộ cùng 1 kiểu vẫn không lỗi / không mất số
+var onlyA = gridList.filter(x => x.ai.reasonsArr[0] === 'A');
+var gridA = arrangeGridDiverse(onlyA, 4, 2);
+ok('lưới in: toàn 1 kiểu vẫn giữ đủ số', gridA.length === onlyA.length);
+
+// Danh sách ngắn hơn 1 dòng
+var shortList = gridList.slice(0, 3);
+ok('lưới in: danh sách ngắn vẫn đủ', arrangeGridDiverse(shortList, 4, 2).length === 3);
+
 log('');
 if (stats.fail === 0) {
     log('ALL PASSED  (diversity: ' + stats.pass + ' kiểm tra)');
