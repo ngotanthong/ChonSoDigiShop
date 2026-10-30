@@ -1437,6 +1437,11 @@
                 <span style="font-size: 13px; color: #64748b; margin-top: 5px;">(Vuốt để xem hết bảng)</span>
             </div>
 
+            <!-- Trạng thái quét ngầm: bảng in tự cập nhật khi có số mới -->
+            <div id="printScanNote"
+                style="display:none; text-align:left; font-size:13px; color:#92400e; background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:8px 10px; margin-bottom:12px;">
+            </div>
+
             <div class="preview-wrapper" id="previewContainer">
                 <!-- Nội dung ảnh sẽ được render vào đây -->
             </div>
@@ -2473,6 +2478,54 @@
             panel.style.display = 'block';
         }
 
+        // ---- Bảng in & quét ngầm ----
+        let lastBgStats = null;        // tiến độ đợt quét ngầm gần nhất (để hộp thoại in hiện)
+        let printNoteHideTimer = null;
+
+        // Hộp thoại in đang mở? (dùng chung cho việc tự cập nhật bảng in)
+        function isPrintModalOpen() {
+            const m = document.getElementById('printOptionsModal');
+            if (!m) return false;
+            return m.style.display !== 'none' && m.style.display !== '';
+        }
+
+        // Vẽ lại bảng in nếu hộp thoại in đang mở (dữ liệu mới từ quét ngầm / đổi filter)
+        function refreshPrintPreviewIfOpen() {
+            if (!isPrintModalOpen()) return;
+            if (!displayData || displayData.length === 0) return;
+            try {
+                renderPreview();
+            } catch (e) {
+                console.warn('[bảng in] vẽ lại lỗi', e);
+            }
+        }
+
+        // Dòng trạng thái trong hộp thoại in: đang quét / vừa cập nhật
+        function bgSyncPrintNote(state, stats) {
+            const el = document.getElementById('printScanNote');
+            if (!el) return;
+            if (printNoteHideTimer) { clearTimeout(printNoteHideTimer); printNoteHideTimer = null; }
+            if (state === 'running' && stats) {
+                el.style.display = 'block';
+                el.innerHTML = '⏳ Đang quét ngầm: đã thêm <b>' + stats.added + '</b> số'
+                    + ' · đợt ' + stats.batch + ' (' + stats.done + '/' + stats.total + ' lượt)'
+                    + ' — bảng in bên dưới tự cập nhật theo từng đợt.';
+                return;
+            }
+            if (stats && stats.added > 0) {
+                el.style.display = 'block';
+                el.innerHTML = (state === 'stopped' ? '⏹ Đã dừng quét' : '✅ Quét xong')
+                    + ': thêm <b>' + stats.added + '</b> số — bảng in đã cập nhật.';
+                printNoteHideTimer = setTimeout(function () {
+                    el.style.display = 'none';
+                    el.innerHTML = '';
+                }, 8000);
+                return;
+            }
+            el.style.display = 'none';
+            el.innerHTML = '';
+        }
+
         function bgLogBatch(stats) {
             const log = document.getElementById('bgScanLog');
             if (!log) return;
@@ -2501,6 +2554,8 @@
             if (stopBtn) stopBtn.style.display = state === 'running' ? 'inline-block' : 'none';
             if (l1) l1.textContent = 'Đợt ' + stats.batch + ' · ' + stats.done + '/' + stats.total + ' lượt · +' + stats.added + ' số';
             if (l2) l2.textContent = '⏱ ' + bgFmtDuration(elapsed) + (state === 'running' ? '' : ' · tổng cộng +' + stats.added + ' số');
+            lastBgStats = stats;
+            bgSyncPrintNote(state, stats);
         }
 
         // Bấm "Dừng": các worker dừng sau khi xong request đang chạy
@@ -2529,6 +2584,7 @@
 
             const stats = { startedAt: Date.now(), total: 0, done: 0, added: 0, batch: 0, batches: [] };
             let lastBatchAt = Date.now();
+            let lastPrintSyncAt = 0;
             let lastBatchAdded = 0;
             const BATCH_SIZE = 50; // mỗi 50 lượt gọi API = 1 "đợt", báo tiến độ 1 lần
 
@@ -2608,6 +2664,21 @@
                 bgLogBatch(stats);
                 console.log('[quét ngầm] đợt ' + stats.batch + ': +' + stats.batches[stats.batches.length - 1].added + ' số, '
                     + stats.done + '/' + stats.total + ' lượt');
+
+                // Đang mở hộp thoại in -> chấm lại + vẽ lại bảng in ngay trong lúc quét
+                // (không phải chờ quét xong). Chỉ chạy khi có số mới và cách nhau >= 1.5s.
+                if (stats.added > 0 && isPrintModalOpen()) {
+                    const nowSync = Date.now();
+                    if (nowSync - lastPrintSyncAt >= 1500) {
+                        lastPrintSyncAt = nowSync;
+                        try {
+                            processAIScores();
+                            renderResults();
+                        } catch (e) {
+                            console.warn('[quét ngầm] cập nhật bảng in lỗi', e);
+                        }
+                    }
+                }
             }
 
             async function worker() {
@@ -3762,6 +3833,9 @@
             } else {
                 document.getElementById('btnLoadMore').style.display = 'none';
             }
+
+            // Quét ngầm bổ sung số / đổi filter -> cập nhật luôn bảng in nếu đang mở
+            refreshPrintPreviewIfOpen();
         }
 
         // --- JPG EXPORT ENGINE ---
@@ -3775,6 +3849,8 @@
 
             document.getElementById('printOptionsModal').style.display = 'flex';
             renderPreview(); // Hiển thị preview ngay lập tức
+            // Nếu đang quét ngầm: hiện tiến độ + bảng in sẽ tự cập nhật
+            if (autoScanRunning && lastBgStats) bgSyncPrintNote('running', lastBgStats);
             logFeedback('scan_print_open', { count: (displayData || []).length, category: currentCategory });
         }
 
