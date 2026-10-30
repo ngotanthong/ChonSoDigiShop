@@ -1608,7 +1608,7 @@
         const TAXI_COMMITS = ['100000', '150000', '200000', '400000', '600000', '800000'];
 
         let rawData = [];
-        let scoredData = [];
+        let knownPhonesGlobal = new Set(); // dùng chung cho mọi lượt quét để tránh trùng số        let scoredData = [];
         let displayData = [];
         let currentCategory = 'all';
         let currentDisplayCount = 100;
@@ -2694,7 +2694,8 @@
             const MAX_TASKS = 3000; // ngân sách lượt mỗi lần quét
             const MAX_RUN_MS = 5 * 60 * 1000; // ngân sách thời gian: 5 phút
             // Danh sách số đã có (tạo 1 lần thay vì map lại toàn bộ rawData mỗi request)
-            const knownPhones = new Set(rawData.map(d => String(d.so_tb || d.fNum)));
+            knownPhonesGlobal = new Set(rawData.map(d => String(d.so_tb || d.fNum)));
+            const knownPhones = knownPhonesGlobal;
 
             function finishBatch() {
                 if (stats.done === 0) return;
@@ -2887,7 +2888,8 @@
             document.getElementById('btnLoadMore').style.display = 'none';
 
             // Giữ lại số đã có; chỉ thêm số mới
-            const knownPhones = new Set(rawData.map(d => String(d.so_tb || d.fNum)));
+            knownPhonesGlobal = new Set(rawData.map(d => String(d.so_tb || d.fNum)));
+            const knownPhones = knownPhonesGlobal;
             if (window.__VC_QUERY_KEYS) window.__VC_QUERY_KEYS.clear();
             const globalQueryKeys = (window.__VC_QUERY_KEYS = window.__VC_QUERY_KEYS || new Set());
 
@@ -3135,7 +3137,8 @@
             if (deepScanRunning) return;
             deepScanRunning = true;
 
-            const knownPhones = new Set(rawData.map(d => String(d.so_tb || d.fNum)));
+            knownPhonesGlobal = new Set(rawData.map(d => String(d.so_tb || d.fNum)));
+            const knownPhones = knownPhonesGlobal;
 
             const toast = document.getElementById('toast');
             if (toast) {
