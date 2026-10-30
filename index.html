@@ -25071,6 +25071,14 @@
                 // Lọc thật theo kiểu số (trước đây chỉ đẩy lên đầu) — giống tab lọc của sodep
                 sorted = sorted.filter(item => kieuTagName(item) === priorityTag);
             }
+            // Ưu tiên số nét đẹp trước (điểm AI cao trước) khi không sắp xếp theo giá
+            if (!sortPrice) {
+                sorted.sort((a, b) => {
+                    const sa = (getItemAI(a) && getItemAI(a).score) || 0;
+                    const sb = (getItemAI(b) && getItemAI(b).score) || 0;
+                    return sb - sa;
+                });
+            }
             renderCards(sorted);
         }
 
@@ -25731,7 +25739,9 @@
         let currentExportData = [];
 
         function generatePrintList() {
-            if (!window.currentDisplayData || window.currentDisplayData.length === 0) {
+            const hasData = (window.currentDisplayData && window.currentDisplayData.length)
+                || (typeof currentData !== 'undefined' && currentData && currentData.length);
+            if (!hasData) {
                 alert("Không có số nào để in! Vui lòng chọn danh mục có số.");
                 return;
             }
@@ -25744,6 +25754,13 @@
             document.getElementById('printOptionsModal').style.display = 'none';
         }
 
+        // Nhấn ESC để thoát hộp thoại in
+        document.addEventListener('keydown', function (e) {
+            if (e.key !== 'Escape') return;
+            const m = document.getElementById('printOptionsModal');
+            if (m && m.style.display !== 'none' && m.style.display !== '') closePrintModal();
+        });
+
 
         function renderPreview(isPrint = false, returnHtml = false) {
             const showTag = document.getElementById('printShowTag').checked;
@@ -25754,8 +25771,12 @@
             if (showContact) rows -= 1;
             let limit = rows * 4;
 
-            // Nguồn dữ liệu mới nhất
-            const pool = [...(window.currentDisplayData || [])]
+            // Nguồn dữ liệu mới nhất (ưu tiên toàn bộ kết quả tìm kiếm, không chỉ
+            // phần đã lọc theo nét đẹp, để có đủ số đẹp để chọn)
+            const baseData = (typeof currentData !== 'undefined' && Array.isArray(currentData) && currentData.length)
+                ? currentData
+                : (window.currentDisplayData || []);
+            const pool = [...baseData]
                 .map(it => (it && it.ai) ? it : Object.assign({}, it, { ai: getItemAI(it) }));
 
             if (pool.length === 0) {

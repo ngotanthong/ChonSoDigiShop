@@ -3965,6 +3965,13 @@
             document.getElementById('printOptionsModal').style.display = 'none';
         }
 
+        // Nhấn ESC để thoát hộp thoại in
+        document.addEventListener('keydown', function (e) {
+            if (e.key !== 'Escape') return;
+            const m = document.getElementById('printOptionsModal');
+            if (m && m.style.display !== 'none' && m.style.display !== '') closePrintModal();
+        });
+
         // Cơ cấu kiểu số trong bảng in: mỗi kiểu bao nhiêu số + điểm cao nhất
         // của kiểu đó (theo đúng hệ rule đang chấm điểm), để kiểm tra trước khi in.
 
