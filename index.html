@@ -25749,7 +25749,7 @@
             document.getElementById('printOptionsModal').style.display = 'flex';
             renderPreview();
             // DEBUG
-            try { alert('DEBUG pool=' + (typeof currentData!=='undefined'?currentData.length:'NA') + ' display=' + (window.currentDisplayData?window.currentDisplayData.length:'NA')); } catch(e){}
+            try { alert('DEBUG pool=' + pool.length + ' limit=' + limit + ' plan.total=' + plan.total + ' arranged=' + arrangedForPrint.length); } catch(e){}
         }
 
         function closePrintModal() {
