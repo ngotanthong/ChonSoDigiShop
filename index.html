@@ -25773,11 +25773,17 @@
 
             // Nguồn dữ liệu: toàn bộ kết quả tìm kiếm (không lọc theo nét đẹp),
             // ưu tiên số nét đẹp (điểm AI cao) trước.
+            // Loại các nét đẹp "Nút 7/8/9" khỏi bảng in (không ưu tiên in các loại này).
             const baseData = (typeof currentData !== 'undefined' && Array.isArray(currentData) && currentData.length)
                 ? currentData
                 : (window.currentDisplayData || []);
-            const pool = [...baseData]
+            let pool = [...baseData]
                 .map(it => (it && it.ai) ? it : Object.assign({}, it, { ai: getItemAI(it) }));
+            pool = pool.filter(it => {
+                const rs = (it && it.ai && Array.isArray(it.ai.reasonsArr)) ? it.ai.reasonsArr : [];
+                return !rs.some(r => /Nút\s*[789]/.test(String(r)));
+            });
+            if (pool.length === 0) pool = [...baseData].map(it => (it && it.ai) ? it : Object.assign({}, it, { ai: getItemAI(it) }));
             pool.sort((a, b) => {
                 const sa = (a && a.ai && a.ai.score) || 0;
                 const sb = (b && b.ai && b.ai.score) || 0;
