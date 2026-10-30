@@ -2624,11 +2624,20 @@
             let lastPrintSyncAt = 0;
             let lastPrintSyncAdded = -1;
             let lastFetchAdded = 0;
+            let lastGridSyncAt = 0;
+            let lastGridSyncAdded = -1;
             let lastBatchAdded = 0;
             const BATCH_SIZE = 50; // mỗi 50 lượt gọi API = 1 "đợt", báo tiến độ 1 lần
 
             bgShow();
             bgRender(stats, 'running');
+            // Báo đang quét để người dùng biết số sẽ hiện dần
+            const _es = document.getElementById('emptyState');
+            if (_es) {
+                _es.style.display = 'block';
+                const _p = _es.querySelector('p');
+                if (_p) _p.textContent = 'Đang quét ngầm, số đẹp sẽ hiện dần...';
+            }
 
             const wildcardDB = [
                 "*666*", "*888*", "*999*", "*333*", "*777*", "*555*", "*222*", "*111*", "*444*",
@@ -2712,6 +2721,27 @@
                     lastFetchAdded = stats.added;
                     try { updateLastFetchTime(); } catch (e) { /* bỏ qua */ }
                     showBgScanToast('Quét ngầm: đã thêm +' + delta + ' số (tổng ' + stats.added + ')');
+                }
+
+                // Hiển thị số dần trong lúc quét (không chờ quét xong)
+                if (stats.added > 0 && stats.added !== lastGridSyncAdded) {
+                    const nowGrid = Date.now();
+                    if (nowGrid - lastGridSyncAt >= 8000) {
+                        lastGridSyncAt = nowGrid;
+                        lastGridSyncAdded = stats.added;
+                        try {
+                            processAIScores();
+                            const toolbar = document.getElementById('toolbar');
+                            if (toolbar && scoredData.length > 0) {
+                                toolbar.style.display = 'flex';
+                                const emptyState = document.getElementById('emptyState');
+                                if (emptyState) emptyState.style.display = 'none';
+                                renderResults();
+                            }
+                        } catch (e) {
+                            console.warn('[quét ngầm] cập nhật lưới lỗi', e);
+                        }
+                    }
                 }
 
                 // Đang mở hộp thoại in -> chấm lại + vẽ lại bảng in định kỳ trong
