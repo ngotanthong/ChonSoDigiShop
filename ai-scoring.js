@@ -849,71 +849,6 @@ function diversifyScoredList(list, opts) {
     return result.concat(overflow);
 }
 
-// Xếp lại danh sách đã chọn thành LƯỚI (VD bảng in 4 cột) sao cho mỗi DÒNG
-// không dồn 1 kiểu số. Ý tưởng: kiểu nào còn NHIỀU số nhất thì ưu tiên xếp
-// trước, nhưng mỗi dòng chỉ nhận tối đa `maxPerRowTag` số cùng kiểu -> kiểu
-// đông (VD "Sảnh Giữa" chiếm 3/4 kho) sẽ trải đều các dòng thay vì dồn cuối.
-// Thứ tự trong từng kiểu vẫn giữ nguyên (điểm cao trước).
-function arrangeGridDiverse(list, cols, maxPerRowTag) {
-    const c = cols > 0 ? cols : 4;
-    const cap = maxPerRowTag != null ? maxPerRowTag : 2;
-    const items = Array.isArray(list) ? list.slice() : [];
-    const tagOf = (x) => (x && x.ai && x.ai.reasonsArr && x.ai.reasonsArr[0])
-        || (x && x.kieuso_name) || 'Khác';
-
-    const groups = [];
-    const byTag = new Map();
-    items.forEach(x => {
-        const t = tagOf(x);
-        if (!byTag.has(t)) {
-            const g = { tag: t, items: [] };
-            byTag.set(t, g);
-            groups.push(g);
-        }
-        byTag.get(t).items.push(x);
-    });
-
-    const out = [];
-    let row = 0;
-    let guard = 0;
-    while (out.length < items.length) {
-        const rowCount = {};
-        const n = groups.length;
-        let lastTag = null;
-        for (let col = 0; col < c && out.length < items.length; col++) {
-            // 2 lượt: ưu tiên kiểu KHÁC ô liền trước (tránh 2 số cùng kiểu sát nhau),
-            // nếu không còn lựa chọn mới cho trùng.
-            let pick = null;
-            for (let pass = 0; pass < 2 && !pick; pass++) {
-                let bestRemain = -1;
-                for (let off = 0; off < n; off++) {
-                    const g = groups[(row + col + off) % n];
-                    if (!g.items.length) continue;
-                    if ((rowCount[g.tag] || 0) >= cap) continue;
-                    if (pass === 0 && lastTag && g.tag === lastTag) continue;
-                    if (g.items.length > bestRemain) { bestRemain = g.items.length; pick = g; }
-                }
-            }
-            if (!pick) {
-                // Mọi kiểu còn lại đều đã đạt cap trong dòng -> lấy kiểu đông nhất
-                let bestRemain = -1;
-                for (let k = 0; k < n; k++) {
-                    const g = groups[k];
-                    if (g.items.length > bestRemain) { bestRemain = g.items.length; pick = g; }
-                }
-            }
-            if (!pick) break;
-            rowCount[pick.tag] = (rowCount[pick.tag] || 0) + 1;
-            lastTag = pick.tag;
-            out.push(pick.items.shift());
-        }
-        row++;
-        guard++;
-        if (guard > items.length + 5) break; // an toàn, không lặp vô hạn
-    }
-    return out;
-}
-
 // ===========================================================================
 // CHIA SUẤT BẢNG IN THEO KIỂU SỐ (rule)
 // ===========================================================================
@@ -974,4 +909,45 @@ function buildPrintPlan(list, limit, opts) {
     }
 
     return { items: items, groups: groups, total: items.length };
+}
+
+// ===========================================================================
+// BỐ CỤC BẢNG IN: dòng 1 điểm cao nhất, từ dòng 2 mỗi dòng 1 kiểu số
+// ===========================================================================
+// - Dòng 1: `cols` số có điểm AI cao nhất (toàn bộ danh sách đã chọn).
+// - Từ dòng 2: gom theo kiểu số, kiểu có điểm cao nhất đứng trước; trong mỗi
+//   kiểu, điểm cao trước. Kiểu đủ số sẽ chiếm trọn dòng; kiểu ít số (1-3 số)
+//   nối tiếp sang dòng sau để bảng in không bị ô trống.
+function layoutPrintRows(items, cols) {
+    const c = cols > 0 ? cols : 4;
+    const list = Array.isArray(items) ? items.slice() : [];
+    const scoreOf = (x) => (x && x.ai && x.ai.score) || 0;
+    const typeOf = (x) => (x && x.ai && x.ai.reasonsArr && x.ai.reasonsArr[0])
+        || (x && x.kieuso_name) || 'Khác';
+
+    // Dòng 1: điểm AI cao nhất
+    const byScore = list.slice().sort((a, b) => scoreOf(b) - scoreOf(a));
+    const first = byScore.slice(0, c);
+    const firstSet = new Set(first.map(x => x && x.fNum));
+
+    // Phần còn lại: gom kiểu, kiểu điểm cao đứng trước
+    const rest = list.filter(x => !firstSet.has(x && x.fNum));
+    const byType = new Map();
+    rest.forEach(x => {
+        const t = typeOf(x);
+        if (!byType.has(t)) byType.set(t, []);
+        byType.get(t).push(x);
+    });
+    const groups = Array.from(byType.entries())
+        .map(([name, arr]) => {
+            arr.sort((a, b) => scoreOf(b) - scoreOf(a));
+            return { name, items: arr, top: scoreOf(arr[0]) };
+        })
+        .sort((a, b) => b.top - a.top);
+
+    const out = first.slice();
+    groups.forEach(g => {
+        g.items.forEach(x => out.push(x));
+    });
+    return out.slice(0, list.length);
 }

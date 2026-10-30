@@ -7,7 +7,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="accounts.js"></script>
-    <script src="ai-scoring.js?v=20261030b"></script>
+    <script src="ai-scoring.js?v=20261030c"></script>
     <title>Tấn Thông xin chào! &amp; Chào mừng bạn đến với tool chọn số DigiShop</title>
     <style>
         :root {
@@ -25770,12 +25770,13 @@
             let limit = rows * 4;
             const selectedForPrint = currentExportData.slice(0, limit);
 
-            // Mỗi dòng 4 ô không dồn 1 kiểu số (dùng chung logic với sodep.html)
-            const arrangedForPrint = (typeof arrangeGridDiverse === 'function')
-                ? arrangeGridDiverse(selectedForPrint.map(it => {
+            // Dòng 1 điểm AI cao nhất, từ dòng 2 mỗi dòng 1 kiểu số
+            // (dùng chung logic với sodep.html)
+            const arrangedForPrint = (typeof layoutPrintRows === 'function')
+                ? layoutPrintRows(selectedForPrint.map(it => {
                     if (!it || it.ai) return it;
                     return Object.assign({}, it, { ai: getItemAI(it) });
-                }), 4, 2)
+                }), 4)
                 : selectedForPrint;
 
             let html = `

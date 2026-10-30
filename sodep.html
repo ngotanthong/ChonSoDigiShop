@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="accounts.js"></script>
     <!-- Bump ?v= mỗi khi sửa ai-scoring.js để tránh trình duyệt dùng bản cache cũ -->
-    <script src="ai-scoring.js?v=20261030b"></script>
+    <script src="ai-scoring.js?v=20261030c"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
@@ -3836,9 +3836,10 @@
                 : { items: allData.slice(0, limit), groups: [], total: Math.min(limit, allData.length) };
             const selectedForPrint = plan.items;
 
-            // Lưới 4 cột: mỗi dòng nhiều kiểu, không để 2 số cùng kiểu sát nhau
-            const gridOrder = (typeof arrangeGridDiverse === 'function')
-                ? arrangeGridDiverse(selectedForPrint, 4, 2)
+            // Bố cục: dòng 1 = 4 số điểm AI cao nhất; từ dòng 2 mỗi dòng 1 kiểu
+            // số, kiểu điểm cao đứng trước, trong kiểu điểm cao trước.
+            const gridOrder = (typeof layoutPrintRows === 'function')
+                ? layoutPrintRows(selectedForPrint, 4)
                 : selectedForPrint;
 
             // Cơ cấu kiểu số đang có trong bảng in (chỉ hiện trong hộp thoại)

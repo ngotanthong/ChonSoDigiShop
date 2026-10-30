@@ -120,44 +120,54 @@ ok('danh sách rỗng trả về rỗng', diversifyScoredList([], {}).length ===
 var noAI = diversifyScoredList([{ fNum: '0912345678' }, { fNum: '0912345679' }], {});
 ok('số không có AI vẫn được giữ', noAI.length === 2);
 
-// ---------------- 12. Xếp lưới in: không dồn 1 kiểu trong 1 dòng ----------------
-// 14 "A" + 6 "B" + 5 "C" + 5 "D" = 30 số -> lưới 4 cột, tối đa 2 A/dòng
+// ---------------- 12. Bố cục bảng in: dòng 1 điểm cao nhất, dòng 2+ 1 kiểu/dòng ----------------
 var gridList = [];
 for (var g1 = 0; g1 < 14; g1++) gridList.push(item('081' + (2000000 + g1) + '', 50 - g1, 'A', '1' + g1 + '11'));
 for (var g2 = 0; g2 < 6; g2++) gridList.push(item('082' + (3000000 + g2) + '', 30 - g2, 'B', '2' + g2 + '22'));
 for (var g3 = 0; g3 < 5; g3++) gridList.push(item('083' + (4000000 + g3) + '', 25 - g3, 'C', '3' + g3 + '33'));
 for (var g4 = 0; g4 < 5; g4++) gridList.push(item('084' + (5000000 + g4) + '', 20 - g4, 'D', '4' + g4 + '44'));
 
-var grid = arrangeGridDiverse(gridList, 4, 2);
-ok('lưới in: giữ đủ số', grid.length === gridList.length);
-ok('lưới in: không nhân bản', new Set(grid.map(x => x.fNum)).size === gridList.length);
+var grid = layoutPrintRows(gridList, 4);
+ok('bố cục in: giữ đủ số', grid.length === gridList.length);
+ok('bố cục in: không nhân bản số', new Set(grid.map(x => x.fNum)).size === gridList.length);
+ok('bố cục in: không có ô trống', grid.every(x => !!x));
 
-var worstRow = 0;
-var adjacentSame = 0;
-for (var rr = 0; rr < grid.length; rr += 4) {
-    var rowItems = grid.slice(rr, rr + 4);
-    var cnt = {};
-    rowItems.forEach(function (x) {
-        var t = x.ai.reasonsArr[0];
-        cnt[t] = (cnt[t] || 0) + 1;
-    });
-    Object.keys(cnt).forEach(function (k) { if (cnt[k] > worstRow) worstRow = cnt[k]; });
-    for (var cc = 1; cc < rowItems.length; cc++) {
-        if (rowItems[cc].ai.reasonsArr[0] === rowItems[cc - 1].ai.reasonsArr[0]) adjacentSame++;
+var topRow = grid.slice(0, 4).map(x => x.ai.score);
+ok('bố cục in: dòng 1 = 4 điểm AI cao nhất (giảm dần)', topRow.join(',') === '50,49,48,47');
+
+// Từ ô thứ 5 trở đi: mỗi kiểu là 1 khối liền nhau, khối điểm cao đứng trước
+var blocks = [];
+for (var bi = 4; bi < grid.length; bi++) {
+    var bt = grid[bi].ai.reasonsArr[0];
+    if (!blocks.length || blocks[blocks.length - 1].tag !== bt) {
+        blocks.push({ tag: bt, items: [grid[bi]] });
+    } else {
+        blocks[blocks.length - 1].items.push(grid[bi]);
     }
 }
-ok('lưới in: mỗi dòng tối đa 2 số cùng kiểu', worstRow <= 2);
-ok('lưới in: không để 2 số cùng kiểu sát nhau (khi còn kiểu khác)', adjacentSame === 0);
-ok('lưới in: 1 kiểu đông trải đều (dòng 1 vẫn có kiểu A)', grid.slice(0, 4).some(x => x.ai.reasonsArr[0] === 'A'));
+ok('bố cục in: từ dòng 2 mỗi kiểu là 1 khối liền nhau', blocks.length === 4);
+ok('bố cục in: khối điểm cao đứng trước',
+    blocks.map(b => b.tag).join(',') === 'A,B,C,D');
+
+var blocksDesc = true;
+blocks.forEach(function (b) {
+    for (var q3 = 1; q3 < b.items.length; q3++) {
+        if (b.items[q3].ai.score > b.items[q3 - 1].ai.score) blocksDesc = false;
+    }
+});
+ok('bố cục in: trong mỗi khối, điểm cao đứng trước', blocksDesc);
 
 // Toàn bộ cùng 1 kiểu vẫn không lỗi / không mất số
 var onlyA = gridList.filter(x => x.ai.reasonsArr[0] === 'A');
-var gridA = arrangeGridDiverse(onlyA, 4, 2);
-ok('lưới in: toàn 1 kiểu vẫn giữ đủ số', gridA.length === onlyA.length);
+ok('bố cục in: toàn 1 kiểu vẫn giữ đủ số', layoutPrintRows(onlyA, 4).length === onlyA.length);
 
 // Danh sách ngắn hơn 1 dòng
-var shortList = gridList.slice(0, 3);
-ok('lưới in: danh sách ngắn vẫn đủ', arrangeGridDiverse(shortList, 4, 2).length === 3);
+ok('bố cục in: danh sách ngắn vẫn đủ', layoutPrintRows(gridList.slice(0, 3), 4).length === 3);
+
+// 1 kiểu ít số (1 số) đứng sau vẫn không tạo ô trống
+var smallList = gridList.slice(0, 4).concat([item('0859999999', 5, 'E', '999')]);
+var smallGrid = layoutPrintRows(smallList, 4);
+ok('bố cục in: kiểu ít số vẫn đủ ô, không trống', smallGrid.length === 5 && smallGrid.every(x => !!x));
 
 // ---------------- 13. Chia suất bảng in theo kiểu số ----------------
 var plan1 = buildPrintPlan(gridList, 12, { maxPerSignature: 3 });
