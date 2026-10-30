@@ -82,7 +82,9 @@ ok('có refreshPrintPreviewIfOpen()', /function refreshPrintPreviewIfOpen\(\)/.t
 ok('renderResults gọi refreshPrintPreviewIfOpen()',
     /refreshPrintPreviewIfOpen\(\);[\s\S]{0,80}\n        \}/.test(sodep));
 ok('finishBatch cập nhật bảng in ngay khi số mới về (không chờ quét xong)',
-    /stats\.added > 0 && isPrintModalOpen\(\)[\s\S]{0,320}processAIScores\(\);[\s\S]{0,80}renderResults\(\);/.test(sodep));
+    /stats\.added > 0 && stats\.added !== lastPrintSyncAdded && isPrintModalOpen\(\)[\s\S]{0,320}processAIScores\(\);[\s\S]{0,80}renderResults\(\);/.test(sodep));
+ok('cập nhật bảng in có giới hạn tần suất (>= 15 giây, không chấm lại vô ích)',
+    /nowSync - lastPrintSyncAt >= 15000/.test(sodep));
 ok('có cờ lastPrintSyncAt (chống vẽ lại quá dày)', /lastPrintSyncAt/.test(sodep));
 ok('hộp thoại in có dòng trạng thái #printScanNote', sodep.indexOf('id="printScanNote"') !== -1);
 ok('có bgSyncPrintNote() cập nhật dòng trạng thái', /function bgSyncPrintNote\(state, stats\)/.test(sodep));

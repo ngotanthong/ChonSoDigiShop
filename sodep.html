@@ -2509,7 +2509,7 @@
                 el.style.display = 'block';
                 el.innerHTML = '⏳ Đang quét ngầm: đã thêm <b>' + stats.added + '</b> số'
                     + ' · đợt ' + stats.batch + ' (' + stats.done + '/' + stats.total + ' lượt)'
-                    + ' — bảng in bên dưới tự cập nhật theo từng đợt.';
+                    + ' — bảng in tự cập nhật định kỳ (~15 giây).';
                 return;
             }
             if (stats && stats.added > 0) {
@@ -2585,6 +2585,7 @@
             const stats = { startedAt: Date.now(), total: 0, done: 0, added: 0, batch: 0, batches: [] };
             let lastBatchAt = Date.now();
             let lastPrintSyncAt = 0;
+            let lastPrintSyncAdded = -1;
             let lastBatchAdded = 0;
             const BATCH_SIZE = 50; // mỗi 50 lượt gọi API = 1 "đợt", báo tiến độ 1 lần
 
@@ -2665,12 +2666,14 @@
                 console.log('[quét ngầm] đợt ' + stats.batch + ': +' + stats.batches[stats.batches.length - 1].added + ' số, '
                     + stats.done + '/' + stats.total + ' lượt');
 
-                // Đang mở hộp thoại in -> chấm lại + vẽ lại bảng in ngay trong lúc quét
-                // (không phải chờ quét xong). Chỉ chạy khi có số mới và cách nhau >= 1.5s.
-                if (stats.added > 0 && isPrintModalOpen()) {
+                // Đang mở hộp thoại in -> chấm lại + vẽ lại bảng in định kỳ trong
+                // lúc quét (không phải chờ quét xong). Chỉ chạy khi có số mới,
+                // cách nhau >= 15s và số mới đã tăng (tránh chấm lại vô ích).
+                if (stats.added > 0 && stats.added !== lastPrintSyncAdded && isPrintModalOpen()) {
                     const nowSync = Date.now();
-                    if (nowSync - lastPrintSyncAt >= 1500) {
+                    if (nowSync - lastPrintSyncAt >= 15000) {
                         lastPrintSyncAt = nowSync;
+                        lastPrintSyncAdded = stats.added;
                         try {
                             processAIScores();
                             renderResults();
