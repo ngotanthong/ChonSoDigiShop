@@ -1305,17 +1305,25 @@
                         style="font-weight: 600; color: var(--primary);">--:--</span>
                 </div>
 
-                <!-- Nút nhỏ báo quét ngầm đang chạy (bấm để dừng) -->
-                <div id="bgScanIndicator" style="display:none; margin-top:10px; text-align:center;">
-                    <button onclick="stopAutoScan()"
-                        style="background:#0ea5e9; color:#fff; border:none; border-radius:8px; padding:6px 14px; font-size:13px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+                <!-- Nút icon nhỏ báo quét ngầm đang chạy (bấm để dừng) -->
+                <div id="bgScanIndicator" style="display:none; position:fixed; right:16px; bottom:16px; z-index:9999;">
+                    <button onclick="stopAutoScan()" title="Quét ngầm đang chạy - bấm để dừng"
+                        style="width:34px; height:34px; border-radius:50%; border:none; background:#0ea5e9; color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(14,165,233,.4); padding:0;">
                         <span id="bgScanIndicatorDot"
-                            style="width:8px; height:8px; border-radius:50%; background:#fff; display:inline-block; animation:bgPulse 1.2s infinite;"></span>
-                        Quét ngầm đang chạy (bấm để dừng)
+                            style="width:14px; height:14px; border-radius:50%; border:2px solid #fff; border-top-color:transparent; display:inline-block; animation:bgSpin 1s linear infinite;"></span>
                     </button>
                 </div>
+
+                <!-- Thông báo nhỏ khi có số mới (giữ cho đến khi bấm tắt / rê chuột) -->
+                <div id="bgScanToast" style="display:none; position:fixed; right:16px; bottom:60px; z-index:9999; max-width:260px; background:rgba(15,23,42,.96); color:#e2e8f0; border-radius:10px; padding:10px 12px; font-size:13px; box-shadow:0 8px 24px rgba(0,0,0,.3);"
+                    onmouseenter="dismissBgScanToast()">
+                    <div style="display:flex; align-items:flex-start; gap:8px;">
+                        <span style="flex:1;" id="bgScanToastMsg"></span>
+                        <button onclick="dismissBgScanToast()" style="background:none; border:none; color:#94a3b8; cursor:pointer; font-size:14px; line-height:1; padding:0;">✕</button>
+                    </div>
+                </div>
                 <style>
-                    @keyframes bgPulse { 0%,100% { opacity:1; } 50% { opacity:.3; } }
+                    @keyframes bgSpin { to { transform: rotate(360deg); } }
                 </style>
 
 
@@ -2485,10 +2493,23 @@
         }
 
         function bgShow() {
-            const panel = document.getElementById('bgScanPanel');
-            if (!panel) return;
-            if (bgHideTimer) { clearTimeout(bgHideTimer); bgHideTimer = null; }
-            panel.style.display = 'block';
+            // Bảng liệt kê chi tiết ẩn theo yêu cầu; chỉ hiện nút icon nhỏ.
+            const ind = document.getElementById('bgScanIndicator');
+            if (ind) ind.style.display = autoScanRunning ? 'block' : 'none';
+        }
+
+        // Thông báo nhỏ khi có số mới (giữ cho đến khi bấm tắt / rê chuột)
+        let bgToastDismissed = false;
+        function showBgScanToast(msg) {
+            if (bgToastDismissed) return;
+            const el = document.getElementById('bgScanToast');
+            const m = document.getElementById('bgScanToastMsg');
+            if (el && m) { m.textContent = msg; el.style.display = 'block'; }
+        }
+        function dismissBgScanToast() {
+            const el = document.getElementById('bgScanToast');
+            if (el) el.style.display = 'none';
+            bgToastDismissed = true;
         }
 
         // ---- Bảng in & quét ngầm ----
@@ -2596,6 +2617,7 @@
             }
             autoScanRunning = true;
             autoScanAbort = false;
+            bgToastDismissed = false;
 
             const stats = { startedAt: Date.now(), total: 0, done: 0, added: 0, batch: 0, batches: [] };
             let lastBatchAt = Date.now();
@@ -2686,8 +2708,10 @@
 
                 // Có số mới -> cập nhật "lần cuối" ngay (không chờ quét xong)
                 if (stats.added > lastFetchAdded) {
+                    const delta = stats.added - lastFetchAdded;
                     lastFetchAdded = stats.added;
                     try { updateLastFetchTime(); } catch (e) { /* bỏ qua */ }
+                    showBgScanToast('Quét ngầm: đã thêm +' + delta + ' số (tổng ' + stats.added + ')');
                 }
 
                 // Đang mở hộp thoại in -> chấm lại + vẽ lại bảng in định kỳ trong
