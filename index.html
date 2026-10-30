@@ -25716,11 +25716,6 @@
                 <!-- Nội dung ảnh sẽ được render vào đây -->
             </div>
 
-            <!-- Cơ cấu kiểu số của bảng in (không in vào ảnh) -->
-            <div id="printMixSummary"
-                style="display:none; text-align:left; font-size:12.5px; color:#334155; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:8px; padding:8px 10px; margin-bottom:12px;">
-            </div>
-
             <div style="display: flex; gap: 10px; justify-content: flex-end;">
                 <button class="btn-copy" style="background: #94a3b8; padding: 12px; margin: 0; width: 120px;"
                     onclick="closePrintModal()">Hủy</button>
@@ -25749,24 +25744,6 @@
             document.getElementById('printOptionsModal').style.display = 'none';
         }
 
-        function renderPrintMixSummary(groups, total) {
-            const el = document.getElementById('printMixSummary');
-            if (!el) return;
-            const chosen = (groups || []).filter(g => (g.count || 0) > 0);
-            if (!chosen.length) {
-                el.style.display = 'none';
-                el.innerHTML = '';
-                return;
-            }
-            const parts = chosen.map(g => '<span style=\"display:inline-block;margin:0 12px 4px 0;white-space:nowrap;\">'
-                + '<b>' + g.name + '</b>: ' + g.count + ' số '
-                + '<span style=\"color:#64748b;\">(cao nhất ' + g.top + ' điểm'
-                + (g.available > g.count ? ' · có ' + g.available : '') + ')</span></span>');
-            el.style.display = 'block';
-            el.innerHTML = '<div style=\"font-weight:700;color:#0f172a;margin-bottom:4px;\">Cơ cấu '
-                + total + ' số theo kiểu:</div><div style=\"line-height:1.75;\">'
-                + parts.join('') + '</div>';
-        }
 
         function renderPreview(isPrint = false, returnHtml = false) {
             const showTag = document.getElementById('printShowTag').checked;
@@ -25799,8 +25776,6 @@
                 : plan.items;
 
             currentExportData = plan.items;
-
-            renderPrintMixSummary(plan.groups, plan.total);
 
             let html = `
             <div id="jpgExportArea" style="zoom: 0.65; margin: 0 auto;">
