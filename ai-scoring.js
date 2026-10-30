@@ -765,3 +765,86 @@ function highlightHTML(numStr, matchStr, reasonText = '', primaryTag = '', searc
     if (openClass) html += '</span>';
     return html;
 }
+// ===========================================================================
+// ĐA DẠNG HOÁ DANH SÁCH (chống "toàn 1 kiểu số" và trùng lặp gần giống)
+// ===========================================================================
+// Mỗi số đẹp có 1 "dấu hiệu" = nhóm nét đẹp + cụm highlight + vị trí cụm đó.
+// VD: 0814312342 và 0836312342 cùng dấu hiệu "Sảnh Giữa|1234|5" -> nhìn như
+// trùng nhau, nên chỉ giữ tối đa vài số ở nhóm đầu (phần còn lại đẩy xuống cuối,
+// KHÔNG xoá, để bộ lọc theo danh mục vẫn còn đủ số).
+function simPatternSignature(item) {
+    if (!item || !item.ai) return '';
+    const ai = item.ai;
+    const hl = String(ai.primaryHighlight || ai.highlight || '');
+    if (hl.length < 3) return ''; // cụm 1-2 số (79, 68, 8...) không tính là trùng
+    const num = String(item.fNum || '');
+    return String(ai.primaryTag || '') + '|' + hl + '|' + num.indexOf(hl);
+}
+
+// Sắp xếp đa dạng:
+//   1. Điểm cao trước, nhưng mỗi "dấu hiệu" chỉ giữ tối đa maxPerSignature số.
+//   2. Xen kẽ theo nhóm nét đẹp (reasonsArr[0]) để danh sách không dồn 1 kiểu.
+//   3. bandSize > 0: chỉ xen kẽ TRONG từng dải điểm (VD 10 điểm) để thứ tự
+//      điểm vẫn gần đúng, không có cảnh điểm 20 đứng trên điểm 42.
+function diversifyScoredList(list, opts) {
+    opts = opts || {};
+    const maxPerSignature = opts.maxPerSignature != null ? opts.maxPerSignature : 3;
+    const bandSize = opts.bandSize != null ? Number(opts.bandSize) : 0;
+    const scoreOf = (x) => (x && x.ai && x.ai.score) || 0;
+
+    const items = Array.isArray(list) ? list.slice() : [];
+    items.sort((a, b) => scoreOf(b) - scoreOf(a));
+
+    const main = [];
+    const overflow = [];
+    const sigCount = {};
+    items.forEach(item => {
+        const sig = simPatternSignature(item);
+        if (!sig) { main.push(item); return; }
+        const n = sigCount[sig] || 0;
+        sigCount[sig] = n + 1;
+        if (n < maxPerSignature) main.push(item);
+        else overflow.push(item);
+    });
+
+    // Xen kẽ: vòng 1 lấy số tốt nhất của MỖI kiểu, vòng 2 lấy số thứ 2...
+    const roundRobin = (arr) => {
+        const groups = new Map();
+        arr.forEach(item => {
+            const tag = (item && item.ai && item.ai.reasonsArr && item.ai.reasonsArr[0]) || 'Khác';
+            if (!groups.has(tag)) groups.set(tag, []);
+            groups.get(tag).push(item);
+        });
+        const ordered = Array.from(groups.values())
+            .sort((a, b) => scoreOf(b[0]) - scoreOf(a[0]));
+
+        const out = [];
+        let i = 0;
+        let more = true;
+        while (more) {
+            more = false;
+            for (let g = 0; g < ordered.length; g++) {
+                if (i < ordered[g].length) { out.push(ordered[g][i]); more = true; }
+            }
+            i++;
+        }
+        return out;
+    };
+
+    let result;
+    if (bandSize > 0) {
+        const bands = new Map();
+        main.forEach(item => {
+            const b = Math.floor(scoreOf(item) / bandSize);
+            if (!bands.has(b)) bands.set(b, []);
+            bands.get(b).push(item);
+        });
+        result = [];
+        Array.from(bands.keys()).sort((a, b) => b - a).forEach(b => {
+            result = result.concat(roundRobin(bands.get(b)));
+        });
+    } else {
+        result = roundRobin(main);
+    }
+    return result.concat(overflow);
+}

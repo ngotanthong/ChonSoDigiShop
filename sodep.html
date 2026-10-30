@@ -3455,7 +3455,11 @@
 
         function sortScoredData() {
             if (currentSort === 'score-desc') {
-                scoredData.sort((a, b) => b.ai.score - a.ai.score);
+                // Đa dạng hoá: điểm cao trước nhưng xen kẽ các kiểu số,
+                // và không để 1 dấu hiệu (VD "1234" giữa số) lặp quá nhiều.
+                scoredData = (typeof diversifyScoredList === 'function')
+                    ? diversifyScoredList(scoredData, { maxPerSignature: 3, bandSize: 20 })
+                    : scoredData.slice().sort((a, b) => b.ai.score - a.ai.score);
             } else if (currentSort === 'price-asc') {
                 scoredData.sort((a, b) => (Number(a.monthly) || 0) - (Number(b.monthly) || 0));
             } else if (currentSort === 'price-desc') {
@@ -3806,60 +3810,55 @@
             const allData = currentExportData;
             if (!allData || allData.length === 0) return;
 
-            // 1) Dòng đầu: Top 4 điểm AI cao nhất
-            const sorted = [...allData].sort((a, b) => (b.ai ? b.ai.score : 0) - (a.ai ? a.ai.score : 0));
-            const top4 = sorted.slice(0, 4);
+            // Bản in: trộn đều tối đa (không hiện điểm nên không cần giữ dải điểm)
+            const printOrder = (typeof diversifyScoredList === 'function')
+                ? diversifyScoredList(allData, { maxPerSignature: 3, bandSize: 0 })
+                : allData.slice();
+
+            // 1) 4 ô đầu: 4 số đứng đầu danh sách đã trộn kiểu
+            const top4 = printOrder.slice(0, 4);
             const top4Set = new Set(top4.map(x => x.fNum));
 
-            // 2) Phần còn lại gom nhóm theo tag đầu tiên
-            const remaining = allData.filter(x => !top4Set.has(x.fNum));
+            // 2) Phần còn lại: gom theo nét đẹp rồi lấy XEN KẼ từng số, để mỗi
+            //    dòng 4 ô là 4 kiểu số khác nhau (trước đây 4 ô cùng 1 kiểu).
+            const remaining = printOrder.filter(x => !top4Set.has(x.fNum));
             const catMap = {};
+            const catOrder = [];
             remaining.forEach(item => {
                 const cat = (item.ai && item.ai.reasonsArr && item.ai.reasonsArr[0]) ? item.ai.reasonsArr[0] : (item.kieuso_name || 'Khác');
-                if (!catMap[cat]) catMap[cat] = [];
+                if (!catMap[cat]) { catMap[cat] = []; catOrder.push(cat); }
                 catMap[cat].push(item);
             });
-            for (let k in catMap) catMap[k].sort((a, b) => (b.ai ? b.ai.score : 0) - (a.ai ? a.ai.score : 0));
 
             // Dòng giữa = tổng dòng - 1 (đầu) - 2 (cuối)
             const midRows = Math.max(0, rows - 3);
 
-            // Mỗi dòng giữa = 4 số cùng loại tag, luân phiên từng loại
-            // Sắp xếp categories theo điểm cao nhất của nhóm đó (nhóm xịn lên trước)
-            const catKeys = Object.keys(catMap).sort((a, b) => {
-                const scoreA = catMap[a][0] && catMap[a][0].ai ? catMap[a][0].ai.score : 0;
-                const scoreB = catMap[b][0] && catMap[b][0].ai ? catMap[b][0].ai.score : 0;
-                return scoreB - scoreA;
+            // Nhóm xịn (điểm cao nhất) đứng trước
+            catOrder.sort((a, b) => {
+                const sa = catMap[a][0] && catMap[a][0].ai ? catMap[a][0].ai.score : 0;
+                const sb = catMap[b][0] && catMap[b][0].ai ? catMap[b][0].ai.score : 0;
+                return sb - sa;
             });
 
+            // Luân phiên từng số giữa các nhóm -> trộn đều
+            const midNeed = midRows * 4;
             const midPool = [];
             const catUsed = {};
-            catKeys.forEach(k => catUsed[k] = 0);
-
+            catOrder.forEach(k => { catUsed[k] = 0; });
             let catIdx = 0;
-            for (let row = 0; row < midRows; row++) {
-                // Tìm category tiếp theo còn đủ ít nhất 1 số
-                let found = false;
-                let attempts = 0;
-                while (attempts < catKeys.length) {
-                    const cat = catKeys[catIdx % catKeys.length];
-                    const startIdx = catUsed[cat];
-                    if (startIdx < catMap[cat].length) {
-                        // Lấy tối đa 4 số từ category này cho 1 dòng
-                        const rowItems = catMap[cat].slice(startIdx, startIdx + 4);
-                        midPool.push(...rowItems);
-                        catUsed[cat] += rowItems.length;
-                        catIdx++;
-                        found = true;
-                        break;
-                    }
-                    catIdx++;
-                    attempts++;
+            let emptyRounds = 0;
+            while (midPool.length < midNeed && emptyRounds < catOrder.length) {
+                const cat = catOrder[catIdx % catOrder.length];
+                catIdx++;
+                const used = catUsed[cat] || 0;
+                if (used < catMap[cat].length) {
+                    midPool.push(catMap[cat][used]);
+                    catUsed[cat] = used + 1;
+                    emptyRounds = 0;
+                } else {
+                    emptyRounds++;
                 }
-                if (!found) break;
             }
-
-            const midSet = new Set(midPool.map(x => x.fNum));
 
             // 3) Dòng cuối: random từ số còn lại để lấp đầy bảng in (đảm bảo đủ số lượng)
             const usedSet = new Set([...top4, ...midPool].map(x => x.fNum));
