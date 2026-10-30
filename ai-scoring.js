@@ -913,3 +913,65 @@ function arrangeGridDiverse(list, cols, maxPerRowTag) {
     }
     return out;
 }
+
+// ===========================================================================
+// CHIA SUẤT BẢNG IN THEO KIỂU SỐ (rule)
+// ===========================================================================
+// Mục tiêu: bảng in không dồn 1 kiểu số, mà mỗi kiểu có suất của mình:
+//   1. Gom số theo "kiểu" = nét đẹp chính (ai.reasonsArr[0], cùng hệ rule
+//      đang chấm điểm; không có AI thì dùng kieuso_name).
+//   2. Kiểu có số điểm CAO NHẤT đứng trước.
+//   3. Chia suất vòng tròn: mỗi lượt lấy 1 số của mỗi kiểu -> kiểu ít số vẫn
+//      có mặt, kiểu nhiều số không lấn hết bảng in.
+//   4. Trong 1 kiểu: điểm cao đứng trước.
+//   5. maxPerSignature (mặc định 3): không in quá nhiều số gần giống nhau.
+//
+// Trả về:
+//   { items: [...số đã chọn theo thứ tự in],
+//     groups: [{ name, top, available, count }],  // count = số suất đã chia
+//     total }
+function buildPrintPlan(list, limit, opts) {
+    opts = opts || {};
+    const maxPerSignature = opts.maxPerSignature != null ? opts.maxPerSignature : 3;
+    const max = Math.max(0, Number(limit) || 0);
+    const scoreOf = (x) => (x && x.ai && x.ai.score) || 0;
+    const typeOf = (x) => (x && x.ai && x.ai.reasonsArr && x.ai.reasonsArr[0])
+        || (x && x.kieuso_name) || 'Khác';
+
+    const ordered = (typeof diversifyScoredList === 'function')
+        ? diversifyScoredList(list, { maxPerSignature: maxPerSignature, bandSize: 0 })
+        : (Array.isArray(list) ? list.slice() : []);
+
+    const byType = new Map();
+    ordered.forEach(item => {
+        const t = typeOf(item);
+        if (!byType.has(t)) byType.set(t, []);
+        byType.get(t).push(item);
+    });
+
+    const groups = Array.from(byType.entries())
+        .map(([name, items]) => {
+            items.sort((a, b) => scoreOf(b) - scoreOf(a));
+            return { name, items, top: scoreOf(items[0]), available: items.length, count: 0 };
+        })
+        .sort((a, b) => b.top - a.top);
+
+    const items = [];
+    let pass = 0;
+    while (items.length < max) {
+        let added = 0;
+        for (let i = 0; i < groups.length; i++) {
+            if (items.length >= max) break;
+            const g = groups[i];
+            if (pass < g.items.length) {
+                items.push(g.items[pass]);
+                g.count++;
+                added++;
+            }
+        }
+        if (!added) break;
+        pass++;
+    }
+
+    return { items: items, groups: groups, total: items.length };
+}

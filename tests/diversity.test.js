@@ -159,6 +159,43 @@ ok('lưới in: toàn 1 kiểu vẫn giữ đủ số', gridA.length === onlyA.l
 var shortList = gridList.slice(0, 3);
 ok('lưới in: danh sách ngắn vẫn đủ', arrangeGridDiverse(shortList, 4, 2).length === 3);
 
+// ---------------- 13. Chia suất bảng in theo kiểu số ----------------
+var plan1 = buildPrintPlan(gridList, 12, { maxPerSignature: 3 });
+ok('bảng in: đúng số ô cần in', plan1.total === 12 && plan1.items.length === 12);
+ok('bảng in: không nhân bản số', new Set(plan1.items.map(x => x.fNum)).size === 12);
+var planTags = plan1.items.slice(0, 4).map(x => x.ai.reasonsArr[0]);
+ok('bảng in: 4 số đầu là 4 kiểu khác nhau', new Set(planTags).size === 4);
+
+var planCountSum = plan1.groups.reduce(function (s, g) { return s + g.count; }, 0);
+ok('bảng in: tổng suất = số ô', planCountSum === 12);
+ok('bảng in: kiểu nào cũng có suất', plan1.groups.every(g => g.count >= 1));
+
+var planSorted = true;
+for (var pg = 1; pg < plan1.groups.length; pg++) {
+    if (plan1.groups[pg].top > plan1.groups[pg - 1].top) planSorted = false;
+}
+ok('bảng in: kiểu điểm cao nhất đứng trước', planSorted);
+
+var planInnerSorted = true;
+plan1.groups.forEach(function (g) {
+    var itemsOfType = plan1.items.filter(function (x) { return x.ai.reasonsArr[0] === g.name; });
+    for (var q2 = 1; q2 < itemsOfType.length; q2++) {
+        if (itemsOfType[q2].ai.score > itemsOfType[q2 - 1].ai.score) planInnerSorted = false;
+    }
+});
+ok('bảng in: trong 1 kiểu, điểm cao đứng trước', planInnerSorted);
+
+// Nguồn ít hơn số ô -> in hết, không bịa thêm
+var planShort = buildPrintPlan(gridList.slice(0, 7), 40, { maxPerSignature: 3 });
+ok('bảng in: nguồn ít hơn số ô -> in hết', planShort.total === 7);
+
+// Chỉ có 1 kiểu -> vẫn in đủ số, không lỗi
+var planOne = buildPrintPlan(gridList.filter(x => x.ai.reasonsArr[0] === 'A'), 5, { maxPerSignature: 3 });
+ok('bảng in: 1 kiểu duy nhất vẫn in đủ', planOne.total === 5);
+
+// limit = 0
+ok('bảng in: limit 0 -> 0 số', buildPrintPlan(gridList, 0, {}).total === 0);
+
 log('');
 if (stats.fail === 0) {
     log('ALL PASSED  (diversity: ' + stats.pass + ' kiểm tra)');

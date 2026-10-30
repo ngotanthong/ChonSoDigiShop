@@ -7,7 +7,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="accounts.js"></script>
-    <script src="ai-scoring.js?v=20261030a"></script>
+    <script src="ai-scoring.js?v=20261030b"></script>
     <title>Tấn Thông xin chào! &amp; Chào mừng bạn đến với tool chọn số DigiShop</title>
     <style>
         :root {
@@ -25741,10 +25741,15 @@
                 return array;
             }
 
-            // Lấy 40 số ngẫu nhiên từ danh sách đang hiển thị
-            let topData = shuffle([...window.currentDisplayData]).slice(0, 40);
+            // Chia suất theo kiểu số (Thần Tài, Ông Địa, Sảnh Giữa...) thay vì
+            // random thuần: kiểu điểm cao trước, mỗi kiểu đều có mặt, trong
+            // kiểu thì điểm cao trước.
+            const pool = [...window.currentDisplayData].map(it => (it && it.ai) ? it : Object.assign({}, it, { ai: getItemAI(it) }));
+            const plan = (typeof buildPrintPlan === 'function')
+                ? buildPrintPlan(pool, 40, { maxPerSignature: 3 })
+                : { items: shuffle(pool).slice(0, 40) };
 
-            currentExportData = topData;
+            currentExportData = plan.items;
 
             document.getElementById('printOptionsModal').style.display = 'flex';
             renderPreview();
