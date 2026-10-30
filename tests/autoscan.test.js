@@ -70,7 +70,7 @@ ok('có log từng đợt #bgScanLog', sodep.indexOf('id="bgScanLog"') !== -1);
 ok('có nút Dừng', sodep.indexOf('id="bgScanStop"') !== -1);
 ok('có stopAutoScan()', /function stopAutoScan\(\)/.test(sodep));
 ok('stopAutoScan bật cờ autoScanAbort', /autoScanAbort = true;/.test(sodep));
-ok('worker dừng khi bấm Dừng', /while \(tasks\.length > 0 && !autoScanAbort\)/.test(sodep));
+ok('worker dừng khi bấm Dừng', /while \(tasks\.length > 0 && !autoScanAbort/.test(sodep));
 ok('trạng thái "stopped" được render', /autoScanAbort \? 'stopped' : 'done'/.test(sodep));
 
 // --- 6. Cập nhật "lần cuối" sau khi quét xong ---

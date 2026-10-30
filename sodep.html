@@ -1305,6 +1305,19 @@
                         style="font-weight: 600; color: var(--primary);">--:--</span>
                 </div>
 
+                <!-- Nút nhỏ báo quét ngầm đang chạy (bấm để dừng) -->
+                <div id="bgScanIndicator" style="display:none; margin-top:10px; text-align:center;">
+                    <button onclick="stopAutoScan()"
+                        style="background:#0ea5e9; color:#fff; border:none; border-radius:8px; padding:6px 14px; font-size:13px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+                        <span id="bgScanIndicatorDot"
+                            style="width:8px; height:8px; border-radius:50%; background:#fff; display:inline-block; animation:bgPulse 1.2s infinite;"></span>
+                        Quét ngầm đang chạy (bấm để dừng)
+                    </button>
+                </div>
+                <style>
+                    @keyframes bgPulse { 0%,100% { opacity:1; } 50% { opacity:.3; } }
+                </style>
+
 
                 <div class="progress-container" id="progressContainer">
                     <div class="progress-bar" id="progressBar"></div>
@@ -2556,6 +2569,8 @@
             if (l2) l2.textContent = '⏱ ' + bgFmtDuration(elapsed) + (state === 'running' ? '' : ' · tổng cộng +' + stats.added + ' số');
             lastBgStats = stats;
             bgSyncPrintNote(state, stats);
+            const ind = document.getElementById('bgScanIndicator');
+            if (ind) ind.style.display = state === 'running' ? 'block' : 'none';
         }
 
         // Bấm "Dừng": các worker dừng sau khi xong request đang chạy
@@ -2586,6 +2601,7 @@
             let lastBatchAt = Date.now();
             let lastPrintSyncAt = 0;
             let lastPrintSyncAdded = -1;
+            let lastFetchAdded = 0;
             let lastBatchAdded = 0;
             const BATCH_SIZE = 50; // mỗi 50 lượt gọi API = 1 "đợt", báo tiến độ 1 lần
 
@@ -2648,7 +2664,9 @@
                 seeds.forEach(shard => pushSilentTask(pref, commit, shard, depth + 1));
             }
 
-            const CONCURRENCY = 10;
+            const CONCURRENCY = 6; // nhẹ nhàng, tiết kiệm tài nguyên
+            const MAX_TASKS = 3000; // ngân sách lượt mỗi lần quét
+            const MAX_RUN_MS = 5 * 60 * 1000; // ngân sách thời gian: 5 phút
             // Danh sách số đã có (tạo 1 lần thay vì map lại toàn bộ rawData mỗi request)
             const knownPhones = new Set(rawData.map(d => String(d.so_tb || d.fNum)));
 
@@ -2665,6 +2683,12 @@
                 bgLogBatch(stats);
                 console.log('[quét ngầm] đợt ' + stats.batch + ': +' + stats.batches[stats.batches.length - 1].added + ' số, '
                     + stats.done + '/' + stats.total + ' lượt');
+
+                // Có số mới -> cập nhật "lần cuối" ngay (không chờ quét xong)
+                if (stats.added > lastFetchAdded) {
+                    lastFetchAdded = stats.added;
+                    try { updateLastFetchTime(); } catch (e) { /* bỏ qua */ }
+                }
 
                 // Đang mở hộp thoại in -> chấm lại + vẽ lại bảng in định kỳ trong
                 // lúc quét (không phải chờ quét xong). Chỉ chạy khi có số mới,
@@ -2685,7 +2709,7 @@
             }
 
             async function worker() {
-                while (tasks.length > 0 && !autoScanAbort) {
+                while (tasks.length > 0 && !autoScanAbort && stats.done < MAX_TASKS && (Date.now() - stats.startedAt) < MAX_RUN_MS) {
                     const { pref, c, search, depth } = tasks.shift();
                     const url = `${BASE_API}?search=${encodeURIComponent(search)}&prefix=${pref}&commit=${c}`;
                     try {
@@ -2699,8 +2723,21 @@
                                 freshData.forEach(d => knownPhones.add(String(d.so_tb || d.fNum)));
                                 rawData = rawData.concat(freshData);
                                 stats.added += freshData.length;
+
+                                // Thông báo số đẹp ngay khi buff thêm (không chờ quét xong)
+                                freshData.forEach(d => {
+                                    try {
+                                        const n = formatNumber(d.so_tb || d.fNum || '');
+                                        const ai = (typeof analyzeSIM === 'function') ? analyzeSIM(n, Number(d.monthly) || 0) : null;
+                                        if (ai && ai.score >= 100 && !notifiedTelegramSims.has(n)) {
+                                            notifiedTelegramSims.add(n);
+                                            telegramQueue.push(Object.assign({}, d, { fNum: n, ai: ai }));
+                                            if (typeof processTelegramQueue === 'function') processTelegramQueue();
+                                        }
+                                    } catch (e) { /* bỏ qua */ }
+                                });
                             }
-                            if (Array.isArray(json.data) && json.data.length >= 50) {
+                            if (Array.isArray(json.data) && json.data.length >= 50 && freshData.length > 0) {
                                 enqueueSilentShards(pref, c, search, depth || 0);
                             }
                         }
@@ -2737,13 +2774,17 @@
                 console.log('[quét ngầm] ' + (autoScanAbort ? 'đã dừng' : 'hoàn tất') + ': +' + stats.added
                     + ' số / ' + stats.done + ' lượt trong ' + durText);
 
+                const budgetHit = !autoScanAbort
+                    && (stats.done >= MAX_TASKS || (Date.now() - stats.startedAt) >= MAX_RUN_MS);
                 const toast = document.getElementById('toast');
                 if (toast) {
                     toast.querySelector('span').textContent = autoScanAbort
                         ? `Đã dừng quét ngầm: +${stats.added} số (${durText})`
-                        : (stats.added > 0
-                            ? `Quét ngầm xong: thêm ${stats.added} số mới (${durText})`
-                            : `Quét ngầm xong: không có số mới (${durText})`);
+                        : (budgetHit
+                            ? `Quét ngầm tạm dừng: +${stats.added} số (${durText}) — sẽ tiếp tục lượt sau`
+                            : (stats.added > 0
+                                ? `Quét ngầm xong: thêm ${stats.added} số mới (${durText})`
+                                : `Quét ngầm xong: không có số mới (${durText})`));
                     toast.classList.add('show');
                     setTimeout(() => toast.classList.remove('show'), 5000);
                 }
