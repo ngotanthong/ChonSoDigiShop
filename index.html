@@ -25748,9 +25748,9 @@
 
             document.getElementById('printOptionsModal').style.display = 'flex';
             renderPreview();
+            // DEBUG
+            try { alert('DEBUG pool=' + (typeof currentData!=='undefined'?currentData.length:'NA') + ' display=' + (window.currentDisplayData?window.currentDisplayData.length:'NA')); } catch(e){}
         }
-
-        function closePrintModal() {
             document.getElementById('printOptionsModal').style.display = 'none';
         }
 
