@@ -25748,8 +25748,6 @@
 
             document.getElementById('printOptionsModal').style.display = 'flex';
             renderPreview();
-            // DEBUG
-            try { alert('DEBUG pool=' + pool.length + ' limit=' + limit + ' plan.total=' + plan.total + ' arranged=' + arrangedForPrint.length); } catch(e){}
         }
 
         function closePrintModal() {
@@ -25773,48 +25771,41 @@
             if (showContact) rows -= 1;
             let limit = rows * 4;
 
-            // Nguồn dữ liệu mới nhất (ưu tiên toàn bộ kết quả tìm kiếm, không chỉ
-            // phần đã lọc theo nét đẹp, để có đủ số đẹp để chọn)
+            // Nguồn dữ liệu: toàn bộ kết quả tìm kiếm (không lọc theo nét đẹp),
+            // ưu tiên số nét đẹp (điểm AI cao) trước.
             const baseData = (typeof currentData !== 'undefined' && Array.isArray(currentData) && currentData.length)
                 ? currentData
                 : (window.currentDisplayData || []);
             const pool = [...baseData]
                 .map(it => (it && it.ai) ? it : Object.assign({}, it, { ai: getItemAI(it) }));
+            pool.sort((a, b) => {
+                const sa = (a && a.ai && a.ai.score) || 0;
+                const sb = (b && b.ai && b.ai.score) || 0;
+                return sb - sa;
+            });
 
             if (pool.length === 0) {
                 alert("Không có số nào để in! Vui lòng chọn danh mục có số.");
                 return;
             }
 
-            // Chia suất theo kiểu số (Thần Tài, Ông Địa, Sảnh Giữa...) + bố cục
-            // dòng 1 điểm AI cao nhất, dòng 2+ mỗi dòng 1 kiểu số.
-            const plan = (typeof buildPrintPlan === 'function')
-                ? buildPrintPlan(pool, limit, { maxPerSignature: 3 })
-                : { items: pool.slice(0, limit), groups: [], total: Math.min(limit, pool.length) };
-            const arrangedForPrint = (typeof layoutPrintRows === 'function')
-                ? layoutPrintRows(plan.items.map(it => {
-                    if (!it || it.ai) return it;
-                    return Object.assign({}, it, { ai: getItemAI(it) });
-                }), 4)
-                : plan.items;
-
-            currentExportData = plan.items;
+            const selectedForPrint = pool.slice(0, limit);
+            currentExportData = selectedForPrint;
 
             let html = `
             <div id="jpgExportArea" style="zoom: 0.65; margin: 0 auto;">
                 <div class="print-header">
                     <h2>DANH SÁCH SIM SỐ</h2>
-                    <p>Ngày cập nhật: ${new Date().toLocaleDateString('vi-VN')}</p>
+                    <p>Ngày cập nhật: ${new Date().toLocaleDateString('vi-VN')} · ${selectedForPrint.length} số</p>
                 </div>
                 <div class="print-grid">
             `;
 
-            arrangedForPrint.forEach(item => {
+            selectedForPrint.forEach(item => {
                 let normalizedNum = String(item.so_tb || item.fNum || "");
                 if (normalizedNum && normalizedNum.startsWith('84')) normalizedNum = '0' + normalizedNum.slice(2);
 
                 const ai = item.ai || getItemAI(item);
-                // Nhịp + mark theo AI (đồng bộ với sodep.html)
                 const numHtml = (typeof highlightHTML === 'function')
                     ? highlightHTML(normalizedNum, ai ? (ai.primaryHighlight || ai.highlight) : '', ai ? ai.reasonText : '', ai ? ai.primaryTag : '')
                     : normalizedNum;
